@@ -1,0 +1,77 @@
+# ------------------------------------
+# Cloud weighting function LOGICAL T/F
+# ------------------------------------
+Cloud column weighting function
+F
+
+# -------------------------
+# COD Jacobians LOGICAL T/F
+# -------------------------
+COD jacobians
+T
+
+# --------------------------
+# CSSA Jacobians LOGICAL T/F
+# --------------------------
+CSSA jacobians
+T
+
+# ---------------------------
+# CFRAC Jacobians LOGICAL T/F
+# ---------------------------
+CFRAC jacobians
+T
+
+# -------------------------
+# CTP Jacobians LOGICAL T/F
+# -------------------------
+CTP jacobians
+F
+
+# -----------------------
+# Lambertian cloud albedo
+# -----------------------
+Lambertian cloud albedo
+0.80
+
+# -----------------------------------------------------
+# Set to TRUE if cloud tops and bottom are specified in
+# km. Set to FALSE if provided in pressure. LOGICAL T/F
+# -----------------------------------------------------
+Use zcldspec
+F
+
+# ------------------------------
+# Wavelength to specify COD (nm)
+# ------------------------------
+COD wavelength
+550.0
+
+# -----------------------------------
+# Cloud franction (IPA approximation)
+# -----------------------------------
+Cloud fraction
+0.1
+
+# -----------------------------
+# Cloud top (pressure/altitude)
+# -----------------------------
+Cloud top
+500.0
+
+# -----------------------------------------------
+# Number of cloud types followed
+# by properties for each one
+#   1. Number of clouds:
+#      Loop for:
+#       - Cloud type
+#       - Cloup bottom, top and optical thickness
+# -----------------------------------------------
+Number of clouds
+2
+WC
+900.0d0 700.0d0 10.0d0
+IC
+250.0d00 200.0d0 1.d0
+
+#EOF

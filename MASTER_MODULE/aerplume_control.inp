@@ -1,0 +1,56 @@
+# ----------------------------------------------
+# Aerosols column weighting function LOGICAL T/F
+# ----------------------------------------------
+Aerosol column weighting function
+F
+
+# -------------------------
+# AOD Jacobians LOGICAL T/F
+# -------------------------
+AOD jacobians
+T
+
+# --------------------------
+# ASSA Jacobians LOICAL T/F
+# --------------------------
+ASSA jacobians
+T
+
+# ---------------------------
+# AERPH Jacobians LOGICAL T/F
+# ---------------------------
+AERPH jacobians
+F
+
+# ---------------------------
+# AERHW Jacobians LOGICAL T/F
+# ---------------------------
+AERHW jacobians
+F
+
+# -------------------
+# AOD wavelength (nm)
+# -------------------
+AOD wavelength
+550.0
+
+# ----------------------------------------------
+# Aerosol types:
+#   1. Number of aerosol types
+#   Follow by those lines for each type:
+#       1. Aerosol type 
+#       2. Aerosol optical thickness
+#       3. Upper limit, lower limit, peak height
+#       4. Half width
+# ----------------------------------------------
+2
+SU
+0.2
+12.0  0.00  6.00
+0.5d0
+DU
+0.2
+12.0
+0.00
+6.00
+0.5d0

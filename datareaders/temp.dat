@@ -1,0 +1,298 @@
+144c144
+<    real(kind=8), dimension ( 0:GC_nlayers ), intent(out)  :: temperatures
+---
+>    real(kind=8), dimension (   GC_nlayers ), intent(out)  :: temperatures
+167c167
+<    real(kind=8), dimension(1:GC_nlayers) :: layertemp
+---
+>    real(kind=8), dimension(0:GC_nlayers) :: leveltemp
+176c176
+<    real(kind=8)  :: rho1, rho2, col, pp, delp, temp, airc, ccon, avit
+---
+>    real(kind=8)  :: rho1, rho2, col, pp, delp, temp, airc
+198c198
+<       temperatures(n) = profile_data(n1,3)
+---
+>       leveltemp(n) = profile_data(n1,3)
+200d199
+<       heights(n) = profile_data(n1, 2)
+206,211c205,210
+< !   heights(GC_nlayers) = 0.0d0
+< !   ccon = - 9.81d0 * 28.9d0 / 8314.0d0 * 500.0d0
+< !  do n = GC_nlayers, 1, -1
+< !     avit = (1.0d0/temperatures(n-1))+(1.0d0/temperatures(n))
+< !      heights(n-1) = heights(n) - dlog(pressures(n)/pressures(n-1))/avit/ccon
+< !   enddo
+---
+>    heights(GC_nlayers) = 0.0d0
+>    ccon = - 9.81d0 * 28.9d0 / 8314.0d0 * 500.0d0
+>    do n = GC_nlayers, 1, -1
+>       avit = (1.0d0/leveltemp(n-1))+(1.0d0/leveltemp(n))
+>       heights(n-1) = heights(n) - dlog(pressures(n)/pressures(n-1))/avit/ccon
+>    enddo
+221,223c220,222
+<       rho1 = pressures(n1)/ temperatures(n1)
+<       rho2 = pressures(n)/ temperatures(n)
+<       temp = 0.5d0 * (temperatures(n1)+temperatures(n))
+---
+>       rho1 = pressures(n1)/ leveltemp(n1)
+>       rho2 = pressures(n)/ leveltemp(n)
+>       temp = 0.5d0 * (leveltemp(n1)+leveltemp(n))
+227,229c226,228
+<       layertemp(n)   = temp
+<       aircolumns(n)     = gasconstants(n) * delp / layertemp(n)
+<       daircolumns_dT(n) = - aircolumns(n) / layertemp(n)
+---
+>       temperatures(n)   = temp
+>       aircolumns(n)     = gasconstants(n) * delp / temperatures(n)
+>       daircolumns_dT(n) = - aircolumns(n) / temperatures(n)
+245c244
+<             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,6)  ! O3
+---
+>             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,5)  ! O3
+251,269c250
+<             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,12) ! NO2
+<          enddo
+<       else if ( which_gases(g) .eq. 'CO2 ' ) then
+<          ngas_check = ngas_check + 1
+<          do n = 1, GC_nlayers
+<             n1 = GC_nlayers + 1 - n
+<             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,5) ! CO2
+<          enddo
+<       else if ( which_gases(g) .eq. 'CH4 ' ) then
+<          ngas_check = ngas_check + 1
+<          do n = 1, GC_nlayers
+<             n1 = GC_nlayers + 1 - n
+<             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,9) ! CH4
+<          enddo
+<       else if ( which_gases(g) .eq. 'CO  ' ) then
+<          ngas_check = ngas_check + 1
+<          do n = 1, GC_nlayers
+<             n1 = GC_nlayers + 1 - n
+<             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,8) ! CO
+---
+>             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,6) ! NO2
+271c252
+<       else if ( which_gases(g) .eq. 'N2O ' ) then
+---
+>       else if ( which_gases(g) .eq. 'HCHO' ) then
+275c256
+<             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,7) ! N2O
+---
+>             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,7) ! HCHO
+277c258
+<       else if ( which_gases(g) .eq. 'NO  ' ) then
+---
+>       else if ( which_gases(g) .eq. 'SO2 ' ) then
+281c262
+<             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,11) ! NO
+---
+>             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,8) ! SO2
+283,306d263
+<       else if ( which_gases(g) .eq. 'HNO3' ) then
+<          ngas_check = ngas_check + 1
+<          do n = 1, GC_nlayers
+<             n1 = GC_nlayers + 1 - n
+<             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,13) ! HNO3
+<          enddo
+<       else if ( which_gases(g) .eq. 'OCS ' ) then
+<          ngas_check = ngas_check + 1
+<          do n = 1, GC_nlayers
+<             n1 = GC_nlayers + 1 - n
+<             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,14) ! OCS
+<          enddo
+< !      else if ( which_gases(g) .eq. 'HCHO' ) then
+< !         ngas_check = ngas_check + 1
+< !         do n = 1, GC_nlayers
+< !            n1 = GC_nlayers + 1 - n
+< !            gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,7) ! HCHO
+< !         enddo
+< !      else if ( which_gases(g) .eq. 'SO2 ' ) then
+< !         ngas_check = ngas_check + 1
+< !         do n = 1, GC_nlayers
+< !            n1 = GC_nlayers + 1 - n
+< !            gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,8) ! SO2
+< !         enddo
+313c270
+<       else if ( which_gases(g) .eq. 'O2  ' ) then
+---
+>       else if ( which_gases(g) .eq. 'O4  ' ) then
+317,318c274
+<             !gas_partialcolumns(n,g) = aircolumns(n) * O2RATIO  ! O2
+<             gas_partialcolumns(n,g) = pp * aircolumns(n) * profile_data(n1,10)  ! O2
+---
+>             gas_partialcolumns(n,g) = (aircolumns(n) * O2RATIO) ** 2.0 / (heights(n-1)-heights(n)) / 1.0D5 ! O4
+320c276
+<       else if ( which_gases(g) .eq. 'O4  ' ) then
+---
+>       else if ( which_gases(g) .eq. 'O2  ' ) then
+324,325c280
+<             gas_partialcolumns(n,g) = (pp * aircolumns(n) * profile_data(n1,10)) ** 2.0 &
+<                  / (heights(n-1)-heights(n)) / 1.0D5 ! O4
+---
+>             gas_partialcolumns(n,g) = aircolumns(n) * O2RATIO  ! O2
+361,524d315
+< subroutine insert_clouds(maxlayers, nlayers, heights, pressures, temperatures,    &
+<      aircolumns, daircolumns_dT, gas_partialcolumns, maxgases, ngases,            &
+<      do_lambertian_cloud, maxcloud, ncloud, cld_zbots, cld_ztops, cld_total_taus, &
+<      cld_lowers, cld_uppers, cld_opdeps, fail, message)
+< 
+<   implicit none
+< 
+<   ! ========================
+<   ! Input/output parameters
+<   ! ========================
+<   integer, intent(IN)    :: maxlayers, maxgases, ngases, maxcloud, ncloud
+<   logical, intent(IN)    :: do_lambertian_cloud
+<   integer, intent(INOUT) :: nlayers
+<   real(kind=8), dimension (maxcloud), intent(IN)               :: cld_total_taus
+<   real(kind=8), dimension (maxcloud), intent(INOUT)            :: cld_zbots, cld_ztops
+<   real(kind=8), dimension (0:maxlayers), intent(INOUT)         :: heights, pressures, temperatures
+<   real(kind=8), dimension (maxlayers), intent(INOUT)           :: aircolumns, daircolumns_dT
+<   real(kind=8), dimension (maxlayers, maxgases), intent(INOUT) :: gas_partialcolumns
+<   character*(*), intent(INOUT)                                 :: message
+< 
+<   logical, INTENT(OUT)                             :: fail
+<   integer, dimension (maxcloud), intent(out)       :: cld_lowers, cld_uppers
+<   real(kind=8), dimension (maxlayers), intent(out) :: cld_opdeps
+< 
+<   ! ================
+<   ! Local variables
+<   ! ================
+<   integer      :: icld, i, istart
+<   real(kind=8) :: ext, frac, presfrac
+< 
+<   fail = .false.
+<   message = ' '
+<   cld_opdeps = 0.0d0
+<   cld_lowers = -1
+<   cld_uppers = -1
+<   
+<   
+<   ! Use linear inteprolation
+<   if (do_lambertian_cloud) then
+<      do i = 1, nlayers
+<         if (abs(cld_ztops(1) - heights(i)) < 1.0E-1) then ! merge levels within 100 m
+<            cld_ztops(1) = heights(i)
+<            cld_uppers(1) = i + 1
+<            exit
+<         else if (cld_ztops(1) > heights(i) ) then
+<            
+<            heights(i+1:nlayers + 1) = heights(i:nlayers)
+<            pressures(i+1:nlayers + 1) = pressures(i:nlayers)
+<            temperatures(i + 1:nlayers+1) = temperatures(i:nlayers)
+<            heights(i) = cld_ztops(1)
+<            
+<            frac = (heights(i) - heights(i-1)) / (heights(i + 1) - heights(i - 1))
+<            temperatures(i) = temperatures(i - 1) * (1.0 - frac) + temperatures(i + 1) * frac
+<            pressures(i) = EXP(frac * (LOG(pressures(i + 1)) - LOG(pressures(i - 1))) + LOG(pressures(i - 1)))
+<            presfrac = (pressures(i) - pressures(i - 1)) / (pressures(i+1) - pressures(i-1))
+<            aircolumns(i + 1: nlayers + 1) = aircolumns(i : nlayers)
+<            aircolumns(i) =  aircolumns(i + 1)  * presfrac
+<            aircolumns(i + 1) =  aircolumns(i + 1)  * (1.0 - presfrac)
+<            gas_partialcolumns(i + 1: nlayers + 1, 1:ngases) = gas_partialcolumns(i : nlayers, 1:ngases)
+<            gas_partialcolumns(i, 1:ngases) =  gas_partialcolumns(i + 1, 1:ngases)  * presfrac
+<            gas_partialcolumns(i + 1, 1:ngases) =  gas_partialcolumns(i + 1, 1:ngases)  * (1.0 - presfrac)
+<            daircolumns_dT(i) = -aircolumns(i) / (temperatures(i-1) + temperatures(i)) * 2.0
+<            daircolumns_dT(i + 1) = -aircolumns(i + 1) / (temperatures(i) + temperatures(i+1)) * 2.0  
+<            nlayers = nlayers + 1
+< 
+<            if (nlayers > maxlayers) then
+<               message = 'Need to increase maxlayers!!!'
+<               fail = .true.; return
+<            endif
+<            exit
+<         endif
+<      enddo
+<   else
+< 
+<      istart = 1
+<      do icld = ncloud, 1, -1
+< 
+<         ! insert cloud top
+<         do i = istart, nlayers
+<            if (abs(cld_ztops(icld) - heights(i)) < 1.0E-1) then
+<               cld_ztops(icld) = heights(i)
+<               cld_uppers(icld) = i + 1
+<               exit
+<            else if (cld_ztops(icld) > heights(i) ) then             
+<               heights(i + 1: nlayers + 1) = heights(i: nlayers)
+<               pressures(i + 1: nlayers + 1) = pressures(i: nlayers)
+<               temperatures(i + 1: nlayers + 1) = temperatures(i: nlayers)
+<               heights(i) = cld_ztops(icld)
+<               
+<               frac = (heights(i) - heights(i-1)) / (heights(i + 1) - heights(i - 1))
+<               temperatures(i) = temperatures(i - 1) * (1.0 - frac) + temperatures(i + 1) * frac
+<               pressures(i) = EXP(frac * (LOG(pressures(i + 1)) - LOG(pressures(i - 1))) + LOG(pressures(i - 1)))
+<               presfrac = (pressures(i) - pressures(i - 1)) / (pressures(i+1) - pressures(i-1))
+<               aircolumns(i + 1: nlayers + 1) = aircolumns(i : nlayers)
+<               aircolumns(i) =  aircolumns(i + 1)  * presfrac
+<               aircolumns(i + 1) =  aircolumns(i + 1)  * (1.0 - presfrac)
+<               gas_partialcolumns(i + 1: nlayers + 1, 1:ngases) = gas_partialcolumns(i : nlayers, 1:ngases)
+<               gas_partialcolumns(i, 1:ngases) =  gas_partialcolumns(i + 1, 1:ngases)  * presfrac
+<               gas_partialcolumns(i + 1, 1:ngases) =  gas_partialcolumns(i + 1, 1:ngases)  * (1.0 - presfrac)
+<               daircolumns_dT(i) = -aircolumns(i) / (temperatures(i-1) + temperatures(i)) * 2.0
+<               daircolumns_dT(i + 1) = -aircolumns(i + 1) / (temperatures(i) + temperatures(i+1)) * 2.0   
+< 
+<               nlayers = nlayers + 1
+<               cld_uppers(icld) = i + 1
+<               
+<               if (nlayers > maxlayers) then
+<                  message = 'Need to increase maxlayers!!!'
+<                  fail = .true.; return
+<               endif
+<               exit
+<            endif
+<            
+<         enddo
+< 
+<         ! insert cloud bottom
+<         istart = i
+<         do i = istart, nlayers
+<            if (abs(cld_zbots(icld) - heights(i)) < 1.0E-1) then
+<               cld_zbots(icld) = heights(i)
+<               cld_lowers(icld) = i 
+<               exit
+<            else if (cld_zbots(icld) > heights(i) ) then
+<               
+<               heights(i + 1: nlayers + 1) = heights(i: nlayers)
+<               pressures(i + 1: nlayers + 1) = pressures(i: nlayers)
+<               temperatures(i + 1: nlayers + 1) = temperatures(i: nlayers)
+<               heights(i) = cld_zbots(icld)            
+<               
+<               frac = (heights(i) - heights(i-1)) / (heights(i + 1) - heights(i - 1))
+<               temperatures(i) = temperatures(i - 1) * (1.0 - frac) + temperatures(i + 1) * frac
+<               pressures(i) = EXP(frac * (LOG(pressures(i + 1)) - LOG(pressures(i - 1))) + LOG(pressures(i - 1)))
+<               presfrac = (pressures(i) - pressures(i - 1)) / (pressures(i+1) - pressures(i-1))
+<               aircolumns(i + 1: nlayers + 1) = aircolumns(i : nlayers)
+<               aircolumns(i) =  aircolumns(i + 1)  * presfrac
+<               aircolumns(i + 1) =  aircolumns(i + 1)  * (1.0 - presfrac)
+<               gas_partialcolumns(i + 1: nlayers + 1, 1:ngases) = gas_partialcolumns(i : nlayers, 1:ngases)
+<               gas_partialcolumns(i, 1:ngases) =  gas_partialcolumns(i + 1, 1:ngases)  * presfrac
+<               gas_partialcolumns(i + 1, 1:ngases) =  gas_partialcolumns(i + 1, 1:ngases)  * (1.0 - presfrac)
+<               daircolumns_dT(i) = -aircolumns(i) / (temperatures(i-1) + temperatures(i)) * 2.0
+<               daircolumns_dT(i + 1) = -aircolumns(i + 1) / (temperatures(i) + temperatures(i+1)) * 2.0   
+< 
+<               nlayers = nlayers + 1
+<               cld_lowers(icld) = i 
+<               
+<               if (nlayers > maxlayers) then
+<                  message = 'Need to increase maxlayers!!!'
+<                  fail = .true.; return
+<               endif
+<               exit
+<            endif
+<            
+<         enddo
+<         istart = i
+<         
+<         ext = cld_total_taus(icld) / (heights(cld_uppers(icld)-1) - heights(cld_lowers(icld)))
+<         cld_opdeps(cld_uppers(icld):cld_lowers(icld)) = &
+<              (heights(cld_uppers(icld)-1:cld_lowers(icld)-1) - heights(cld_uppers(icld):cld_lowers(icld))) * ext
+<         
+<      enddo
+<      
+<   endif
+<   
+<   return
+< end subroutine insert_clouds

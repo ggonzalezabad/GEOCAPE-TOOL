@@ -1,0 +1,10 @@
+!------------------------------------------------------------------------------
+!          Harvard University Atmospheric Chemistry Modeling Group            !
+!------------------------------------------------------------------------------
+!BOI
+! !TITLE: Radiative Transfer Tool
+! !AUTHORS: Gonzalo Gonzalez Abad and Xiong Liu
+! !AFFILIATION: Smithsonian Astrophysical Observatory, Atomic and Molecular Physics Division
+! !DATE: April, 2013
+!EOI
+!------------------------------------------------------------------------------

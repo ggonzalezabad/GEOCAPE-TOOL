@@ -1,0 +1,5 @@
+  FATAL:   Wrong input from VLIDORT input file-read
+   ------ Here are the messages and actions 
+    ** Number of messages =   1
+Message #   1 : openfile failure for VLIDORT_Input.cf
+Action  #   1 : Find the Right File!!

@@ -1,0 +1,8 @@
+  WARNING: Suspicious input from VLIDORT input check
+   ------ VLIDORT has executed with internal defaults
+   ------ Here are the messages and actions 
+    ** Number of messages =   2
+Message #   1 : Bad input: No SS correction for Rayleigh only
+Action  #   1 : Warning: DO_SSCORR_NADIR turned off internally
+Message #   2 : 
+Action  #   2 : 

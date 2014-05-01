@@ -1,0 +1,52 @@
+UV/visible database for PBL O3 studies
+
+I have prepared a reasonably complete and up-to-date database for our
+radiance-calculating and retrieval purposes. I have truncated spectra
+to be within 280-700 nm, assuming our studies will not go below
+280. If they do, that can be addressed without difficulty. All spectra
+are given as vacuum nanometers. Where air-vacuum corrections were
+necessary, I used Edlen 1966. All spectra are cross section (cm2
+mol-1) except for O2-O2, which are cm5 mol-2: O2-O2 is mostly a
+collision complex, with perhaps some very weak van der Waals
+contribution in certain parts of the spectrum. The absorption for
+either of these is proportional to the rate of collisions, which goes
+as the square of the densities. Thus A = CX * (density**2) *
+path-length: A = (cm**5 mol-2) * ((mol cm-3)**2) * cm = dimensionless,
+as required.
+
+convolutions:
+
+for present purposes, assume negligibly small resolution and convolve
+to the instrument resolution without subtracting (in quadrature) the
+reference spectrum width. This is not quite correct, but the
+differences are negligible for present purposes. I include
+gauss_uneven.f90 for convenience.
+
+Solar irradiance spectrum: 2007_kpno_afgl_vac_04nm.spc
+My most recent reanalysis of Kitt Peak (Kurucz et al.)  and balloon
+(Hall and Anderson) spectra, in photons s-1 cm-2 nm-1.
+
+Ring spectrum: ring4o3z.out
+Calculated from 2007_kpno_afgl_vac_04nm.spc
+
+O3: o3abs_brion_195_660_vacfinal.dat
+Xiong Liu's parameterization of the Brion et al data, a quadratic fit,
+where TC = TK - 273.15, O3-cross-section = 1.d-20 * (c0 + TC * c1 + TC
+* TC * c2)
+
+NO2: no2r_97.nm
+The BISA 294 K FTS measurements, converted to vacuum nm.
+
+BrO: 228kbro10cm.nm
+The Wilmouth et al. FTS measurements, converted to nm.
+
+HCHO: h2co_cc.300
+The Cantrell et al. FTS measurements, evaluated at 300 K
+
+SO2: SO2_298_BISA.nm
+The 298 K BISA measurements, converted to vacuum nm
+
+O2-O2: O4_294K_BISA.dat
+The 294 K BISA measurements, converted to vacuum nm and with negative
+values set to 0.
+

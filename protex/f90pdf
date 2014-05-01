@@ -1,0 +1,108 @@
+#!/usr/bin/perl -w
+
+# $Id: f90pdf,v 1.2 2008/05/22 20:10:31 bmy Exp $
+
+=head1 NAME
+
+F90PDF
+
+=head1 SYNOPSIS
+
+f90pdf [ myfile1.F90 ... myfileN.F90 | *.F90 ] 
+
+=head1 REQUIRES
+
+Perl 5.003
+protex
+dvipdf
+pdflatex
+
+=head1 EXPORTS
+
+none
+
+=head1 DESCRIPTION
+
+f902pdf
+Wrapper script to call the "protex" script, which converts header comments from
+F90 routines into a LaTeX document.  The LaTeX document is then converted into
+a PDF document with the pdflatex command.
+
+Output Filenames: 
+LaTeX file : output.tex
+PDF file   : output.pdf
+
+=head1 METHODS
+
+&main : Driver routine
+
+=head1 MODIFICATION HISTORY
+
+bmy, 22 May 2008 - INITIAL VERSION
+
+Bob Yantosca (yantosca@seas.harvard.edu)
+
+=head1 SEE ALSO
+
+protex
+dvipdf
+dvips
+pdflatex
+latex
+latex2html
+f90ps
+
+=head1 COPYRIGHT
+
+Copyright 2008, Bob Yantosca.  All rights reserved.
+
+=cut
+
+require 5.003;        # need this version of Perl or newer
+use English;          # Use English language
+use Carp;             # Get detailed error messages
+use strict;           # Use IMPLICIT NONE-like strict syntax
+
+#------------------------------------------------------------------------------
+
+sub main() {
+
+  #==========================================================================
+  # MAIN is the driver routine for the script.
+  #==========================================================================
+
+  # Error check #of arguments
+  if ( scalar( @ARGV ) == 0 ) { 
+    print "Usage: f90pdf [ myfile1.F90 ... myfileN.F90 | *.F90 ]\n"; 
+    exit(1); 
+  }
+
+  # Temporary file
+  my $texFile = "output.tex";
+  my $pdfFile = "output.pdf";
+
+  # Call "protex" to convert comments to make a *.tex file
+  # Pipe the output from all files into a single file
+  # The -s option only prints code headers
+  # The -f option suppresses source code headers
+  qx( protex -s -f @ARGV > $texFile );
+  
+  # If successful, then call pdflatex 3 times 
+  if ( $? == 0 ) { qx( pdflatex $texFile; ) }
+  if ( $? == 0 ) { qx( pdflatex $texFile; ) }
+  if ( $? == 0 ) { qx( pdflatex $texFile; ) }
+
+  # Remove temporary files
+  if ( $? == 0 ) { qx( rm *.aux *.log *.toc ); }
+
+  # Return successfully
+  return(0);
+}
+
+#------------------------------------------------------------------------------
+
+# Call main program
+main(); 
+
+# Exit back to shell w/ error code
+exit( $? );

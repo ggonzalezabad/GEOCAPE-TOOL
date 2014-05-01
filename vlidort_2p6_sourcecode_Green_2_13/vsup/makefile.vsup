@@ -1,0 +1,13 @@
+#
+# Define individual supplement paths
+#
+
+VBRDF_PATHG   = $(VLIDORT_VSUP_PATHG)/vbrdf
+VSLEAVE_PATHG = $(VLIDORT_VSUP_PATHG)/vsleave
+
+#
+# Include individual supplement makefiles
+#
+
+include $(VBRDF_PATHG)/makefile.vbrdf
+include $(VSLEAVE_PATHG)/makefile.vsleave

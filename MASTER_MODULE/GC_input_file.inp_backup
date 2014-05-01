@@ -1,0 +1,323 @@
+# --------------
+# Results folder
+# --------------
+Output folder
+../test/
+
+# -------------------------------------
+# Database directory:
+#  cross section, solar, surface albedo
+#  aresols/cloud property
+# -------------------------------------
+Database directory
+../geocape_data/
+
+# ---------------------
+# Profile data filename
+# ---------------------
+Profile data filename
+/data/dumbo/gonzalo/AMFcomputations/Computations/AMF/Make_Atmospheres/Atmospheres/gcsim_2007071519_1710-97.5W38.0N_atmosprof.dat
+
+# ------------------------------------------
+# Use footprint info in atmospheric profile:
+#   lon, lat, yy, mm, dd, utc, sza, vza, aza
+#   , Ts, Ps, fc, ws,ctp
+# ------------------------------------------
+Use footprint info
+F
+
+# ----------------------
+# Do debug geocape tool:
+#   1. logical T/F
+#   2. Debug filename
+# ----------------------
+Debug geocape
+T
+debug_geocape_tool.log
+
+# ----------------------------------
+# Do vector calculation, logical T/F
+# ----------------------------------
+Vector calculation
+F
+
+# --------------------------------
+# Do Stokes QU output, logical T/F
+# --------------------------------
+Stokes output
+F
+
+# -------------------------
+# Do Jacobians, logical T/F
+# -------------------------
+Jacobians
+T
+
+# ----------------------------
+# Do QU Jacobians, logical T/F
+# ----------------------------
+QU jacobians
+F
+
+# -------------------------------
+# Do AMF calculation, logical T/F
+# -------------------------------
+Air mass factors
+T
+
+# -------------------------------------
+# Do temperature Jacobians, logical T/F
+# -------------------------------------
+Temperature jacobians
+F
+
+# ------------------------------------------
+# Do Surface Pressure Jacobians, logical T/F
+# ------------------------------------------
+Surface pressure jacobians
+F
+
+# ----------------------------------------------------
+# Do Normalized Weighting Function output, logical T/F
+#   T: dy/dx*x; F: dy/dx
+# ----------------------------------------------------
+Normalized WF output
+F
+
+# -----------------------------------
+# Do Normalized Radiance, logical T/F
+#   T: I/F; F: I
+# -----------------------------------
+Normalized radiance
+T
+
+# ----------------------------------------
+# Use solar photons, logical T/F
+#   T: photons/cm^2/nm/s; F: W/m^2/cm^-1/s
+# ----------------------------------------
+Solar photons
+T
+
+# -----------------------------------------
+# Use effective cross sections, logical T/F
+# -----------------------------------------
+Effective cross sections
+T
+
+# -----------------------------------------------------------
+# Spectral input:
+#   1. Logical T/F, T: wavelength(nm); F: wavenumber(cm^-1)
+#   2. Lambda start, Lambda finish, lambda resolution at FWHM
+#   3. Spectral interval for output and fine radiances
+# -----------------------------------------------------------
+Spectral
+T
+300.00d0 350.00d0 0.5d0
+2.0d0 1.0d0
+
+# ----------------------------------------------------------
+# Gases input allowed values: O3, NO2, HCHO, SO2, H2O, GLYX,
+#                             BRO, OCLO, IO, CO, CO2, N2O, 
+#                             CH4, O2, NO, HNO3, OCS
+#   1. Number of gases
+#   2. Which gases
+# ----------------------------------------------------------
+Gases
+3
+O3, NO2, HCHO, BRO
+#, SO2, GLYX, H2O, BRO, OCLO, O4, O2
+
+# -----------------------------------------------------------------------
+# Albedo input:
+#   1. Use lambertian surface, use fixed albedo, logical T/F, logical T/F
+#   2. Fixed albedo
+#   3. Use albedospectra, logical T/F
+#   4. Albedo spectra filename
+#   5. Wind speed
+# -----------------------------------------------------------------------
+Albedo
+T T
+0.03d0
+F
+grass_ASTER.dat
+5.0d0
+
+# ------------------------------------------------
+# Aerosols input:
+#   1. Do aerosols, logical T/F
+#   2. Use aerosol profiles from atmos. input file
+#   3. Aerosols input control file
+# ------------------------------------------------
+Aerosols
+F
+F
+aerplume_control.inp
+
+# -----------------------------------------------------------------
+# Clouds input:
+#   1. Do clouds, logical T/F; Do_lambertian_clouds, logical T/F
+#   2. Use cloud profiles from atmospheric input files, logical T/F
+#   3. Clouds input control file
+# -----------------------------------------------------------------
+Clouds
+F F
+F
+clouds_control.inp
+
+# -------------------------------------
+# Number of aerosols and clouds moments
+# -------------------------------------
+Number of moments
+8
+
+# -----------------
+# Number of streams
+# -----------------
+Streams
+4
+
+# ---------------------------
+# Sun positions:
+#   1. Number
+#      Values (one each line)
+# ---------------------------
+Sun positions
+7
+00.01d0
+15.0d0
+30.0d0
+45.0d0
+60.0d0
+75.0d0
+89.99d0
+
+# ---------------------------
+# View angles:
+#   1. Number
+#      Values (one each line)
+# ---------------------------
+View angles
+7
+00.01d0
+15.0d0
+30.0d0
+45.0d0
+60.0d0
+75.0d0
+89.99d0
+
+# ---------------------------
+# Azimuth angles:
+#   1. Number
+#      Values (one each line)
+# ---------------------------
+Azimuth angles
+1
+00.01d0
+
+# -------------------------------------------------
+# User level to output radiances:
+#   1. Number of user levels (1 for this interface)
+#      Values (0.d0 for TOA) (one each line)
+# -------------------------------------------------
+User levels
+1
+0.d0
+
+# ---------------------------------------------------
+# Do user altitudes:
+#   1. Logical T/F
+#   2. Values (one each line, as many as user levels)
+# ---------------------------------------------------
+User altitudes
+F
+12.0d0
+
+# ------------------------
+# Do upwelling logical T/F
+# ------------------------
+Upwelling
+T
+
+# ------------------------------------------------------------------
+# Footprint information:
+#   1. year, month, day, utc
+#   2. longitude, latitude
+#   3. satellite longitude, laitude (deg) and altitude (km)
+#   4. Redo viewing geometry based on footprint/satellite positions
+# -----------------------------------------------------------------
+Footprint
+2007  07 15 21.0
+-60.0 38.0
+-100.0 0.0 35786.0
+F
+
+# --------------------------------------------------------------
+# Cross sections.
+# Files should be placed on database_directory/SAO_crosssections
+# Just provide filename, NOT full path.
+# The program looks for the molecule name as in the gas
+# definition. After the file name please included the number of
+# cross sections and the type of the cross sections:
+#   1. Not dependent on P, T (same for all layers)
+#   2. Parameterized T-dependent coefficients (e.g., O3)
+#   3. Dependent of P and T (e.g., those read from HITRAN). For
+#      HITRAN xsec the number of them will be equal to the
+#      number of layers. Use -1 to indicate that. The program
+#      will take of it.
+# --------------------------------------------------------------
+Cross sections
+O3
+o3abs_brion_195_830_vacfinal.dat    
+3   2
+NO2
+no2r_97.nm                          
+1   1
+HCHO
+h2co_cc.300                         
+1   1
+SO2
+SO2_298_BISA.nm                     
+1   1
+H2O
+h2o_0.9atm_280k_hitran.dat          
+1   1
+GLYX
+glyx_296k_volkamer.dat              
+1   1       
+BRO
+228kbro10cm.nm                      
+1   1
+IO
+io_298k_bremen.dat                  
+1   1
+CO
+HITRAN                             
+-1   3 
+CO2
+HITRAN                             
+-1   3
+N2O
+HITRAN                             
+-1   3
+CH4
+HITRAN                             
+-1   3
+O2
+o2_0.5atm_253k_hitran.dat           
+1   1
+NO
+HITRAN                             
+-1   3
+HNO3
+HITRAN                             
+-1   3
+OCS
+HITRAN                             
+-1   3
+O4
+O4_294K_BISA_800nmfillzero.dat
+1   1
+OCLO
+oclo_213k_sciafm.dat
+1   1

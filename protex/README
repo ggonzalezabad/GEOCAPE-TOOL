@@ -1,0 +1,139 @@
+README -- describes contents of ESMF/protex directory
+23 May 2008
+Bob Yantosca              and Philippe Le Sager
+yantosca@seas.harvard.edu     plesager@seas.harvard.edu
+
+
+Files:
+-------------------------------------------------------------------------------
+
+README                     -- This file		
+
+protex                     -- Perl Script from GSFC that converts special
+                              F90 header comment tags into LaTeX format.
+                              See the template* files for more info.
+
+f90pdf                     -- Perl script which is a wrapper for protex.
+                              Calls protex, latex, and dvipdf to convert
+                              the output of protex to PDF format.
+
+f90ps                      -- Perl script which is a wrapper for protex.
+                              Calls protex, latex, and dvipdf to convert
+                              the output of protex to PostScript format.
+
+template_introduction.txt  -- Front page template file for use with the 
+                              protex script.  Use this template to specify
+                              the title of the document, authors, affiliation, 
+                              and date.  This should always be the first file
+                              passed to protex.
+
+template_includefile.h     -- Template header file w/ F90 declarations
+
+
+template_module.F90        -- Template F90 module with module header and
+                              internal routines.
+
+template_routine.F90       -- Template F90 file for a standalone program
+                              or routine  (i.e. not contained in a module).
+
+sample.pdf                 -- Sample PDF output file, created from the
+                              the template_includefile.h, template_routine.F90
+                              and template_module.F90 files.
+
+sample.ps                  -- Sample PostScript output file, created from the
+                              the template_includefile.h, template_routine.F90
+                              and template_module.F90 files.
+
+
+Generating PDF documentation:
+-------------------------------------------------------------------------------
+
+To generate a PDF file, type:
+
+   f90pdf [list of files]
+
+This will create the files:
+  
+   output.tex  -- documentation file in LaTeX format file 
+   output.pdf  -- documentation file in PDF format
+
+You may choose to rename these as you see fit.  The f90pdf command is a 
+convenience wrapper script.  It executes the following commands:
+
+   protex -s -f [list of files] > output.tex
+   pdflatex output.tex
+   pdflatex output.tex
+   pdflatex output.tex   
+   rm *.dvi *.aux *.log *.toc 
+ 
+NOTES:
+(1) The -s option of protex will cause only the module, subroutine, and
+     function headers to be included in the output.
+(2) The -f option of protex suppresses printing source code file information
+     next to each module name.
+(3) Calling pdflatex 3 times is necessary to ensure that the table of contents
+     information will be compiled correctly into the final output file.
+(4) If the f90pdf script hangs for a while then it has probably encountered an
+     error.  To continue you may type "r". 
+
+
+Generating PostScript documentation:
+-------------------------------------------------------------------------------
+
+To generate a PostScript file, type:
+
+   f90ps [list of files]
+
+This will create the files:
+  
+   output.tex  -- documentation file in LaTeX format file 
+   output.ps  -- documentation file in PDF format
+
+You may choose to rename these as you see fit.  The f90ps command is a 
+convenience wrapper script.  It executes the following commands:
+
+   protex -s -f [list of files] > output.tex
+   latex output.tex
+   latex output.tex
+   latex output.tex   
+   dvips output.dvi -o output.ps
+   rm *.dvi *.aux *.log *.toc 
+ 
+NOTES:
+(1) The -s option of protex will cause only the module, subroutine, and
+     function headers to be included in the output.
+(2) The -f option of protex suppresses printing source code file information
+     next to each module name.
+(3) Note: calling latex 3 times is necessary to ensure that the table of 
+     contents information will be compiled correctly into the final output 
+     file.
+(4) Also note: since there is no "pslatex" command, we must do the intermediate
+     step of creating the dvi file and then 
+(5) If the f90ps script hangs for a while then it has probably encountered an
+     error.  To continue you may type "r". 
+
+
+Generating HTML documentation:
+-------------------------------------------------------------------------------
+
+To generate HTML documentation from F90 files, type:
+
+   protex [list of files] > output.tex
+   latex2html output.tex
+
+This will call the latex2html utility (which ships standard with Linux) to 
+parse the LaTeX file "output.tex" and create navigatable HTML pages.
+
+
+The sample.pdf and sample.ps files:
+-------------------------------------------------------------------------------
+
+We have created sample output files for you from the F90 template files 
+located in this directory.  These were created with the following commands:
+
+   f90pdf template_introduction.txt *.h *.F90
+   mv output.pdf sample.pdf
+
+   f90ps template_introduction.txt *.h *.F90
+   mv output.ps sample.ps
+

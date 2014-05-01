@@ -1,0 +1,281 @@
+# --------------------------------------------------------
+# -------------- Rule to compile Master programs ---------
+# --------------------------------------------------------
+$(OBJ)/geocape_tool_v2p6.o: geocape_tool_v2p6.f90 \
+    $(VLIDORT_OBJECTS)
+	$(TOOL_COMPILE) -I$(GC_OBJ) -I$(GC_MOD) -I$(OBJ)   \
+    -I$(WARN_PATH) -I$(VLIDORT_OBJ)  -I$(VLIDORT_MOD)  \
+     geocape_tool_v2p6.f90 -o $(OBJ)/geocape_tool_v2p6.o
+
+$(OBJ)/geocape_tool_v2p6G.o: geocape_tool_v2p6.f90 \
+    $(VLIDORT_OBJECTSG)
+	$(TOOL_COMPILE) -I$(GC_OBJG) -I$(GC_MODG) -I$(OBJ)   \
+    -I$(WARN_PATH) -I$(VLIDORT_OBJG)  -I$(VLIDORT_MODG)  \
+     geocape_tool_v2p6.f90 -o $(OBJ)/geocape_tool_v2p6G.o
+
+# --------------------------------------------------------
+# ------------ Rules to compile VIS routines -------------
+# --------------------------------------------------------
+$(OBJ)/%.o: $(DATA_PATH)/%.f90
+	$(TOOL_COMPILE) $< -o $(OBJ)/$@
+
+# --------------------------------------------------------
+# ----------Rule to compile NETCDF routines --------------
+# --------------------------------------------------------
+$(OBJ)/netcdf_wrt.o: $(NC_PATH)/netcdf_wrt.f90 \
+	$(NC_PATH)/netcdf.inc
+	$(TOOL_COMPILE) $(NC_PATH)/netcdf_wrt.f90 -o $(OBJ)/netcdf_wrt.o
+
+# --------------------------------------------------------
+# ------------- Rules to compile GC modules --------------
+# --------------------------------------------------------
+$(GC_OBJ)/GC_parameters_module.o: $(MOD_PATH)/GC_parameters_module.f90
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_parameters_module.f90 -I$(GC_OBJ)  -I$(GC_MOD)\
+    -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_parameters_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_variables_module.o:  $(MOD_PATH)/GC_variables_module.f90 \
+                               $(GC_OBJ)/GC_parameters_module.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_variables_module.f90 -I$(GC_OBJ) -I$(GC_MOD) \
+    -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_variables_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_error_module.o:      $(MOD_PATH)/GC_error_module.f90 \
+                               $(GC_OBJ)/GC_parameters_module.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_error_module.f90 -I$(GC_OBJ)  -I$(GC_MOD) \
+     -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_error_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_read_input_module.o: $(MOD_PATH)/GC_read_input_module.f90 \
+                               $(GC_OBJ)/GC_error_module.o             \
+                               $(GC_OBJ)/GC_parameters_module.o        \
+                               $(GC_OBJ)/GC_variables_module.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_read_input_module.f90 -I$(GC_OBJ)  -I$(GC_MOD) \
+    -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_read_input_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_profiles_module.o:   $(MOD_PATH)/GC_profiles_module.f90 \
+                               $(GC_OBJ)/GC_parameters_module.o      \
+                               $(GC_OBJ)/GC_error_module.o           \
+                               $(GC_OBJ)/GC_variables_module.o       \
+                               $(OBJ)/geocape_profile_prep.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_profiles_module.f90 -I$(OBJ) -I$(GC_OBJ)  -I$(GC_MOD) \
+     -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_profiles_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_aerosols_module.o:   $(MOD_PATH)/GC_aerosols_module.f90 \
+                               $(GC_OBJ)/GC_parameters_module.o      \
+                               $(GC_OBJ)/GC_error_module.o           \
+                               $(GC_OBJ)/GC_read_input_module.o      \
+                               $(GC_OBJ)/GC_variables_module.o       \
+                               $(OBJ)/generate_plume.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_aerosols_module.f90 -I$(OBJ)  -I$(GC_OBJ) -I$(GC_MOD) \
+      -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_aerosols_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_clouds_module.o:     $(MOD_PATH)/GC_clouds_module.f90 \
+                               $(GC_OBJ)/GC_parameters_module.o    \
+                               $(GC_OBJ)/GC_error_module.o         \
+                               $(GC_OBJ)/GC_read_input_module.o    \
+                               $(GC_OBJ)/GC_variables_module.o     \
+                               $(OBJ)/geocape_profile_prep.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_clouds_module.f90 -I$(OBJ)  -I$(GC_OBJ) -I$(GC_MOD) \
+     -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_clouds_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_solar_module.o:      $(MOD_PATH)/GC_solar_module.f90 \
+                               $(GC_OBJ)/GC_parameters_module.o   \
+                               $(GC_OBJ)/GC_error_module.o        \
+                               $(GC_OBJ)/GC_variables_module.o    \
+                               $(OBJ)/solarspec_prep.o         \
+                               $(OBJ)/julday.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_solar_module.f90 -I$(OBJ)  -I$(GC_OBJ)  -I$(GC_MOD) \
+    -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_solar_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_xsections_module.o:  $(MOD_PATH)/GC_xsections_module.f90 \
+                               $(GC_OBJ)/GC_parameters_module.o   \
+                               $(GC_OBJ)/GC_error_module.o        \
+                               $(GC_OBJ)/GC_read_input_module.o   \
+                               $(GC_OBJ)/GC_variables_module.o    \
+                               $(OBJ)/geocape_xsecs_prep.o     \
+                               $(OBJ)/get_hitran_crs.o         \
+                               $(OBJ)/gauss.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_xsections_module.f90 -I$(OBJ)  -I$(GC_OBJ) -I$(GC_MOD) \
+     -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_xsections_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_surface_module.o:    $(MOD_PATH)/GC_surface_module.f90 \
+                               $(GC_OBJ)/GC_parameters_module.o     \
+                               $(GC_OBJ)/GC_error_module.o          \
+                               $(GC_OBJ)/GC_variables_module.o      \
+                               $(OBJ)/get_hitran_crs.o           \
+                               $(OBJ)/geocape_surface_prep.o     \
+                               $(OBJ)/index_water.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_surface_module.f90 -I$(OBJ)  -I$(GC_OBJ) -I$(GC_MOD) \
+     -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_surface_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_Vlidort_module.o:    $(MOD_PATH)/GC_Vlidort_module.f90 \
+                               $(GC_OBJ)/GC_error_module.o          \
+                               $(GC_OBJ)/GC_variables_module.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_Vlidort_module.f90 -I$(GC_OBJ)  -I$(GC_MOD) \
+    -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_Vlidort_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_convolution_module.o:$(MOD_PATH)/GC_convolution_module.f90 \
+                               $(GC_OBJ)/GC_error_module.o              \
+                               $(GC_OBJ)/GC_variables_module.o          \
+                               $(OBJ)/gauss.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_convolution_module.f90 -I$(OBJ)  -I$(GC_OBJ)  -I$(GC_MOD)  \
+    -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_convolution_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_netcdf_module.o:$(MOD_PATH)/GC_netcdf_module.f90   \
+                               $(GC_OBJ)/GC_parameters_module.o \
+                               $(GC_OBJ)/GC_error_module.o      \
+                               $(GC_OBJ)/GC_variables_module.o  \
+                               $(OBJ)/netcdf_wrt.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_netcdf_module.f90 -I$(OBJ)  -I$(GC_OBJ)  -I$(GC_MOD) \
+    -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_netcdf_module.o
+	mv -f *.mod $(GC_MOD)
+
+# --------------------------------------------------------
+# ---------- Rules to compile GC Green modules -----------
+# --------------------------------------------------------
+$(GC_OBJG)/GC_parameters_module.o: $(MOD_PATH)/GC_parameters_module.f90
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_parameters_module.f90 -I$(GC_OBJG)  -I$(GC_MODG)\
+    -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_parameters_module.o
+	mv -f *.mod $(GC_MODG)
+
+$(GC_OBJG)/GC_variables_module.o:  $(MOD_PATH)/GC_variables_module.f90 \
+                               $(GC_OBJG)/GC_parameters_module.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_variables_module.f90 -I$(GC_OBJG) -I$(GC_MODG) \
+    -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_variables_module.o
+	mv -f *.mod $(GC_MODG)
+
+$(GC_OBJG)/GC_error_module.o:      $(MOD_PATH)/GC_error_module.f90 \
+                               $(GC_OBJG)/GC_parameters_module.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_error_module.f90 -I$(GC_OBJG)  -I$(GC_MODG) \
+     -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_error_module.o
+	mv -f *.mod $(GC_MODG)
+
+$(GC_OBJG)/GC_read_input_module.o: $(MOD_PATH)/GC_read_input_module.f90 \
+                               $(GC_OBJG)/GC_error_module.o             \
+                               $(GC_OBJG)/GC_parameters_module.o        \
+                               $(GC_OBJG)/GC_variables_module.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_read_input_module.f90 -I$(GC_OBJG)  -I$(GC_MODG) \
+    -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_read_input_module.o
+	mv -f *.mod $(GC_MODG)
+
+$(GC_OBJG)/GC_profiles_module.o:   $(MOD_PATH)/GC_profiles_module.f90 \
+                               $(GC_OBJG)/GC_parameters_module.o      \
+                               $(GC_OBJG)/GC_error_module.o           \
+                               $(GC_OBJG)/GC_variables_module.o       \
+                               $(OBJ)/geocape_profile_prep.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_profiles_module.f90 -I$(OBJ) -I$(GC_OBJG)  -I$(GC_MODG) \
+     -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_profiles_module.o
+	mv -f *.mod $(GC_MODG)
+
+$(GC_OBJG)/GC_aerosols_module.o:   $(MOD_PATH)/GC_aerosols_module.f90 \
+                               $(GC_OBJG)/GC_parameters_module.o      \
+                               $(GC_OBJG)/GC_error_module.o           \
+                               $(GC_OBJG)/GC_read_input_module.o      \
+                               $(GC_OBJG)/GC_variables_module.o       \
+                               $(OBJ)/generate_plume.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_aerosols_module.f90 -I$(OBJ)  -I$(GC_OBJG) -I$(GC_MODG) \
+      -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_aerosols_module.o
+	mv -f *.mod $(GC_MODG)
+
+$(GC_OBJG)/GC_clouds_module.o:     $(MOD_PATH)/GC_clouds_module.f90 \
+                               $(GC_OBJG)/GC_parameters_module.o    \
+                               $(GC_OBJG)/GC_error_module.o         \
+                               $(GC_OBJG)/GC_read_input_module.o    \
+                               $(GC_OBJG)/GC_variables_module.o     \
+                               $(OBJ)/geocape_profile_prep.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_clouds_module.f90 -I$(OBJ)  -I$(GC_OBJG) -I$(GC_MODG) \
+     -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_clouds_module.o
+	mv -f *.mod $(GC_MODG)
+
+$(GC_OBJG)/GC_solar_module.o:      $(MOD_PATH)/GC_solar_module.f90 \
+                               $(GC_OBJG)/GC_parameters_module.o   \
+                               $(GC_OBJG)/GC_error_module.o        \
+                               $(GC_OBJG)/GC_variables_module.o    \
+                               $(OBJ)/solarspec_prep.o         \
+                               $(OBJ)/julday.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_solar_module.f90 -I$(OBJ)  -I$(GC_OBJG)  -I$(GC_MODG) \
+    -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_solar_module.o
+	mv -f *.mod $(GC_MODG)
+
+$(GC_OBJG)/GC_xsections_module.o:  $(MOD_PATH)/GC_xsections_module.f90 \
+                               $(GC_OBJG)/GC_parameters_module.o   \
+                               $(GC_OBJG)/GC_error_module.o        \
+                               $(GC_OBJG)/GC_read_input_module.o   \
+                               $(GC_OBJG)/GC_variables_module.o    \
+                               $(OBJ)/geocape_xsecs_prep.o     \
+                               $(OBJ)/get_hitran_crs.o         \
+                               $(OBJ)/gauss.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_xsections_module.f90 -I$(OBJ)  -I$(GC_OBJG) -I$(GC_MODG) \
+     -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_xsections_module.o
+	mv -f *.mod $(GC_MODG)
+
+$(GC_OBJG)/GC_surface_module.o:    $(MOD_PATH)/GC_surface_module.f90 \
+                               $(GC_OBJG)/GC_parameters_module.o     \
+                               $(GC_OBJG)/GC_error_module.o          \
+                               $(GC_OBJG)/GC_variables_module.o      \
+                               $(OBJ)/get_hitran_crs.o           \
+                               $(OBJ)/geocape_surface_prep.o     \
+                               $(OBJ)/index_water.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_surface_module.f90 -I$(OBJ)  -I$(GC_OBJG) -I$(GC_MODG) \
+     -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_surface_module.o
+	mv -f *.mod $(GC_MODG)
+
+$(GC_OBJG)/GC_Vlidort_module.o:    $(MOD_PATH)/GC_Vlidort_module.f90 \
+                               $(GC_OBJG)/GC_error_module.o          \
+                               $(GC_OBJG)/GC_variables_module.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_Vlidort_module.f90 -I$(GC_OBJG)  -I$(GC_MODG) \
+    -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_Vlidort_module.o
+	mv -f *.mod $(GC_MODG)
+
+$(GC_OBJG)/GC_convolution_module.o:$(MOD_PATH)/GC_convolution_module.f90 \
+                               $(GC_OBJG)/GC_error_module.o              \
+                               $(GC_OBJG)/GC_variables_module.o          \
+                               $(OBJ)/gauss.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_convolution_module.f90 -I$(OBJ)  -I$(GC_OBJG)  -I$(GC_MODG)  \
+    -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_convolution_module.o
+	mv -f *.mod $(GC_MODG)
+
+$(GC_OBJG)/GC_netcdf_module.o:$(MOD_PATH)/GC_netcdf_module.f90   \
+                               $(GC_OBJG)/GC_parameters_module.o \
+                               $(GC_OBJG)/GC_error_module.o      \
+                               $(GC_OBJG)/GC_variables_module.o  \
+                               $(OBJ)/netcdf_wrt.o
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_netcdf_module.f90 -I$(OBJ)  -I$(GC_OBJG)  -I$(GC_MODG) \
+    -I$(VLIDORT_MODG) -I$(VLIDORT_OBJG) -o $(GC_OBJG)/GC_netcdf_module.o
+	mv -f *.mod $(GC_MODG)
+
+
+# --------------------------------------------------------
+# ----- Rules to compile Vlidort objects and modules -----
+# --------------------------------------------------------
+$(VLIDORT_OBJ)/%.o: $(VLIDORT_DEF_PATH)/%.f90
+	$(VLIDORT_COMPILE) -I$(VLIDORT_MOD) \
+                        $< -o $(VLIDORT_OBJ)/$@
+	mv -f *.mod $(VLIDORT_MOD)
+
+$(VLIDORT_OBJ)/%.o: $(VLIDORT_MAIN_PATH)/%.f90
+	$(VLIDORT_COMPILE) -I$(VLIDORT_MOD) \
+                        $< -o $(VLIDORT_OBJ)/$@
+	mv -f *.mod $(VLIDORT_MOD)
+	
+$(VLIDORT_OBJG)/%.o: $(VLIDORT_DEF_PATHG)/%.f90
+	$(VLIDORT_COMPILE) -I$(VLIDORT_MODG) \
+                        $< -o $(VLIDORT_OBJG)/$@
+	mv -f *.mod $(VLIDORT_MODG)
+
+$(VLIDORT_OBJG)/%.o: $(VLIDORT_MAIN_PATHG)/%.f90
+	$(VLIDORT_COMPILE) -I$(VLIDORT_MODG) \
+                        $< -o $(VLIDORT_OBJG)/$@
+	mv -f *.mod $(VLIDORT_MODG)
+
+

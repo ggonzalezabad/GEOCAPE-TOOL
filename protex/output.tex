@@ -1,0 +1,111 @@
+%                **** IMPORTANT NOTICE *****
+% This LaTeX file has been automatically produced by ProTeX v. 1.1
+% Any changes made to this file will likely be lost next time
+% this file is regenerated from its source. Send questions 
+% to Arlindo da Silva, dasilva@gsfc.nasa.gov
+ 
+%------------------------ PREAMBLE --------------------------
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{epsfig}
+\usepackage{hangcaption}
+\textheight     9in
+\topmargin      0pt
+\headsep        1cm
+\headheight     0pt
+\textwidth      6in
+\oddsidemargin  0in
+\evensidemargin 0in
+\marginparpush  0pt
+\pagestyle{myheadings}
+\markboth{}{}
+%-------------------------------------------------------------
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{0pt}
+\setlength{\baselineskip}{11pt}
+ 
+%--------------------- SHORT-HAND MACROS ----------------------
+\def\bv{\begin{verbatim}}
+\def\ev{\end{verbatim}}
+\def\be{\begin{equation}}
+\def\ee{\end{equation}}
+\def\bea{\begin{eqnarray}}
+\def\eea{\end{eqnarray}}
+\def\bi{\begin{itemize}}
+\def\ei{\end{itemize}}
+\def\bn{\begin{enumerate}}
+\def\en{\end{enumerate}}
+\def\bd{\begin{description}}
+\def\ed{\end{description}}
+\def\({\left (}
+\def\){\right )}
+\def\[{\left [}
+\def\]{\right ]}
+\def\<{\left  \langle}
+\def\>{\right \rangle}
+\def\cI{{\cal I}}
+\def\diag{\mathop{\rm diag}}
+\def\tr{\mathop{\rm tr}}
+%-------------------------------------------------------------
+
+\markboth{Left}{Source File: sao\_rt\_tool\_introduction.txt,  Date: Fri Apr  5 16:50:55 EDT 2013
+}
+
+ 
+ 
+%/////////////////////////////////////////////////////////////
+\newpage
+
+\markboth{Left}{Source File: GC\_parameters\_module.f90,  Date: Fri Apr  5 16:50:55 EDT 2013
+}
+
+ 
+%/////////////////////////////////////////////////////////////
+\title{Radiative Transfer Tool}
+\author{{\sc Gonzalo Gonzalez Abad and Xiong Liu}\\ {\em Smithsonian Astrophysical Observatory, Atomic and Molecular Physics Division}}
+\date{April, 2013}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section{Routine/Function Prologues} \label{app:ProLogues}
+
+  \subsection{Fortran:  Module Interface GC\_parameters\_module.f90 }
+
+
+  This module contains dimensioning parameters, 
+   angle conversion and PI definition.
+  \\
+  \\{\bf INTERFACE:}
+\begin{verbatim} MODULE GC_parameters_module.f90
+   IMPLICIT NONE\end{verbatim}{\bf PUBLIC DATA MEMBERS:}
+\begin{verbatim}    Dimensioning
+    ------------
+ 
+    Dimensions with 'GC_' prefix, distinguish from VLIDORT variables
+ 
+    integer, parameter :: GC_maxlayers      = 51
+    integer, parameter :: GC_maxgeometries  =  1
+    integer, parameter :: GC_maxuserlevels  =  1
+ 
+    wavelengths, gases, messages
+    integer, parameter :: maxgases      = 10
+    integer, parameter :: maxaer        = 6
+    integer, parameter :: maxcld        = 3
+    integer, parameter :: maxflambdas   = 53501
+    integer, parameter :: maxlambdas    = 2700
+    integer, parameter :: maxmessages   = 100
+    integer, parameter :: maxmoms       = 32
+    integer, parameter :: maxgksec      = 6, maxgkmatc = 8
+    integer, parameter :: maxscatter    = 3  ! Molecules, aerosols, clouds
+    INTEGER, DIMENSION(maxgkmatc), PARAMETER :: &
+         greekmat_idxs = (/1, 2, 5, 6, 11, 12, 15, 16/), &
+         phasmoms_idxs = (/1, 5, 5, 2, 3, 6, 6, 4/)
+    real(KIND=8), PARAMETER :: pi      = 3.14159265358979d0
+    real(KIND=8), PARAMETER :: deg2rad = pi / 180.d0,    &
+                               rad2deg = 180.d0 / pi
+ \end{verbatim}{\bf REVISION HISTORY:}
+\begin{verbatim}    April 2013 - G. Gonzalez Abad - Initial Version\end{verbatim}
+
+%...............................................................
+\end{document}

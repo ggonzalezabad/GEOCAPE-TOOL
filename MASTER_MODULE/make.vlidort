@@ -1,0 +1,182 @@
+BASE_SOURCES =
+SOURCES      =
+L_SOURCES    =
+LPS_SOURCES  =
+LCS_SOURCES  =
+SUP_SOURCES  =
+
+BASE_SOURCES +=                         \
+   $(VLIDORT_DEF_PATH)/vlidort_pars.f90
+
+SOURCES +=                                        \
+   $(BASE_SOURCES)                                \
+   $(VLIDORT_MAIN_PATH)/lapack_tools.f90          \
+   $(VLIDORT_MAIN_PATH)/lapack_z16_tools.f90      \
+   $(VLIDORT_DEF_PATH)/vlidort_inputs_def.f90     \
+   $(VLIDORT_DEF_PATH)/vlidort_sup_brdf_def.f90   \
+   $(VLIDORT_DEF_PATH)/vlidort_sup_ss_def.f90     \
+   $(VLIDORT_DEF_PATH)/vlidort_sup_sleave_def.f90 \
+   $(VLIDORT_DEF_PATH)/vlidort_sup_def.f90        \
+   $(VLIDORT_DEF_PATH)/vlidort_outputs_def.f90    \
+   $(VLIDORT_DEF_PATH)/vlidort_io_defs.f90        \
+   $(VLIDORT_MAIN_PATH)/vlidort_aux.f90           \
+   $(VLIDORT_MAIN_PATH)/vlidort_getplanck.f90     \
+   $(VLIDORT_MAIN_PATH)/vlidort_geometry.f90      \
+   $(VLIDORT_MAIN_PATH)/vlidort_inputs.f90        \
+   $(VLIDORT_MAIN_PATH)/vlidort_miscsetups.f90    \
+   $(VLIDORT_MAIN_PATH)/vlidort_multipliers.f90   \
+   $(VLIDORT_MAIN_PATH)/vlidort_corrections.f90   \
+   $(VLIDORT_MAIN_PATH)/vlidort_thermalsup.f90    \
+   $(VLIDORT_MAIN_PATH)/vlidort_solutions.f90     \
+   $(VLIDORT_MAIN_PATH)/vlidort_bvproblem.f90     \
+   $(VLIDORT_MAIN_PATH)/vlidort_intensity.f90	  \
+   $(VLIDORT_MAIN_PATH)/vlidort_writemodules.f90  \
+   $(VLIDORT_MAIN_PATH)/vlidort_masters.f90
+
+L_SOURCES +=                                          \
+   $(VLIDORT_DEF_PATH)/vlidort_lin_inputs_def.f90     \
+   $(VLIDORT_DEF_PATH)/vlidort_lin_sup_brdf_def.f90   \
+   $(VLIDORT_DEF_PATH)/vlidort_lin_sup_ss_def.f90     \
+   $(VLIDORT_DEF_PATH)/vlidort_lin_sup_sleave_def.f90 \
+   $(VLIDORT_DEF_PATH)/vlidort_lin_sup_def.f90        \
+   $(VLIDORT_DEF_PATH)/vlidort_lin_outputs_def.f90    \
+   $(VLIDORT_DEF_PATH)/vlidort_lin_io_defs.f90        \
+   $(VLIDORT_MAIN_PATH)/vlidort_l_inputs.f90          \
+   $(VLIDORT_MAIN_PATH)/vlidort_la_miscsetups.f90     \
+   $(VLIDORT_MAIN_PATH)/vlidort_la_corrections.f90    \
+   $(VLIDORT_MAIN_PATH)/vlidort_ls_corrections.f90    \
+   $(VLIDORT_MAIN_PATH)/vlidort_l_thermalsup.f90      \
+   $(VLIDORT_MAIN_PATH)/vlidort_lpc_solutions.f90     \
+   $(VLIDORT_MAIN_PATH)/vlidort_lpc_bvproblem.f90     \
+   $(VLIDORT_MAIN_PATH)/vlidort_ls_wfsurface.f90      \
+   $(VLIDORT_MAIN_PATH)/vlidort_ls_wfsleave.f90       \
+   $(VLIDORT_MAIN_PATH)/vlidort_l_writemodules.f90
+
+LPS_SOURCES +=                                     \
+   $(VLIDORT_MAIN_PATH)/vlidort_lp_miscsetups.f90  \
+   $(VLIDORT_MAIN_PATH)/vlidort_lp_corrections.f90 \
+   $(VLIDORT_MAIN_PATH)/vlidort_lp_solutions.f90   \
+   $(VLIDORT_MAIN_PATH)/vlidort_lp_bvproblem.f90   \
+   $(VLIDORT_MAIN_PATH)/vlidort_lp_wfatmos.f90     \
+   $(VLIDORT_MAIN_PATH)/vlidort_lps_masters.f90
+
+LCS_SOURCES +=                                     \
+   $(VLIDORT_MAIN_PATH)/vlidort_lc_miscsetups.f90  \
+   $(VLIDORT_MAIN_PATH)/vlidort_lc_corrections.f90 \
+   $(VLIDORT_MAIN_PATH)/vlidort_lc_solutions.f90   \
+   $(VLIDORT_MAIN_PATH)/vlidort_lc_bvproblem.f90   \
+   $(VLIDORT_MAIN_PATH)/vlidort_lc_wfatmos.f90     \
+   $(VLIDORT_MAIN_PATH)/vlidort_lcs_masters.f90
+
+
+# (Include vector supplement source files)
+include $(VLIDORT_VSUP_PATH)/makefile.vsup
+
+SUP_SOURCES +=                \
+   $(VBRDF_LINSUP_SOURCES)    \
+   $(VSLEAVE_LINSUP_SOURCES)
+
+F90SOURCES := $(notdir $(filter %.f90, $(SOURCES)))
+F90L_SOURCES := $(notdir $(filter %.f90, $(L_SOURCES)))
+F90LPS_SOURCES := $(notdir $(filter %.f90, $(LPS_SOURCES)))
+F90LCS_SOURCES := $(notdir $(filter %.f90, $(LCS_SOURCES)))
+F90SUP_SOURCES := $(notdir $(filter %.f90, $(SUP_SOURCES)))
+
+F90OBJECTS_SOURCES := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90SOURCES)))
+F90OBJECTS_L_SOURCES := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90L_SOURCES)))
+F90OBJECTS_LPS_SOURCES := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90LPS_SOURCES)))
+F90OBJECTS_LPC_SOURCES := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90LPC_SOURCES)))
+SUP_OBJECTS := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90SUP_SOURCES)))
+
+
+BASE_SOURCESG =
+SOURCESG      =
+L_SOURCESG    =
+LPS_SOURCESG  =
+LCS_SOURCESG  =
+SUP_SOURCESG  =
+
+BASE_SOURCESG +=                         \
+   $(VLIDORT_DEF_PATHG)/vlidort_pars.f90
+
+SOURCESG +=                                               \
+   $(BASE_SOURCESG)                                       \
+   $(VLIDORT_MAIN_PATHG)/lapack_tools.f90		          \
+   $(VLIDORT_MAIN_PATHG)/lapack_z16_tools.f90		      \
+   $(VLIDORT_DEF_PATHG)/vlidort_inputs_def.f90	          \
+   $(VLIDORT_DEF_PATHG)/vlidort_sup_brdf_def.f90	      \
+   $(VLIDORT_DEF_PATHG)/vlidort_sup_ss_def.f90	          \
+   $(VLIDORT_DEF_PATHG)/vlidort_sup_sleave_def.f90	      \
+   $(VLIDORT_DEF_PATHG)/vlidort_sup_def.f90		          \
+   $(VLIDORT_DEF_PATHG)/vlidort_outputs_def.f90	          \
+   $(VLIDORT_DEF_PATHG)/vlidort_io_defs.f90		          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_Rayleigh_IQGreenFunc.f90 \
+   $(VLIDORT_MAIN_PATHG)/vlidort_aux.f90		          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_getplanck.f90	          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_geometry.f90             \
+   $(VLIDORT_MAIN_PATHG)/vlidort_inputs.f90		          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_miscsetups.f90	          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_multipliers.f90	      \
+   $(VLIDORT_MAIN_PATHG)/vlidort_corrections.f90	      \
+   $(VLIDORT_MAIN_PATHG)/vlidort_thermalsup.f90	          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_solutions.f90	          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_bvproblem.f90	          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_intensity.f90	          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_writemodules.f90	      \
+   $(VLIDORT_MAIN_PATHG)/vlidort_masters.f90
+
+L_SOURCESG +=                                                 \
+   $(VLIDORT_DEF_PATHG)/vlidort_lin_inputs_def.f90	          \
+   $(VLIDORT_DEF_PATHG)/vlidort_lin_sup_brdf_def.f90          \
+   $(VLIDORT_DEF_PATHG)/vlidort_lin_sup_ss_def.f90	          \
+   $(VLIDORT_DEF_PATHG)/vlidort_lin_sup_sleave_def.f90        \
+   $(VLIDORT_DEF_PATHG)/vlidort_lin_sup_def.f90	              \
+   $(VLIDORT_DEF_PATHG)/vlidort_lin_outputs_def.f90           \
+   $(VLIDORT_DEF_PATHG)/vlidort_lin_io_defs.f90	              \
+   $(VLIDORT_MAIN_PATHG)/vlidort_l_inputs.f90	              \
+   $(VLIDORT_MAIN_PATHG)/vlidort_la_miscsetups.f90	          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_la_corrections.f90           \
+   $(VLIDORT_MAIN_PATHG)/vlidort_ls_corrections.f90           \
+   $(VLIDORT_MAIN_PATHG)/vlidort_l_thermalsup.f90	          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lpc_solutions.f90	          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lpc_bvproblem.f90	          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lpc_Rayleigh_IQGreenFunc.f90 \
+   $(VLIDORT_MAIN_PATHG)/vlidort_ls_wfsurface.f90	          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_ls_wfsleave.f90	          \
+   $(VLIDORT_MAIN_PATHG)/vlidort_l_writemodules.f90
+
+LPS_SOURCESG +=                                       \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lp_miscsetups.f90    \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lp_corrections.f90   \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lp_solutions.f90	  \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lp_bvproblem.f90     \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lp_wfatmos.f90       \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lps_masters.f90
+
+LCS_SOURCESG +=                                       \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lc_miscsetups.f90    \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lc_corrections.f90   \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lc_solutions.f90	  \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lc_bvproblem.f90     \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lc_wfatmos.f90       \
+   $(VLIDORT_MAIN_PATHG)/vlidort_lcs_masters.f90
+
+
+# (Include vector supplement source files)
+include $(VLIDORT_VSUP_PATHG)/makefile.vsup
+
+SUP_SOURCESG += \
+   $(VBRDF_LINSUP_SOURCESG)    \
+   $(VSLEAVE_LINSUP_SOURCESG)
+
+F90SOURCESG := $(notdir $(filter %.f90, $(SOURCESG)))
+F90L_SOURCESG := $(notdir $(filter %.f90, $(L_SOURCESG)))
+F90LPS_SOURCESG := $(notdir $(filter %.f90, $(LPS_SOURCESG)))
+F90LCS_SOURCESG := $(notdir $(filter %.f90, $(LCS_SOURCESG)))
+F90SUP_SOURCESG := $(notdir $(filter %.f90, $(SUP_SOURCESG)))
+
+F90OBJECTS_SOURCESG := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJG)/, $(F90SOURCESG)))
+F90OBJECTS_L_SOURCESG := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJG)/, $(F90L_SOURCESG)))
+F90OBJECTS_LPS_SOURCESG := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJG)/, $(F90LPS_SOURCESG)))
+F90OBJECTS_LPC_SOURCESG := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJG)/, $(F90LPC_SOURCESG)))
+SUP_OBJECTSG := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJG)/, $(F90SUP_SOURCESG)))
