@@ -33,7 +33,7 @@ MODULE GC_parameters_module
   INTEGER, PARAMETER :: maxaer        = 6
   INTEGER, PARAMETER :: maxcld        = 3
   INTEGER, PARAMETER :: maxflambdas   = 53501
-  INTEGER, PARAMETER :: maxlambdas    = 27000
+  INTEGER, PARAMETER :: maxlambdas    = 53501
   INTEGER, PARAMETER :: maxmessages   = 100
   INTEGER, PARAMETER :: maxmoms       = 32
   INTEGER, PARAMETER :: maxgksec      = 6, maxgkmatc = 8
