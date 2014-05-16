@@ -20,7 +20,7 @@
 ! #  Email :       rtsolutions@verizon.net                      #
 ! #                                                             #
 ! #  Versions     :   2.0, 2.2, 2.3, 2.4, 2.4R, 2.4RT, 2.4RTC,  #
-! #                   2.5, 2.6                                  #
+! #                   2.5, 2.6, 2.7                             #
 ! #  Release Date :   December 2005  (2.0)                      #
 ! #  Release Date :   March 2007     (2.2)                      #
 ! #  Release Date :   October 2007   (2.3)                      #
@@ -30,13 +30,17 @@
 ! #  Release Date :   October 2010   (2.4RTC)                   #
 ! #  Release Date :   March 2011     (2.5)                      #
 ! #  Release Date :   May 2012       (2.6)                      #
+! #  Release Date :   May 2014       (2.7)                      #
 ! #                                                             #
-! #       NEW: TOTAL COLUMN JACOBIANS         (2.4)             #
-! #       NEW: BPDF Land-surface KERNELS      (2.4R)            #
-! #       NEW: Thermal Emission Treatment     (2.4RT)           #
-! #       Consolidated BRDF treatment         (2.4RTC)          #
-! #       f77/f90 Release                     (2.5)             #
-! #       External SS / New I/O Structures    (2.6)             #
+! #       NEW: TOTAL COLUMN JACOBIANS          (2.4)            #
+! #       NEW: BPDF Land-surface KERNELS       (2.4R)           #
+! #       NEW: Thermal Emission Treatment      (2.4RT)          #
+! #       Consolidated BRDF treatment          (2.4RTC)         #
+! #       f77/f90 Release                      (2.5)            #
+! #       External SS / New I/O Structures     (2.6)            #
+! #                                                             #
+! #       Surface-leaving, BRDF Albedo-scaling (2.7)            # 
+! #       Taylor series, Black-body Jacobians  (2.7)            #
 ! #                                                             #
 ! ###############################################################
 
@@ -72,6 +76,9 @@ implicit none
 
 type VBRDF_Sup_Inputs
 
+!  Top level flags (same as VLIDORT)
+!  --------------------------------
+
 !  Stream angle flag
 
       LOGICAL :: BS_DO_USER_STREAMS
@@ -88,6 +95,9 @@ type VBRDF_Sup_Inputs
 
       LOGICAL :: BS_DO_SOLAR_SOURCES
       LOGICAL :: BS_DO_USER_OBSGEOMS
+
+!  Numbers and Geometry (same as VLIDORT)
+!  --------------------------------------
 
 !  Number of Stokes components
 
@@ -119,6 +129,9 @@ type VBRDF_Sup_Inputs
 
       INTEGER                                    :: BS_N_USER_OBSGEOMS
       REAL(fpk), dimension (MAX_USER_OBSGEOMS,3) :: BS_USER_OBSGEOMS
+
+!  BRDF-specific inputs
+!  --------------------
 
 !   Number and index-list of bidirectional functions
 
@@ -154,6 +167,17 @@ type VBRDF_Sup_Inputs
       LOGICAL :: BS_DO_EXACT
       LOGICAL :: BS_DO_EXACTONLY
 
+!  WSA and BSA scaling options.
+!   Revised, 14-15 April 2014, first introduced 02 April 2014, Version 2.7
+!      WSA = White-sky albedo. BSA = Black-sky albedo.
+
+      LOGICAL   :: BS_DO_WSA_SCALING
+      LOGICAL   :: BS_DO_BSA_SCALING
+      REAL(fpk) :: BS_WSA_VALUE, BS_BSA_VALUE
+
+!  Multiple-scattering Glitter options
+!  -----------------------------------
+
 !  Multiple reflectance corrections for GLITTER kernels (All of them!)
 
       LOGICAL :: BS_DO_GLITTER_MSRCORR
@@ -168,7 +192,7 @@ type VBRDF_Sup_Inputs
 
       INTEGER :: BS_GLITTER_MSRCORR_ORDER
 
-!  Quadrature orders for MSRCORR
+!  Quadrature orders for MSRCORRemacs
 
       INTEGER :: BS_GLITTER_MSRCORR_NMUQUAD
       INTEGER :: BS_GLITTER_MSRCORR_NPHIQUAD

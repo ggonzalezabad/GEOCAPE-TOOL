@@ -56,7 +56,8 @@ MODULE GC_Vlidort_module
                                  openerrorfileflag, do_cfrac_jacobians, GC_cfrac_Jacobians,    &
                                  GC_cfrac_QJacobians, GC_cfrac_UJacobians, GC_flux,            &
                                  GC_direct_flux, GC_Qflux, GC_Uflux, GC_Qdirect_flux,          &
-                                 GC_Udirect_flux
+                                 GC_Udirect_flux, VBRDF_Sup_Out, VBRDF_LinSup_Out,             &
+                                 VLIDORT_Sup, VLIDORT_LinSup
   USE GC_error_module
 
   IMPLICIT NONE
@@ -1836,5 +1837,37 @@ CONTAINS
     END IF
     
   END SUBROUTINE Vlidort_cloud_and_calculation
+
+  SUBROUTINE VBRDF_TO_VLIDORT(error)
+
+    IMPLICIT NONE
+
+    ! ------------------
+    ! Modified variables
+    ! ------------------
+    LOGICAL,       INTENT(INOUT) :: error ! Error variable
+
+    ! ----------------
+    ! Code starts here
+    ! ----------------
+    error = .FALSE.
+    
+    VLIDORT_Sup%BRDF%TS_BRDF_F_0        = VBRDF_Sup_Out%BS_BRDF_F_0
+    VLIDORT_Sup%BRDF%TS_BRDF_F          = VBRDF_Sup_Out%BS_BRDF_F
+    VLIDORT_Sup%BRDF%TS_USER_BRDF_F_0   = VBRDF_Sup_Out%BS_USER_BRDF_F_0
+    VLIDORT_Sup%BRDF%TS_USER_BRDF_F     = VBRDF_Sup_Out%BS_USER_BRDF_F
+    VLIDORT_Sup%BRDF%TS_EXACTDB_BRDFUNC = VBRDF_Sup_Out%BS_EXACTDB_BRDFUNC
+    VLIDORT_Sup%BRDF%TS_EMISSIVITY      = VBRDF_Sup_Out%BS_EMISSIVITY
+    VLIDORT_Sup%BRDF%TS_USER_EMISSIVITY = VBRDF_Sup_Out%BS_USER_EMISSIVITY
+    
+    VLIDORT_LinSup%BRDF%TS_LS_BRDF_F_0        = VBRDF_LinSup_Out%BS_LS_BRDF_F_0
+    VLIDORT_LinSup%BRDF%TS_LS_BRDF_F          = VBRDF_LinSup_Out%BS_LS_BRDF_F
+    VLIDORT_LinSup%BRDF%TS_LS_USER_BRDF_F_0   = VBRDF_LinSup_Out%BS_LS_USER_BRDF_F_0
+    VLIDORT_LinSup%BRDF%TS_LS_USER_BRDF_F     = VBRDF_LinSup_Out%BS_LS_USER_BRDF_F
+    VLIDORT_LinSup%BRDF%TS_LS_EXACTDB_BRDFUNC = VBRDF_LinSup_Out%BS_LS_EXACTDB_BRDFUNC
+    VLIDORT_LinSup%BRDF%TS_LS_USER_EMISSIVITY = VBRDF_LinSup_Out%BS_LS_USER_EMISSIVITY
+    VLIDORT_LinSup%BRDF%TS_LS_EMISSIVITY      = VBRDF_LinSup_Out%BS_LS_EMISSIVITY
+
+  END SUBROUTINE VBRDF_TO_VLIDORT
   
 END MODULE GC_Vlidort_module

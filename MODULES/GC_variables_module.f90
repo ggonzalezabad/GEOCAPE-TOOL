@@ -9,6 +9,8 @@ MODULE GC_variables_module
 
   USE VBRDF_SUP_INPUTS_DEF
   USE VBRDF_LINSUP_INPUTS_DEF
+  USE VBRDF_SUP_OUTPUTS_DEF
+  USE VBRDF_LINSUP_OUTPUTS_DEF
 
   USE GC_parameters_module
 
@@ -564,6 +566,12 @@ MODULE GC_variables_module
 
    INTEGER            :: unitlen, flen, varlen
 
+   ! --------------------------
+   ! VBRDF supplement variables
+   ! --------------------------
+   LOGICAL :: DO_DEBUG_RESTORATION
+   INTEGER :: BS_NMOMENTS_INPUT   
+
    ! =========================
    ! *************************
    ! =========================
@@ -575,8 +583,10 @@ MODULE GC_variables_module
    ! Filename for Vlidort control file
    ! ---------------------------------
    CHARACTER(LEN=max_ch_len) :: vlidort_control_file
+   CHARACTER(LEN=max_ch_len) :: vlidort_vbrdf_control_file
    LOGICAL                   :: OPENERRORFILEFLAG
-   INTEGER                   ::          NA,NF
+   INTEGER                   :: NA,NF
+
    ! VLIDORT file inputs status structure   
    TYPE(VLIDORT_Input_Exception_Handling) :: VLIDORT_InputStatus
 
@@ -605,6 +615,22 @@ MODULE GC_variables_module
 
    ! VBRDF supplement linearized input structure
    TYPE(VBRDF_LinSup_Inputs)              :: VBRDF_LinSup_In
+
+   !  VLIDORT VBRDF supplement output structure
+   TYPE(VBRDF_Sup_Outputs)                :: VBRDF_Sup_Out
+   
+   !  VLIDORT VBRDF supplement linearized output structure
+   TYPE(VBRDF_LinSup_Outputs)             :: VBRDF_LinSup_Out
+
+   ! VBRDF supplement input status
+   TYPE(VBRDF_Input_Exception_Handling)   :: VBRDF_Sup_InputStatus
+
+   !  VLIDORT VBRDF supplement output status structure
+   TYPE(VBRDF_Output_Exception_Handling)  :: VBRDF_Sup_OutputStatus
+   
+   !  VBRDF supplement / VLIDORT VBRDF-related inputs consistency check status
+   TYPE(VLIDORT_Exception_Handling)       :: VLIDORT_VBRDFCheck_Status
+
 
    ! =============================
    ! *****************************

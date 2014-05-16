@@ -29,13 +29,17 @@
 ! #  Release Date :   October 2010   (2.4RTC)                   #
 ! #  Release Date :   March 2011     (2.5)                      #
 ! #  Release Date :   May 2012       (2.6)                      #
+! #  Release Date :   May 2014       (2.7)                      #
 ! #                                                             #
-! #       NEW: TOTAL COLUMN JACOBIANS         (2.4)             #
-! #       NEW: BPDF Land-surface KERNELS      (2.4R)            #
-! #       NEW: Thermal Emission Treatment     (2.4RT)           #
-! #       Consolidated BRDF treatment         (2.4RTC)          #
-! #       f77/f90 Release                     (2.5)             #
-! #       External SS / New I/O Structures    (2.6)             #
+! #       NEW: TOTAL COLUMN JACOBIANS          (2.4)            #
+! #       NEW: BPDF Land-surface KERNELS       (2.4R)           #
+! #       NEW: Thermal Emission Treatment      (2.4RT)          #
+! #       Consolidated BRDF treatment          (2.4RTC)         #
+! #       f77/f90 Release                      (2.5)            #
+! #       External SS / New I/O Structures     (2.6)            #
+! #                                                             #
+! #       Surface-leaving, BRDF Albedo-scaling (2.7)            # 
+! #       Taylor series, Black-body Jacobians  (2.7)            #
 ! #                                                             #
 ! ###############################################################
 
@@ -1211,13 +1215,19 @@
 !      R(4,4)=    ( CTTPP-CTPPT)*DCOEFF
 
 !  New code (several entries are zero)
+!    WE THINK (Vijay, 07 April 2014) that sine-terms need to be reversed
 
-      GISSCOXMUNK_VKERNEL(3)  =    (-CTTTP-CPTPP)*DCOEFF
-      GISSCOXMUNK_VKERNEL(7)  =    (-CTTTP+CPTPP)*DCOEFF
-      GISSCOXMUNK_VKERNEL(9)  =    (-CTTPT-CTPPP)*DCOEFF
-      GISSCOXMUNK_VKERNEL(10) =    (-CTTPT+CTPPP)*DCOEFF
-      GISSCOXMUNK_VKERNEL(11) =    ( CTTPP+CTPPT)*DCOEFF
-      GISSCOXMUNK_VKERNEL(16) =    ( CTTPP-CTPPT)*DCOEFF
+!      GISSCOXMUNK_VKERNEL(3)  =    (-CTTTP-CPTPP)*DCOEFF
+!      GISSCOXMUNK_VKERNEL(7)  =    (-CTTTP+CPTPP)*DCOEFF
+!      GISSCOXMUNK_VKERNEL(9)  =    (-CTTPT-CTPPP)*DCOEFF
+!      GISSCOXMUNK_VKERNEL(10) =    (-CTTPT+CTPPP)*DCOEFF
+
+      GISSCOXMUNK_VKERNEL(3)  =    (CTTTP+CPTPP)*DCOEFF
+      GISSCOXMUNK_VKERNEL(7)  =    (CTTTP-CPTPP)*DCOEFF
+      GISSCOXMUNK_VKERNEL(9)  =    (CTTPT+CTPPP)*DCOEFF
+      GISSCOXMUNK_VKERNEL(10) =    (CTTPT-CTPPP)*DCOEFF
+      GISSCOXMUNK_VKERNEL(11) =    (CTTPP+CTPPT)*DCOEFF
+      GISSCOXMUNK_VKERNEL(16) =    (CTTPP-CTPPT)*DCOEFF
 
 !  No Shadow code if not flagged
 
@@ -1547,20 +1557,30 @@
 !      R(4,3)=-CI*( CTTPP+CTPPT)*DCOEFF
 !      R(4,4)=    ( CTTPP-CTPPT)*DCOEFF
 
-!  New code
+!  New code 
+!    WE THINK (Vijay, 07 April 2014) that sine-terms need to be reversed
 
-      GISSCOXMUNK_VKERNEL(3)  =    (-CTTTP-CPTPP)*DCOEFF
-      GISSCOXMUNK_VKERNEL(7)  =    (-CTTTP+CPTPP)*DCOEFF
-      GISSCOXMUNK_VKERNEL(9)  =    (-CTTPT-CTPPP)*DCOEFF
-      GISSCOXMUNK_VKERNEL(10) =    (-CTTPT+CTPPP)*DCOEFF
+!      GISSCOXMUNK_VKERNEL(3)  =    (-CTTTP-CPTPP)*DCOEFF
+!      GISSCOXMUNK_VKERNEL(7)  =    (-CTTTP+CPTPP)*DCOEFF
+!      GISSCOXMUNK_VKERNEL(9)  =    (-CTTPT-CTPPP)*DCOEFF
+!      GISSCOXMUNK_VKERNEL(10) =    (-CTTPT+CTPPP)*DCOEFF
+!        GISSCOXMUNK_VKERNEL(4)  = - CI * ( CTTTP+CPTPP)*DCOEFF
+!        GISSCOXMUNK_VKERNEL(8)  = - CI * ( CTTTP-CPTPP)*DCOEFF
+!        GISSCOXMUNK_VKERNEL(13) =   CI * ( CTTPT+CTPPP)*DCOEFF
+!        GISSCOXMUNK_VKERNEL(14) =   CI * ( CTTPT-CTPPP)*DCOEFF
+
+      GISSCOXMUNK_VKERNEL(3)  =    ( CTTTP+CPTPP)*DCOEFF
+      GISSCOXMUNK_VKERNEL(7)  =    ( CTTTP-CPTPP)*DCOEFF
+      GISSCOXMUNK_VKERNEL(9)  =    ( CTTPT+CTPPP)*DCOEFF
+      GISSCOXMUNK_VKERNEL(10) =    ( CTTPT-CTPPP)*DCOEFF
       GISSCOXMUNK_VKERNEL(11) =    ( CTTPP+CTPPT)*DCOEFF
 
       IF ( NSSQ.EQ.16) THEN
-        GISSCOXMUNK_VKERNEL(4)  = - CI * ( CTTTP+CPTPP)*DCOEFF
-        GISSCOXMUNK_VKERNEL(8)  = - CI * ( CTTTP-CPTPP)*DCOEFF
+        GISSCOXMUNK_VKERNEL(4)  = + CI * ( CTTTP+CPTPP)*DCOEFF
+        GISSCOXMUNK_VKERNEL(8)  = + CI * ( CTTTP-CPTPP)*DCOEFF
         GISSCOXMUNK_VKERNEL(12) =   CI * ( CTTPP-CTPPT)*DCOEFF
-        GISSCOXMUNK_VKERNEL(13) =   CI * ( CTTPT+CTPPP)*DCOEFF
-        GISSCOXMUNK_VKERNEL(14) =   CI * ( CTTPT-CTPPP)*DCOEFF
+        GISSCOXMUNK_VKERNEL(13) = - CI * ( CTTPT+CTPPP)*DCOEFF
+        GISSCOXMUNK_VKERNEL(14) = - CI * ( CTTPT-CTPPP)*DCOEFF
         GISSCOXMUNK_VKERNEL(15) = - CI * ( CTTPP+CTPPT)*DCOEFF
         GISSCOXMUNK_VKERNEL(16) =        ( CTTPP-CTPPT)*DCOEFF
       ENDIF

@@ -62,6 +62,8 @@ program geocape_tools_v2p6
 !  ------------------
   USE VLIDORT_INPUTS
   USE VLIDORT_AUX
+  USE VBRDF_LINSUP_MASTERS_M
+  USE VLIDORT_SUP_ACCESSORIES
 
 !  USE GC_parameters_module
   USE GC_variables_module
@@ -76,7 +78,8 @@ program geocape_tools_v2p6
   USE GC_surface_module,    ONLY: prepare_surface
   USE GC_Vlidort_module,    ONLY: Vlidort_GC_config, save_results, &
                                   Vlidort_set_optical,             &
-                                  Vlidort_cloud_and_calculation
+                                  Vlidort_cloud_and_calculation,   &
+                                  VBRDF_TO_VLIDORT
   USE GC_convolution_module,ONLY: convolve_slit
   USE GC_netcdf_module,     ONLY: netcdf_output
 
@@ -99,6 +102,12 @@ program geocape_tools_v2p6
    CALL GETARG(2, vlidort_control_file)
    vlidort_control_file = TRIM(ADJUSTL(vlidort_control_file))
 
+   ! -----------------------------------
+   ! Save Vlidort BRDF control file name
+   ! -----------------------------------
+   CALL GETARG(2, vlidort_vbrdf_control_file)
+   vlidort_vbrdf_control_file = TRIM(ADJUSTL(vlidort_vbrdf_control_file))
+   
    ! -----------------
    ! Read control file
    ! -----------------
@@ -320,6 +329,76 @@ program geocape_tools_v2p6
 !  ##################################################################
 
    ! -------------------------------------------------------
+   ! Read Vlidort VBRDF supplement input file and initialize
+   ! control arrays defined in GC_variables module
+   ! -------------------------------------------------------
+   CALL VBRDF_LIN_INPUTMASTER ( vlidort_vbrdf_control_file, & ! Input
+                                VBRDF_Sup_In,               & ! Outputs
+                                VBRDF_LinSup_In,            & ! Outputs
+                                VBRDF_Sup_InputStatus )       ! Outputs
+
+   ! -----------------------------------------------
+   ! Exception handling. Use Type structure directly
+   ! -----------------------------------------------
+   IF ( VBRDF_Sup_InputStatus%BS_STATUS_INPUTREAD.ne.vlidort_success ) then
+      open(1,file = 'VLIDORT_VBRDF_ReadInput.log', status = 'unknown')
+      if ( VBRDF_Sup_InputStatus%BS_STATUS_INPUTREAD.ne.VLIDORT_WARNING ) THEN
+         WRITE(1,*)' FATAL ERRORS:   Wrong input from VBRDF input file-read'
+      else
+         WRITE(1,*)' WARNINGS    :   Wrong input from VBRDF input file-read'
+      endif
+      WRITE(1,*)'  ------ Here are the messages and actions '
+      write(1,'(A,I3)')'    ** Number of messages = ',VBRDF_Sup_InputStatus%BS_NINPUTMESSAGES
+      DO N = 1, VBRDF_Sup_InputStatus%BS_NINPUTMESSAGES
+         write(1,'(A,I3,A,A)')'Message # ',N,' : ',Adjustl(trim(VBRDF_Sup_InputStatus%BS_INPUTMESSAGES(N)))
+         write(1,'(A,I3,A,A)')'Action  # ',N,' : ',Adjustl(trim(VBRDF_Sup_InputStatus%BS_INPUTACTIONS(N)))
+      ENDDO
+      close(1)
+      if ( VBRDF_Sup_InputStatus%BS_STATUS_INPUTREAD.ne.VLIDORT_WARNING ) THEN
+         STOP'Fatal Read-input fail: Look at file VLIDORT_VBRDF_ReadInput.log'
+      else
+         Write(*,*)'Going on....but warning from Read-input VBRDF: Look at file VLIDORT_VBRDF_ReadInput.log'
+      endif
+   ENDIF
+
+   ! -----------------------------
+   ! Do not want debug restoration
+   ! -----------------------------
+   DO_DEBUG_RESTORATION = .false.
+
+   ! ---------------------------------
+   ! A normal calculation will require
+   ! ---------------------------------
+   BS_NMOMENTS_INPUT = 2 * VBRDF_Sup_In%BS_NSTREAMS - 1
+
+   ! -----------------
+   ! VLIDORT BRDF call
+   ! -----------------
+   CALL VBRDF_LIN_MAINMASTER ( &
+        DO_DEBUG_RESTORATION,    & ! Inputs
+        BS_NMOMENTS_INPUT,       & ! Inputs
+        VBRDF_Sup_In,            & ! Inputs
+        VBRDF_LinSup_In,         & ! Inputs
+        VBRDF_Sup_Out,           & ! Outputs
+        VBRDF_LinSup_Out,        & ! Outputs
+        VBRDF_Sup_OutputStatus )   ! Output Status
+
+   !  Exception handling
+   IF ( VBRDF_Sup_OutputStatus%BS_STATUS_OUTPUT .EQ. VLIDORT_SERIOUS ) THEN
+      write(*,*)'geocape_tool_v2p6: program failed, VBRDF calculation aborted'
+      write(*,*)'Here are the error messages from the VBRDF supplement : - '
+      write(*,*)' - Number of error messages = ',VBRDF_Sup_OutputStatus%BS_NOUTPUTMESSAGES
+      do i = 1, VBRDF_Sup_OutputStatus%BS_NOUTPUTMESSAGES
+         write(*,*) '  * ',adjustl(Trim(VBRDF_Sup_OutputStatus%BS_OUTPUTMESSAGES(I)))
+      enddo
+   ENDIF
+
+   ! -------------------------------------------
+   ! Copy VBRDF outputs to VLIDORT's BRDF inputs
+   ! -------------------------------------------
+   CALL VBRDF_TO_VLIDORT(yn_error)
+
+   ! -------------------------------------------------------
    ! Read Vlidort control file and initialize control arrays
    ! defined in GC_variables module
    ! -------------------------------------------------------
@@ -327,6 +406,7 @@ program geocape_tools_v2p6
                                VLIDORT_FixIn,        & ! Outputs
                                VLIDORT_ModIn,        & ! Outputs
                                VLIDORT_InputStatus)    ! Outputs
+   
    ! ------------------
    ! Exception handling
    ! ------------------
@@ -354,6 +434,37 @@ program geocape_tools_v2p6
    ! Vlidort options.
    ! -----------------------------------
    CALL Vlidort_GC_config (yn_error)
+
+   ! ------------------------------------------------------
+   ! This is the checking routine for compatibility between
+   ! VLIDORT and VBRDF setup
+   ! ------------------------------------------------------
+   CALL VLIDORT_VBRDF_INPUT_CHECKER ( &
+        VBRDF_Sup_In,             & ! Inputs
+        VLIDORT_FixIn,            & ! Inputs
+        VLIDORT_ModIn,            & ! Inputs
+        VLIDORT_VBRDFCheck_Status ) ! Outputs
+
+   ! ------------------
+   ! Exception handling
+   ! ------------------
+   IF ( VLIDORT_VBRDFCheck_Status%TS_STATUS_INPUTCHECK .ne. &
+        vlidort_success ) then
+      WRITE(*,*)' FATAL: Main and BRDFSup inputs are incompatible'
+      WRITE(*,*)'  ------ Here are the messages and actions '
+      write(*,'(A,I3)')'    ** Number of messages = ',&
+           VLIDORT_VBRDFCheck_Status%TS_NCHECKMESSAGES
+      DO N = 1, VLIDORT_VBRDFCheck_Status%TS_NCHECKMESSAGES
+         NF = LEN_STRING(VLIDORT_VBRDFCheck_Status%TS_CHECKMESSAGES(N))
+         NA = LEN_STRING(VLIDORT_VBRDFCheck_Status%TS_ACTIONS(N))
+         write(*,'(A,I3,A,A)')'Message # ',N,': ',&
+              VLIDORT_VBRDFCheck_Status%TS_CHECKMESSAGES(N)(1:NF)
+         write(*,'(A,I3,A,A)')'Action  # ',N,': ',&
+              VLIDORT_VBRDFCheck_Status%TS_ACTIONS(N)(1:NA)
+      ENDDO
+      STOP'Checking fail: Look at file V2p6_VLIDORT_BRDFcheck.log'
+   ENDIF
+   
 
 !  ##################################################################
 !  ##################################################################

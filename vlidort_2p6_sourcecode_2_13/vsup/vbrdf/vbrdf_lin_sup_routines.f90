@@ -19,7 +19,7 @@
 ! #  Email :       rtsolutions@verizon.net                      #
 ! #                                                             #
 ! #  Versions     :   2.0, 2.2, 2.3, 2.4, 2.4R, 2.4RT, 2.4RTC,  #
-! #                   2.5, 2.6                                  #
+! #                   2.5, 2.6, 2.7                             #
 ! #  Release Date :   December 2005  (2.0)                      #
 ! #  Release Date :   March 2007     (2.2)                      #
 ! #  Release Date :   October 2007   (2.3)                      #
@@ -29,13 +29,17 @@
 ! #  Release Date :   October 2010   (2.4RTC)                   #
 ! #  Release Date :   March 2011     (2.5)                      #
 ! #  Release Date :   May 2012       (2.6)                      #
+! #  Release Date :   May 2014       (2.7)                      #
 ! #                                                             #
-! #       NEW: TOTAL COLUMN JACOBIANS         (2.4)             #
-! #       NEW: BPDF Land-surface KERNELS      (2.4R)            #
-! #       NEW: Thermal Emission Treatment     (2.4RT)           #
-! #       Consolidated BRDF treatment         (2.4RTC)          #
-! #       f77/f90 Release                     (2.5)             #
-! #       External SS / New I/O Structures    (2.6)             #
+! #       NEW: TOTAL COLUMN JACOBIANS          (2.4)            #
+! #       NEW: BPDF Land-surface KERNELS       (2.4R)           #
+! #       NEW: Thermal Emission Treatment      (2.4RT)          #
+! #       Consolidated BRDF treatment          (2.4RTC)         #
+! #       f77/f90 Release                      (2.5)            #
+! #       External SS / New I/O Structures     (2.6)            #
+! #                                                             #
+! #       Surface-leaving, BRDF Albedo-scaling (2.7)            # 
+! #       Taylor series, Black-body Jacobians  (2.7)            #
 ! #                                                             #
 ! ###############################################################
 
@@ -51,6 +55,7 @@
 ! # Subroutines in this Module                                  #
 ! #                                                             #
 ! #              VBRDF_LIN_MAKER                                #
+! #              LIN_SCALING_FOURIER_ZERO                       #
 ! #              VBRDF_LIN_FOURIER                              #
 ! #                                                             #
 ! ###############################################################
@@ -60,25 +65,29 @@
 
       PRIVATE
       PUBLIC :: VBRDF_LIN_MAKER, &
-                VBRDF_LIN_FOURIER
+                VBRDF_LIN_FOURIER, LIN_SCALING_FOURIER_ZERO
 
       CONTAINS
 
       SUBROUTINE VBRDF_LIN_MAKER &
          ( BRDF_VFUNCTION_PLUS, BRDF_VFUNCTION_DB_PLUS, &
-           DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-           DO_EXACTONLY, DO_MSRCORR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-           DO_USER_STREAMS, DO_SURFACE_EMISSION,  n_muquad, n_phiquad, &
-           NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-           NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-           QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-           SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, X_BRDF, &
-           CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, BRDF_PARS, BRDF_DERIVS, &
-           X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-           DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-           BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC, &
-           D_DBKERNEL_BRDFUNC, D_BRDFUNC, D_USER_BRDFUNC, &
-           D_BRDFUNC_0, D_USER_BRDFUNC_0, D_EBRDFUNC, D_USER_EBRDFUNC )
+           DO_LOCAL_WSA, DO_LOCAL_BSA, DO_WSA_SCALING,                           & ! New line, Version 2.7
+           DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                         &
+           DO_EXACTONLY, DO_MSRCORR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,        &
+           DO_USER_STREAMS, DO_SURFACE_EMISSION, n_muquad, n_phiquad,            &
+           NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                     &
+           NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                     &
+           QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,                   &
+           SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, BRDF_PARS, BRDF_DERIVS, &
+           SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,           & ! New line, Version 2.7
+           X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF,                         &
+           X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,      &
+           DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                              & ! output
+           BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,                   & ! output
+           SCALING_BRDFUNC, SCALING_BRDFUNC_0,                                   & ! output, New line, Version 2.7
+           D_DBKERNEL_BRDFUNC, D_BRDFUNC, D_USER_BRDFUNC,                        & ! output
+           D_BRDFUNC_0, D_USER_BRDFUNC_0, D_EBRDFUNC, D_USER_EBRDFUNC,           & ! output
+           D_SCALING_BRDFUNC, D_SCALING_BRDFUNC_0 )                                ! output, New line, Version 2.7
 
 !  include file of dimensions and numbers
 
@@ -102,6 +111,12 @@
 
       EXTERNAL            BRDF_VFUNCTION_PLUS
       EXTERNAL            BRDF_VFUNCTION_DB_PLUS
+
+!  White-sky and Black-sky albedo scaling flags. New Version 2.7
+
+      LOGICAL ::          DO_LOCAL_WSA           ! Required only for Regular                SCALING_BRDFUNCs
+      LOGICAL ::          DO_LOCAL_BSA           ! Required both for Regular and linearized SCALING_BRDFUNCs
+      LOGICAL ::          DO_WSA_SCALING         ! Required only for linearized             SCALING_BRDFUNCs
 
 !   !@@ Solar sources + Observational Geometry flag !@@
 
@@ -161,7 +176,13 @@
       DOUBLE PRECISION :: USER_STREAMS(MAX_USER_STREAMS)
       DOUBLE PRECISION :: USER_SINES  (MAX_USER_STREAMS)
 
-!  Local parameter array
+!  Discrete ordinates (local, for Albedo scaling). New Version 2.7
+
+      INTEGER          :: SCALING_NSTREAMS
+      DOUBLE PRECISION :: SCALING_QUAD_STREAMS(MAXSTREAMS_SCALING)
+      DOUBLE PRECISION :: SCALING_QUAD_SINES  (MAXSTREAMS_SCALING)
+
+!  Local parameter arrays
 
       DOUBLE PRECISION :: BRDF_PARS   ( MAX_BRDF_PARAMETERS )
       LOGICAL          :: BRDF_DERIVS ( MAX_BRDF_PARAMETERS )
@@ -213,6 +234,13 @@
       DOUBLE PRECISION :: USER_EBRDFUNC &
           ( MAXSTOKES_SQ, MAX_USER_STREAMS, MAXSTHALF_BRDF, MAXSTREAMS_BRDF )
 
+!  Output for WSA/BSA scaling options. New, Version 2.7
+
+      DOUBLE PRECISION :: SCALING_BRDFUNC &
+          ( MAXSTREAMS_SCALING, MAXSTREAMS_SCALING, MAXSTREAMS_BRDF )
+      DOUBLE PRECISION :: SCALING_BRDFUNC_0 &
+          ( MAXSTREAMS_SCALING, MAXSTREAMS_BRDF )
+
 !  Output Linearizations of BRDF functions (parameter derivatives)
 !  ===============================================================
 
@@ -250,12 +278,20 @@
                        MAX_USER_STREAMS, MAXSTHALF_BRDF, &
                        MAXSTREAMS_BRDF )
 
+!  Values for WSA/BSA scaling options. New, Version 2.7
+
+      DOUBLE PRECISION :: D_SCALING_BRDFUNC &
+          ( MAX_BRDF_PARAMETERS, MAXSTREAMS_SCALING, MAXSTREAMS_SCALING, MAXSTREAMS_BRDF )
+      DOUBLE PRECISION :: D_SCALING_BRDFUNC_0 &
+          ( MAX_BRDF_PARAMETERS, MAXSTREAMS_SCALING, MAXSTREAMS_BRDF )
+
 !  local variables
 !  ---------------
 
-      INTEGER            :: I, UI, J, K, KE, IB, ORDER
+      INTEGER            :: I, UI, J, K, KE, IB, ORDER, NSQ
       INTEGER, PARAMETER :: LUM = 1
       INTEGER, PARAMETER :: LUA = 1
+      DOUBLE PRECISION   :: KERNEL(16), D_KERNEL(MAX_BRDF_PARAMETERS,16)
 
 !  Local
 
@@ -311,7 +347,71 @@
         END IF
       ENDIF
 
-!  Return if this is all you require
+!  SCALING OPTIONS (New Section, Version 2.7)
+!  ------------------------------------------
+
+!  White-sky albedo, scaling. Only requires the (1,1) component
+!     Use Local "Scaling_streams", both incident and outgoing
+
+      IF ( DO_LOCAL_WSA .or. DO_WSA_SCALING ) THEN
+         NSQ = 1
+         DO I = 1, SCALING_NSTREAMS
+            DO J = 1, SCALING_NSTREAMS
+               DO K = 1, NSTREAMS_BRDF
+                  IF ( DO_MSRCORR .and..not.DO_MSRCORR_EXACTONLY ) THEN
+                     CALL BRDF_VFUNCTION_DB_PLUS &
+                        ( MAX_BRDF_PARAMETERS, BRDF_NPARS, BRDF_PARS,      &
+                          BRDF_DERIVS, ORDER, NSQ, n_muquad, n_phiquad,    &
+                          SCALING_QUAD_STREAMS(J), SCALING_QUAD_SINES(J),  &
+                          SCALING_QUAD_STREAMS(I), SCALING_QUAD_SINES(I),  &         
+                          X_BRDF(K), CX_BRDF(K), SX_BRDF(K),               &
+                          X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,      &
+                          KERNEL, D_KERNEL )
+                  ELSE
+                     CALL BRDF_VFUNCTION_PLUS &
+                        ( MAX_BRDF_PARAMETERS, BRDF_NPARS, BRDF_PARS, BRDF_DERIVS, NSQ, &
+                          SCALING_QUAD_STREAMS(J), SCALING_QUAD_SINES(J),  &
+                          SCALING_QUAD_STREAMS(I), SCALING_QUAD_SINES(I),  &         
+                          X_BRDF(K), CX_BRDF(K), SX_BRDF(K),               &
+                          KERNEL, D_KERNEL )
+                  ENDIF
+                  SCALING_BRDFUNC(I,J,K) = KERNEL(1)
+                  if ( DO_WSA_SCALING ) D_SCALING_BRDFUNC(:,I,J,K) = D_KERNEL(:,1)
+               ENDDO
+            ENDDO
+         ENDDO
+      ENDIF
+
+!  Black-sky albedo, scaling
+!     Use Local "Scaling_streams" for outgoing, solar beam for incoming (IB = 1)
+
+      IF ( DO_LOCAL_BSA ) THEN
+         IB = 1 ; NSQ = 1
+         DO I = 1, SCALING_NSTREAMS
+            DO K = 1, NSTREAMS_BRDF
+               IF ( DO_MSRCORR .and..not.DO_MSRCORR_EXACTONLY ) THEN
+                  CALL BRDF_VFUNCTION_DB_PLUS &
+                      ( MAX_BRDF_PARAMETERS, BRDF_NPARS, BRDF_PARS, BRDF_DERIVS,          &
+                        ORDER, NSQ, n_muquad, n_phiquad, SZASURCOS(IB), SZASURSIN(IB),    &
+                        SCALING_QUAD_STREAMS(I), SCALING_QUAD_SINES(I),                   &
+                        X_BRDF(K), CX_BRDF(K), SX_BRDF(K),                                &
+                        X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,  &
+                        KERNEL, D_KERNEL )
+               ELSE
+                  CALL BRDF_VFUNCTION_PLUS &
+                      ( MAX_BRDF_PARAMETERS, BRDF_NPARS, BRDF_PARS,     &
+                        NSQ, SZASURCOS(IB), SZASURSIN(IB),              &
+                        SCALING_QUAD_STREAMS(I), SCALING_QUAD_SINES(I), &
+                        X_BRDF(K), CX_BRDF(K), SX_BRDF(K),              &
+                        KERNEL, D_KERNEL )
+               ENDIF
+               SCALING_BRDFUNC_0(I,K) = KERNEL(1)
+               D_SCALING_BRDFUNC_0(:,I,K) = D_KERNEL(:,1)
+            ENDDO
+         ENDDO
+      ENDIF
+
+!  Return if the Exact BRDF is all that is required (scaled or not!)
 
       IF ( DO_EXACTONLY ) RETURN
 
@@ -498,6 +598,124 @@
 
       RETURN
       END SUBROUTINE VBRDF_LIN_MAKER
+
+!
+
+      SUBROUTINE LIN_SCALING_FOURIER_ZERO &
+            ( DO_LOCAL_WSA, DO_LOCAL_BSA, LAMBERTIAN_FLAG,              &
+              BRDF_NPARS, BRDF_DERIVS, SCALING_NSTREAMS, NSTREAMS_BRDF, &
+              A_BRDF, D_SCALING_BRDFUNC, D_SCALING_BRDFUNC_0,           &
+              D_SCALING_BRDF_F, D_SCALING_BRDF_F_0 )
+
+!  include file of dimensions and numbers
+
+      USE VLIDORT_PARS
+
+      IMPLICIT NONE
+
+!  This is a new routine for developing Fourier = 0 components for WSA/BSA computations.
+!   Installed, 15 April 2014 for Version 2.7
+
+!  Input arguments
+!  ===============
+
+!  Local flags
+
+      LOGICAL ::          DO_LOCAL_WSA, DO_LOCAL_BSA
+
+!  Control
+
+      LOGICAL ::          LAMBERTIAN_FLAG
+
+!  Local numbers
+
+      INTEGER ::          SCALING_NSTREAMS, NSTREAMS_BRDF
+
+!  Azimuth weights
+
+      DOUBLE PRECISION :: A_BRDF ( MAXSTREAMS_BRDF )
+
+!  linearization Control
+
+      INTEGER ::          BRDF_NPARS
+      LOGICAL ::          BRDF_DERIVS ( MAX_BRDF_PARAMETERS )
+
+!  Input for WSA/BSA scaling options. New, Version 2.7
+
+      DOUBLE PRECISION :: D_SCALING_BRDFUNC &
+          ( MAX_BRDF_PARAMETERS, MAXSTREAMS_SCALING, MAXSTREAMS_SCALING, MAXSTREAMS_BRDF )
+      DOUBLE PRECISION :: D_SCALING_BRDFUNC_0 &
+          ( MAX_BRDF_PARAMETERS, MAXSTREAMS_SCALING, MAXSTREAMS_BRDF )
+
+!  Output: Derivative-kernel Fourier components
+!  ============================================
+
+!  at quadrature (discrete ordinate) angles
+
+      DOUBLE PRECISION :: D_SCALING_BRDF_F &
+       ( MAX_BRDF_PARAMETERS, MAXSTREAMS_SCALING, MAXSTREAMS_SCALING )
+      DOUBLE PRECISION :: D_SCALING_BRDF_F_0 &
+       ( MAX_BRDF_PARAMETERS, MAXSTREAMS_SCALING  )
+
+!  local variables
+!  ===============
+
+      INTEGER ::          I, J, K, W
+      DOUBLE PRECISION :: SUM
+
+!  Zeroing
+
+      D_SCALING_BRDF_F        = ZERO
+      D_SCALING_BRDF_F_0      = ZERO
+
+!  Quadrature outgoing directions
+!  ------------------------------
+
+!  Incident Solar beam (direct beam reflections)
+!    !@@ Solar Optionality, added 12/31/12
+
+!  BSA: Incident Solar beam
+
+      IF ( DO_LOCAL_BSA ) THEN
+         IF ( .NOT. LAMBERTIAN_FLAG ) THEN
+            DO W = 1, BRDF_NPARS
+               IF ( BRDF_DERIVS(W) ) THEN
+                  DO I = 1, SCALING_NSTREAMS
+                     SUM = ZERO
+                     DO K = 1, NSTREAMS_BRDF
+                        SUM  = SUM + D_SCALING_BRDFUNC_0(W,I,K)*A_BRDF(K)
+                     ENDDO
+                     D_SCALING_BRDF_F_0(W,I) = SUM * HALF
+                  ENDDO
+               ENDIF
+            ENDDO
+         ENDIF
+      ENDIF
+
+!  WSA: incident quadrature directions
+
+      if ( DO_LOCAL_WSA ) THEN
+         IF ( .NOT. LAMBERTIAN_FLAG ) THEN
+            DO W = 1, BRDF_NPARS
+               IF ( BRDF_DERIVS(W) ) THEN
+                  DO I = 1, SCALING_NSTREAMS
+                     DO J = 1, SCALING_NSTREAMS
+                        SUM = ZERO
+                        DO K = 1, NSTREAMS_BRDF
+                           SUM  = SUM + D_SCALING_BRDFUNC(W,I,J,K)*A_BRDF(K)
+                        ENDDO
+                        D_SCALING_BRDF_F(W,I,J) = SUM * HALF
+                     ENDDO
+                  ENDDO
+               ENDIF
+            ENDDO
+         ENDIF
+      ENDIF
+
+!  Finish
+
+      RETURN
+      END SUBROUTINE LIN_SCALING_FOURIER_ZERO
 
 !
 

@@ -19,7 +19,7 @@
 ! #  Email :       rtsolutions@verizon.net                      #
 ! #                                                             #
 ! #  Versions     :   2.0, 2.2, 2.3, 2.4, 2.4R, 2.4RT, 2.4RTC,  #
-! #                   2.5                                       #
+! #                   2.5, 2.6, 2.7                             #
 ! #  Release Date :   December 2005  (2.0)                      #
 ! #  Release Date :   March 2007     (2.2)                      #
 ! #  Release Date :   October 2007   (2.3)                      #
@@ -29,12 +29,17 @@
 ! #  Release Date :   October 2010   (2.4RTC)                   #
 ! #  Release Date :   March 2011     (2.5)                      #
 ! #  Release Date :   May 2012       (2.6)                      #
+! #  Release Date :   May 2014       (2.7)                      #
 ! #                                                             #
-! #       NEW: TOTAL COLUMN JACOBIANS         (2.4)             #
-! #       NEW: BPDF Land-surface KERNELS      (2.4R)            #
-! #       NEW: Thermal Emission Treatment     (2.4RT)           #
-! #       Consolidated BRDF treatment         (2.4RTC)          #
-! #       f77/f90 Release                     (2.5)             #
+! #       NEW: TOTAL COLUMN JACOBIANS          (2.4)            #
+! #       NEW: BPDF Land-surface KERNELS       (2.4R)           #
+! #       NEW: Thermal Emission Treatment      (2.4RT)          #
+! #       Consolidated BRDF treatment          (2.4RTC)         #
+! #       f77/f90 Release                      (2.5)            #
+! #       External SS / New I/O Structures     (2.6)            #
+! #                                                             #
+! #       Surface-leaving, BRDF Albedo-scaling (2.7)            # 
+! #       Taylor series, Black-body Jacobians  (2.7)            #
 ! #                                                             #
 ! ###############################################################
 
@@ -140,6 +145,14 @@
 !  Input kernel amplitude factors
 
       DOUBLE PRECISION :: BRDF_FACTORS ( MAX_BRDF_KERNELS )
+
+!  WSA and BSA scaling options.
+!   Revised, 14-15 April 2014, first introduced 02 April 2014, Version 2.7
+!      WSA = White-sky albedo. BSA = Black-sky albedo.
+
+      LOGICAL   :: DO_WSA_SCALING
+      LOGICAL   :: DO_BSA_SCALING
+      REAL(fpk) :: WSA_VALUE, BSA_VALUE
 
 !  Number of azimuth quadrature streams for BRDF
 
@@ -287,7 +300,6 @@
       MSRCORR_NMUQUAD      = 0
       MSRCORR_NPHIQUAD     = 0
 
-
       DO K = 1, MAX_BRDF_KERNELS
         LAMBERTIAN_KERNEL_FLAG(K) = .FALSE.
         BRDF_FACTORS(K) = ZERO
@@ -295,6 +307,15 @@
           BRDF_PARAMETERS(K,L) = ZERO
         ENDDO
       ENDDO
+
+!  WSA and BSA scaling options.
+!   Revised, 14-15 April 2014, first introduced 02 April 2014, Version 2.7
+!      WSA = White-sky albedo. BSA = Black-sky albedo.
+
+      DO_WSA_SCALING = .false.
+      DO_BSA_SCALING = .false.
+      WSA_VALUE      = zero
+      BSA_VALUE      = zero
 
 !  number of Stokes components
 !  ===========================
@@ -523,16 +544,21 @@
            READ (FILUNIT,*,ERR=998) DO_SURFACE_EMISSION
       CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
 
-!  BRDF inputs
+!  Only if set
 
       IF ( DO_BRDF_SURFACE ) THEN
 
-!  number of kernels, check this value
+!  Basic BRDF inputs
+!  -----------------
+
+!  number of kernels
 
         PAR_STR = 'Number of BRDF kernels'
         IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) &
               READ (FILUNIT,*,ERR=998) N_BRDF_KERNELS
         CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+
+!  Check Dimension
 
         IF ( N_BRDF_KERNELS .GT. MAX_BRDF_KERNELS ) THEN
           NM = NM + 1
@@ -571,6 +597,28 @@
         ENDIF
         CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
  56     FORMAT( A10, I2, F6.2, I2, 3F12.6 )
+
+!  Check Kernel indices are within bounds. Check BRDF name is on accepted list
+
+        DO K = 1, N_BRDF_KERNELS
+          IF ( WHICH_BRDF(K).GT.MAXBRDF_IDX.OR.WHICH_BRDF(K).LE.0) THEN
+            NM = NM + 1
+            MESSAGES(NM) = 'Bad input: BRDF Index not on list of indices'
+            ACTIONS(NM)  = 'Re-set input value: Look in VLIDORT_PARS for correct index'
+            STATUS = VLIDORT_SERIOUS
+            NMESSAGES = NM
+            GO TO 764
+          ELSE
+            IF ( BRDF_NAMES(K).NE.BRDF_CHECK_NAMES(WHICH_BRDF(K)) ) THEN
+              NM = NM + 1
+              MESSAGES(NM) = 'Bad input: BRDF kernel name not one of accepted list'
+              ACTIONS(NM)  = 'Re-set input value: Look in VLIDORT_PARS for correct name'
+              STATUS = VLIDORT_SERIOUS
+              NMESSAGES = NM
+              GO TO 764
+            ENDIF
+          ENDIF
+        ENDDO
 
 !  Set the Lambertian kernel flags
 
@@ -612,7 +660,10 @@
           CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
         ENDIF
 
-!  Multiple reflectance correction (for Cox-Munk types); General flag
+!  Multiple reflectance correction (for Cox-Munk types)
+!  ----------------------------------------------------
+
+!  General flag
 
         DO I = 1, N_BRDF_KERNELS
          IF ( BRDF_NAMES(I) .EQ. 'Cox-Munk  ' .OR. &
@@ -664,7 +715,7 @@
         ENDIF
         CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS)
 
-!  Check dimensions
+!  Check MSCORR dimensions
 
         IF ( DO_MSRCORR ) THEN
            IF ( MSRCORR_NMUQUAD .gt. max_msrs_muquad ) then
@@ -710,33 +761,120 @@
 !           ENDIF
 !        ENDIF
 
-!  Check Kernel indices are within bounds. Check BRDF name is on accepted list
+!  White-Sky and Black-Sky Albedo scalings. New for Version 2.7
+!  ============================================================
 
-        DO K = 1, N_BRDF_KERNELS
-          IF ( WHICH_BRDF(K).GT.MAXBRDF_IDX.OR.WHICH_BRDF(K).LE.0) THEN
-            NM = NM + 1
-            MESSAGES(NM) = &
-            'Bad input: BRDF Index not on list of indices'
-            ACTIONS(NM)  = &
-            'Re-set input value: Look in VLIDORT_PARS for correct index'
-            STATUS = VLIDORT_SERIOUS
-            NMESSAGES = NM
-            GO TO 764
-          ELSE
-            IF ( BRDF_NAMES(K).NE.BRDF_CHECK_NAMES(WHICH_BRDF(K)) ) THEN
+!  WSA and BSA scaling options.
+!   Revised, 14-15 April 2014, first introduced 02 April 2014, Version 2.7
+!      WSA = White-sky albedo. BSA = Black-sky albedo.
+
+!  White-Sky inputs
+!  ----------------
+
+!  White-sky Albedo scaling
+
+        PAR_STR = 'Do white-sky albedo scaling?'
+        IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) THEN
+           READ (FILUNIT,*,ERR=998)DO_WSA_SCALING
+        ENDIF
+        CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS)
+
+!  WSA value. This could be extracted from a data set.....
+
+        IF ( DO_WSA_SCALING  ) THEN
+           PAR_STR = 'White-sky albedo value'
+           IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) THEN
+              READ (FILUNIT,*,ERR=998)WSA_VALUE
+           ENDIF
+           CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS)
+        ENDIF
+
+!  Check WSA value
+
+        IF ( DO_WSA_SCALING  ) THEN
+           IF ( WSA_VALUE .le.zero .or. WSA_VALUE .gt. one ) then
               NM = NM + 1
-              MESSAGES(NM) = &
-              'Bad input: BRDF kernel name not one of accepted list'
-              ACTIONS(NM)  = &
-              'Re-set input value: Look in VLIDORT_PARS for correct name'
+              MESSAGES(NM) = 'Bad input: White-sky albedo value not in the range [0,1]'
+              ACTIONS(NM)  = 'Fix the input'
               STATUS = VLIDORT_SERIOUS
               NMESSAGES = NM
               GO TO 764
-            ENDIF
-          ENDIF
-        ENDDO
+           ENDIF
+        ENDIF
 
-!  End BRDF clause
+!  Black-Sky inputs
+!  ----------------
+
+!  Black-sky Albedo scaling.
+
+        PAR_STR = 'Do black-sky albedo scaling?'
+        IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) THEN
+           READ (FILUNIT,*,ERR=998)DO_BSA_SCALING
+        ENDIF
+        CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS)
+
+!  Cannot have BSA and WSA together
+
+        IF ( DO_BSA_SCALING .and. DO_WSA_SCALING ) THEN
+           NM = NM + 1
+           MESSAGES(NM) = 'Bad input: Cannot apply both Black-sky albedo and White-sky albedo scalings!'
+           ACTIONS(NM)  = 'Make a choice of which one you want! '
+           STATUS = VLIDORT_SERIOUS
+           NMESSAGES = NM
+           GOTO 764
+        ENDIF
+
+!  BSA value. This could be extracted from a data set.....
+!    WARNING: ONLY ALLOWED ONE VALUE HERE...................
+
+        IF ( DO_BSA_SCALING  ) THEN
+           PAR_STR = 'Black-sky albedo value'
+           IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) THEN
+              READ (FILUNIT,*,ERR=998)BSA_VALUE
+           ENDIF
+           CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS)
+        ENDIF
+
+!  Check BSA value
+
+        IF ( DO_BSA_SCALING  ) THEN
+           IF ( BSA_VALUE .le.zero .or. BSA_VALUE .gt. one ) then
+              NM = NM + 1
+              MESSAGES(NM) = 'Bad input: Black-sky albedo value is not in the range [0,1]'
+              ACTIONS(NM)  = 'Fix the input'
+              STATUS = VLIDORT_SERIOUS
+              NMESSAGES = NM
+              GO TO 764
+           ENDIF
+        ENDIF
+
+!  Check that Solar source flag is on for Black sky albedo
+
+        IF ( DO_BSA_SCALING  ) THEN
+           IF ( .not. DO_SOLAR_SOURCES ) THEN
+              NM = NM + 1
+              MESSAGES(NM) = 'Bad input: Cannot have Black-sky albedo if Solar_sources not turned on'
+              ACTIONS(NM)  = 'Fix the input (turn on DO_SOLAR_SOURCES)'
+              STATUS = VLIDORT_SERIOUS
+              NMESSAGES = NM
+              GO TO 764
+           ENDIF
+        ENDIF
+
+!  Check that there is only one beam for Black sky albedo
+
+        IF ( DO_BSA_SCALING  ) THEN
+           IF ( NBEAMS.gt.1 ) THEN
+              NM = NM + 1
+              MESSAGES(NM) = 'Bad input: Cannot have Black-sky albedo with more than 1 solar angle'
+              ACTIONS(NM)  = 'Fix the input (set NBEAMS = 1)'
+              STATUS = VLIDORT_SERIOUS
+              NMESSAGES = NM
+              GO TO 764
+           ENDIF
+        ENDIF
+
+!  End BRDF surface clause
 
       ENDIF
 
@@ -789,6 +927,15 @@
       VBRDF_Sup_In%BS_GLITTER_MSRCORR_NMUQUAD      = MSRCORR_NMUQUAD
       VBRDF_Sup_In%BS_GLITTER_MSRCORR_NPHIQUAD     = MSRCORR_NPHIQUAD
 
+!  WSA and BSA scaling options.
+!   Revised, 14 April 2014, first introduced 02 April 2014, Version 2.7
+!      WSA = White-sky albedo. BSA = Black-sky albedo.
+
+      VBRDF_Sup_In%BS_DO_WSA_SCALING = DO_WSA_SCALING
+      VBRDF_Sup_In%BS_DO_BSA_SCALING = DO_BSA_SCALING
+      VBRDF_Sup_In%BS_WSA_VALUE      = WSA_VALUE
+      VBRDF_Sup_In%BS_BSA_VALUE      = BSA_VALUE
+
 !  Exception handling
 
       VBRDF_Sup_InputStatus%BS_STATUS_INPUTREAD = STATUS
@@ -836,10 +983,11 @@
 !
 
       SUBROUTINE VBRDF_MAINMASTER ( &
-        DO_DEBUG_RESTORATION, & ! Inputs
-        NMOMENTS_INPUT,       & ! Inputs
-        VBRDF_Sup_In,         & ! Inputs
-        VBRDF_Sup_Out )         ! Outputs
+        DO_DEBUG_RESTORATION,    & ! Inputs
+        NMOMENTS_INPUT,          & ! Inputs
+        VBRDF_Sup_In,            & ! Inputs
+        VBRDF_Sup_Out,           & ! Outputs
+        VBRDF_Sup_OutputStatus )   ! Output Status
 
 !  Prepares the bidirectional reflectance functions necessary for VLIDORT.
 
@@ -850,6 +998,11 @@
 !       User-defined Observation Geometry angles. USER_OBSGEOMS
 !     Added solar_sources flag for better control (DO_SOLAR_SOURCES)
 !     Added Overall-exact flag for better control (DO_EXACT)
+
+!  Upgrade Version 2.7 for WSA/BSA implementation. Marked with !{2.7}
+!  WSA and BSA scaling options.
+!   Revised, 14 April 2014, first introduced 02 April 2014, Version 2.7
+!      WSA = White-sky albedo. BSA = Black-sky albedo.
 
       USE VLIDORT_PARS
 
@@ -885,6 +1038,10 @@
 !  ----------------
 
       TYPE(VBRDF_Sup_Outputs), INTENT(OUT) :: VBRDF_Sup_Out
+
+!  Exception handling introduced 02 April 2014 for Version 2.7
+
+      TYPE(VBRDF_Output_Exception_Handling), INTENT(OUT) :: VBRDF_Sup_OutputStatus
 
 !  VLIDORT local variables
 !  ++++++++++++++++++++++
@@ -926,6 +1083,14 @@
 !  Input kernel amplitude factors
 
       DOUBLE PRECISION :: BRDF_FACTORS ( MAX_BRDF_KERNELS )
+
+!  WSA and BSA scaling options.
+!   Revised, 14-15 April 2014, first introduced 02 April 2014, Version 2.7
+!      WSA = White-sky albedo. BSA = Black-sky albedo.
+
+      LOGICAL   :: DO_WSA_SCALING
+      LOGICAL   :: DO_BSA_SCALING
+      REAL(fpk) :: WSA_VALUE, BSA_VALUE
 
 !  Number of azimuth quadrature streams for BRDF
 
@@ -1032,6 +1197,13 @@
       DOUBLE PRECISION :: USER_EBRDFUNC &
           ( MAXSTOKES_SQ, MAX_USER_STREAMS, MAXSTHALF_BRDF, MAXSTREAMS_BRDF)
 
+!  Values for WSA/BSA scaling options. New, Version 2.7
+
+      DOUBLE PRECISION :: SCALING_BRDFUNC &
+          ( MAXSTREAMS_SCALING, MAXSTREAMS_SCALING, MAXSTREAMS_BRDF )
+      DOUBLE PRECISION :: SCALING_BRDFUNC_0 &
+          ( MAXSTREAMS_SCALING, MAXSTREAMS_BRDF )
+
 !  Local angles, and cosine/sines/weights
 !  ======================================
 
@@ -1046,12 +1218,11 @@
       DOUBLE PRECISION :: SZASURCOS(MAXBEAMS)
       DOUBLE PRECISION :: SZASURSIN(MAXBEAMS)
 
-!  Discrete ordinates
+!  Discrete ordinates (output)
 
       DOUBLE PRECISION :: QUAD_STREAMS(MAXSTREAMS)
       DOUBLE PRECISION :: QUAD_WEIGHTS(MAXSTREAMS)
       DOUBLE PRECISION :: QUAD_SINES  (MAXSTREAMS)
-      DOUBLE PRECISION :: QUAD_STRMWTS(MAXSTREAMS)
 
 !  Viewing zenith streams
 
@@ -1109,19 +1280,41 @@
       DOUBLE PRECISION :: LOCAL_EMISSIVITY ( MAXSTOKES, MAXSTREAMS )
       DOUBLE PRECISION :: LOCAL_USER_EMISSIVITY ( MAXSTOKES, MAX_USER_STREAMS )
 
+!  WSA/BSA scaling componnets, at quadrature (discrete ordinate) angles
+
+      DOUBLE PRECISION :: SCALING_BRDF_F   ( MAXSTREAMS_SCALING, MAXSTREAMS_SCALING )
+      DOUBLE PRECISION :: SCALING_BRDF_F_0 ( MAXSTREAMS_SCALING   )
+
+!  Exception handling. New code, 02 April 2014. Version 2.7
+!     Message Length should be at least 120 Characters
+
+      INTEGER ::             STATUS
+      INTEGER ::             NMESSAGES
+      CHARACTER (LEN=120) :: MESSAGES ( 0:MAX_MESSAGES )
+
 !  Other local variables
 !  =====================
 
-!  Spherical albedo
+!  Discrete ordinates (local, for Albedo scaling). Version 2.7.
 
-      DOUBLE PRECISION :: SPHERICAL_ALBEDO (MAX_BRDF_KERNELS)
+      INTEGER            :: SCALING_NSTREAMS
+      DOUBLE PRECISION   :: SCALING_QUAD_STREAMS(MAXSTREAMS_SCALING)
+      DOUBLE PRECISION   :: SCALING_QUAD_WEIGHTS(MAXSTREAMS_SCALING)
+      DOUBLE PRECISION   :: SCALING_QUAD_SINES  (MAXSTREAMS_SCALING)
+      DOUBLE PRECISION   :: SCALING_QUAD_STRMWTS(MAXSTREAMS_SCALING)
+
+!  White-sky and Black-sky albedos. Version 2.7.
+
+      LOGICAL          :: DO_LOCAL_WSA, DO_LOCAL_BSA
+      DOUBLE PRECISION :: WSA_CALC (MAX_BRDF_KERNELS), TOTAL_WSA_CALC
+      DOUBLE PRECISION :: BSA_CALC (MAX_BRDF_KERNELS), TOTAL_BSA_CALC
 
 !  help
 
       INTEGER ::          K, B, I, I1, J, IB, UI, UM, IA, M, O1, Q
       INTEGER ::          BRDF_NPARS, NMOMENTS, NSTOKESSQ, N_phiquad_HALF
       DOUBLE PRECISION :: PARS ( MAX_BRDF_PARAMETERS )
-      DOUBLE PRECISION :: MUX, DELFAC, HELP_A, SUM, ARGUMENT, XM
+      DOUBLE PRECISION :: MUX, DELFAC, HELP_A, SUM, ARGUMENT, XM, SCALING
       LOGICAL ::          ADD_FOURIER, LOCAL_MSR
 
       INTEGER, PARAMETER :: LUM = 1   !@@
@@ -1130,6 +1323,18 @@
 !  Default, use Gaussian quadrature
 
       LOGICAL, PARAMETER :: DO_BRDFQUAD_GAUSSIAN = .true.
+
+!  Local check of Albedo
+
+      LOGICAL, PARAMETER :: DO_CHECK_ALBEDO = .true.
+
+!  Initialize Exception handling
+!  -----------------------------
+
+      STATUS = VLIDORT_SUCCESS
+      MESSAGES(1:MAX_MESSAGES) = ' '
+      NMESSAGES       = 0
+      MESSAGES(0)     = 'Successful Execution of VLIDORT BRDF Sup Master'
 
 !  Copy from input type structure
 !  ------------------------------
@@ -1202,6 +1407,20 @@
       DO_EXACT               = VBRDF_Sup_In%BS_DO_EXACT          !@@
       DO_EXACTONLY           = VBRDF_Sup_In%BS_DO_EXACTONLY
 
+!  WSA and BSA scaling options.
+!   Revised, 14 April 2014, first introduced 02 April 2014, Version 2.7
+!      WSA = White-sky albedo. BSA = Black-sky albedo.
+
+      DO_WSA_SCALING      = VBRDF_Sup_In%BS_DO_WSA_SCALING
+      DO_BSA_SCALING      = VBRDF_Sup_In%BS_DO_BSA_SCALING
+      WSA_VALUE           = VBRDF_Sup_In%BS_WSA_VALUE
+      BSA_VALUE           = VBRDF_Sup_In%BS_BSA_VALUE
+
+!  Local flags
+
+      DO_LOCAL_WSA = DO_WSA_SCALING .or.  DO_CHECK_ALBEDO
+      DO_LOCAL_BSA = DO_BSA_SCALING .and. DO_SOLAR_SOURCES
+
 !  Copy MSR inputs
 
       DO_MSRCORR             = VBRDF_Sup_In%BS_DO_GLITTER_MSRCORR
@@ -1213,17 +1432,31 @@
 !  Main code
 !  ---------
 
-!  Set up Quadrature streams
+!  Set up Quadrature streams for output
+!    QUAD_STRMWTS dropped for Version 2.7 (now redefined for local WSA/BSA scaling)
 
       CALL BRDF_GAULEG ( 0.0d0, 1.0d0, QUAD_STREAMS, QUAD_WEIGHTS, NSTREAMS )
       DO I = 1, NSTREAMS
         QUAD_SINES(I) = SQRT(1.0d0-QUAD_STREAMS(I)*QUAD_STREAMS(I))
-        QUAD_STRMWTS(I) = QUAD_STREAMS(I) * QUAD_WEIGHTS(I)
       enddo
+
+!  Set up Quadrature streams for WSA/BSA Scaling. New code, Version 2.7
+
+      IF ( DO_LOCAL_WSA .or. DO_LOCAL_BSA ) THEN
+         SCALING_NSTREAMS = MAXSTREAMS_SCALING
+         CALL BRDF_GAULEG ( 0.0d0, 1.0d0, SCALING_QUAD_STREAMS, SCALING_QUAD_WEIGHTS, SCALING_NSTREAMS )
+         DO I = 1, SCALING_NSTREAMS
+            SCALING_QUAD_SINES(I)   = SQRT(1.0d0-SCALING_QUAD_STREAMS(I)*SCALING_QUAD_STREAMS(I))
+            SCALING_QUAD_STRMWTS(I) = SCALING_QUAD_STREAMS(I) * SCALING_QUAD_WEIGHTS(I)
+         enddo
+      ENDIF
 
 !  Number of Stokes components squared
 !    ** Bookkeeping for surface kernel Cox-Munk types
-!    ** Only the Giss CoxMunk kernel is vectorized (as of 19 January 200
+!    ** Only the Giss CoxMunk kernel is vectorized (as of 19 January 2009)
+
+!  Rob Fix, 14 March 2014. NSTOKESSQ > 1 for BPDF
+!    ** Now, the BPDF 2009 kernel is vectorized
 
 !   Additional code for complex RI Giss Cox-Munk, 15 march 2010.
 !     3 parameters are PARS(1) = sigma_sq
@@ -1243,8 +1476,9 @@
          ELSE IF ( BRDF_NAMES(K) .EQ. 'GCMcomplex' ) THEN
             N_BRDF_PARAMETERS(K) = 3
          ENDIF
-          IF ( BRDF_NAMES(K) .EQ. 'GissCoxMnk'  .OR. &
-               BRDF_NAMES(K) .EQ. 'GCMcomplex' ) THEN
+         IF ( BRDF_NAMES(K) .EQ. 'GissCoxMnk'  .OR. &
+              BRDF_NAMES(K) .EQ. 'GCMcomplex'  .OR. &
+              BRDF_NAMES(K) .EQ. 'BPDF2009  ' ) THEN
             NSTOKESSQ = NSTOKES * NSTOKES
          ENDIF
       ENDDO
@@ -1352,9 +1586,20 @@
       VBRDF_Sup_Out%BS_USER_BRDF_F   = ZERO
 
 !  Initialize surface emissivity
+!    Set to zero if you are using Albedo Scaling
 
-      VBRDF_Sup_Out%BS_EMISSIVITY      = ONE
-      VBRDF_Sup_Out%BS_USER_EMISSIVITY = ONE
+      if ( do_wsa_scaling .or. do_bsa_scaling ) then
+         VBRDF_Sup_Out%BS_EMISSIVITY      = ZERO
+         VBRDF_Sup_Out%BS_USER_EMISSIVITY = ZERO
+      else
+         VBRDF_Sup_Out%BS_EMISSIVITY      = ONE
+         VBRDF_Sup_Out%BS_USER_EMISSIVITY = ONE
+      endif
+
+!  Initialize WSA/BSA albedos
+
+      WSA_CALC = zero ; TOTAL_WSA_CALC = zero
+      BSA_CALC = zero ; TOTAL_BSA_CALC = zero
 
 !  Fill BRDF arrays
 !  ----------------
@@ -1382,17 +1627,20 @@
         IF ( WHICH_BRDF(K) .EQ. LAMBERTIAN_IDX ) THEN
           CALL VBRDF_MAKER &
              ( LAMBERTIAN_VFUNCTION, LAMBERTIAN_VFUNCTION, &
-               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-               DO_USER_STREAMS, DO_SURFACE_EMISSION, n_muquad, n_phiquad, &
-               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS, &
-               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, &
-               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC )
+               DO_LOCAL_WSA, DO_LOCAL_BSA,                                       & ! New line, Version 2.7
+               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                     &
+               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,     &
+               DO_USER_STREAMS, DO_SURFACE_EMISSION, N_MUQUAD, N_PHIQUAD,        &
+               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                 &
+               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                 &
+               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,               &
+               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS,               &
+               SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,       & ! New line, Version 2.7
+               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF,                     &
+               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,  &
+               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                          & ! output
+               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,               & ! Output
+               SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                               ! output, New line, Version 2.7
         ENDIF
 
 !  Ross thin kernel, (0 free parameters)
@@ -1400,17 +1648,20 @@
         IF ( WHICH_BRDF(K) .EQ. ROSSTHIN_IDX ) THEN
           CALL VBRDF_MAKER &
              ( ROSSTHIN_VFUNCTION, ROSSTHIN_VFUNCTION, &
-               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-               DO_USER_STREAMS, DO_SURFACE_EMISSION, n_muquad, n_phiquad, &
-               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS, &
-               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, &
-               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC )
+               DO_LOCAL_WSA, DO_LOCAL_BSA,                                       & ! New line, Version 2.7
+               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                     &
+               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,     &
+               DO_USER_STREAMS, DO_SURFACE_EMISSION, N_MUQUAD, N_PHIQUAD,        &
+               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                 &
+               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                 &
+               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,               &
+               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS,               &
+               SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,       & ! New line, Version 2.7
+               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF,                     &
+               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,  &
+               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                          & ! output
+               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,               & ! Output
+               SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                               ! output, New line, Version 2.7
         ENDIF
 
 !  Ross thick kernel, (0 free parameters)
@@ -1418,17 +1669,20 @@
         IF ( WHICH_BRDF(K) .EQ. ROSSTHICK_IDX ) THEN
           CALL VBRDF_MAKER &
              ( ROSSTHICK_VFUNCTION, ROSSTHICK_VFUNCTION, &
-               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-               DO_USER_STREAMS, DO_SURFACE_EMISSION, n_muquad, n_phiquad, &
-               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS, &
-               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, &
-               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC )
+               DO_LOCAL_WSA, DO_LOCAL_BSA,                                       & ! New line, Version 2.7
+               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                     &
+               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,     &
+               DO_USER_STREAMS, DO_SURFACE_EMISSION, N_MUQUAD, N_PHIQUAD,        &
+               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                 &
+               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                 &
+               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,               &
+               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS,               &
+               SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,       & ! New line, Version 2.7
+               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF,                     &
+               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,  &
+               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                          & ! output
+               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,               & ! Output
+               SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                               ! output, New line, Version 2.7
         ENDIF
 
 !  Li Sparse kernel; 2 free parameters
@@ -1436,17 +1690,20 @@
         IF ( WHICH_BRDF(K) .EQ. LISPARSE_IDX ) THEN
           CALL VBRDF_MAKER &
              ( LISPARSE_VFUNCTION, LISPARSE_VFUNCTION, &
-               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-               DO_USER_STREAMS, DO_SURFACE_EMISSION, n_muquad, n_phiquad, &
-               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS, &
-               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, &
-               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC )
+               DO_LOCAL_WSA, DO_LOCAL_BSA,                                       & ! New line, Version 2.7
+               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                     &
+               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,     &
+               DO_USER_STREAMS, DO_SURFACE_EMISSION, N_MUQUAD, N_PHIQUAD,        &
+               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                 &
+               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                 &
+               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,               &
+               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS,               &
+               SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,       & ! New line, Version 2.7
+               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF,                     &
+               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,  &
+               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                          & ! output
+               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,               & ! Output
+               SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                               ! output, New line, Version 2.7
         ENDIF
 
 !  Li Dense kernel; 2 free parameters
@@ -1454,17 +1711,20 @@
         IF ( WHICH_BRDF(K) .EQ. LIDENSE_IDX ) THEN
           CALL VBRDF_MAKER &
              ( LIDENSE_VFUNCTION, LIDENSE_VFUNCTION, &
-               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-               DO_USER_STREAMS, DO_SURFACE_EMISSION, n_muquad, n_phiquad, &
-               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS, &
-               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, &
-               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC )
+               DO_LOCAL_WSA, DO_LOCAL_BSA,                                       & ! New line, Version 2.7
+               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                     &
+               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,     &
+               DO_USER_STREAMS, DO_SURFACE_EMISSION, N_MUQUAD, N_PHIQUAD,        &
+               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                 &
+               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                 &
+               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,               &
+               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS,               &
+               SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,       & ! New line, Version 2.7
+               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF,                     &
+               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,  &
+               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                          & ! output
+               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,               & ! Output
+               SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                               ! output, New line, Version 2.7
         ENDIF
 
 !  Hapke kernel (3 free parameters)
@@ -1472,17 +1732,20 @@
         IF ( WHICH_BRDF(K) .EQ. HAPKE_IDX ) THEN
           CALL VBRDF_MAKER &
              ( HAPKE_VFUNCTION, HAPKE_VFUNCTION, &
-               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-               DO_USER_STREAMS, DO_SURFACE_EMISSION, n_muquad, n_phiquad, &
-               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS, &
-               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, &
-               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC )
+               DO_LOCAL_WSA, DO_LOCAL_BSA,                                       & ! New line, Version 2.7
+               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                     &
+               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,     &
+               DO_USER_STREAMS, DO_SURFACE_EMISSION, N_MUQUAD, N_PHIQUAD,        &
+               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                 &
+               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                 &
+               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,               &
+               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS,               &
+               SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,       & ! New line, Version 2.7
+               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF,                     &
+               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,  &
+               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                          & ! output
+               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,               & ! Output
+               SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                               ! output, New line, Version 2.7
         ENDIF
 
 !  Rahman kernel (3 free parameters)
@@ -1490,17 +1753,20 @@
         IF ( WHICH_BRDF(K) .EQ. RAHMAN_IDX ) THEN
           CALL VBRDF_MAKER &
              ( RAHMAN_VFUNCTION, RAHMAN_VFUNCTION, &
-               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-               DO_USER_STREAMS, DO_SURFACE_EMISSION, n_muquad, n_phiquad, &
-               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS, &
-               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, &
-               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC )
+               DO_LOCAL_WSA, DO_LOCAL_BSA,                                       & ! New line, Version 2.7
+               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                     &
+               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,     &
+               DO_USER_STREAMS, DO_SURFACE_EMISSION, N_MUQUAD, N_PHIQUAD,        &
+               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                 &
+               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                 &
+               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,               &
+               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS,               &
+               SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,       & ! New line, Version 2.7
+               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF,                     &
+               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,  &
+               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                          & ! output
+               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,               & ! Output
+               SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                               ! output, New line, Version 2.7
         ENDIF
 
 !  Roujean kernel (0 free parameters)
@@ -1508,17 +1774,20 @@
         IF ( WHICH_BRDF(K) .EQ. ROUJEAN_IDX ) THEN
           CALL VBRDF_MAKER &
              ( ROUJEAN_VFUNCTION, ROUJEAN_VFUNCTION, &
-               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-               DO_USER_STREAMS, DO_SURFACE_EMISSION, n_muquad, n_phiquad, &
-               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS, &
-               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, &
-               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC )
+               DO_LOCAL_WSA, DO_LOCAL_BSA,                                       & ! New line, Version 2.7
+               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                     &
+               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,     &
+               DO_USER_STREAMS, DO_SURFACE_EMISSION, N_MUQUAD, N_PHIQUAD,        &
+               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                 &
+               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                 &
+               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,               &
+               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS,               &
+               SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,       & ! New line, Version 2.7
+               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF,                     &
+               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,  &
+               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                          & ! output
+               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,               & ! Output
+               SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                               ! output, New line, Version 2.7
         ENDIF
 
 !  Scalar-only original Cox-Munk kernel: (2 free parameters, Shadow = Th
@@ -1527,18 +1796,21 @@
         IF ( WHICH_BRDF(K) .EQ. COXMUNK_IDX ) THEN
           IF ( DO_SHADOW_EFFECT ) PARS(3) = 1.0d0
           CALL VBRDF_MAKER &
-               ( COXMUNK_VFUNCTION, COXMUNK_VFUNCTION_DB, &
-                 DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-                 DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-                 DO_USER_STREAMS, DO_SURFACE_EMISSION, n_muquad, n_phiquad, &
-                 NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-                 NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-                 QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-                 SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS, &
-                 X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, &
-                 X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-                 DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-                 BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC )
+             ( COXMUNK_VFUNCTION, COXMUNK_VFUNCTION_DB, &
+               DO_LOCAL_WSA, DO_LOCAL_BSA,                                       & ! New line, Version 2.7
+               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                     &
+               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,     &
+               DO_USER_STREAMS, DO_SURFACE_EMISSION, N_MUQUAD, N_PHIQUAD,        &
+               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                 &
+               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                 &
+               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,               &
+               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS,               &
+               SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,       & ! New line, Version 2.7
+               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF,                     &
+               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,  &
+               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                          & ! output
+               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,               & ! Output
+               SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                               ! output, New line, Version 2.7
         ENDIF
 
 !  GISS Vector Cox-Munk kernel: (2 free parameters, Shadow = Third). Rea
@@ -1547,35 +1819,41 @@
         IF ( WHICH_BRDF(K) .EQ. GISSCOXMUNK_IDX ) THEN
           IF ( DO_SHADOW_EFFECT ) PARS(3) = 1.0d0
           CALL VBRDF_MAKER &
-               ( GISSCOXMUNK_VFUNCTION, GISSCOXMUNK_VFUNCTION_DB, &
-                 DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-                 DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-                 DO_USER_STREAMS, DO_SURFACE_EMISSION, n_muquad, n_phiquad, &
-                 NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-                 NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-                 QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-                 SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS, &
-                 X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, &
-                 X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-                 DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-                 BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC )
+             ( GISSCOXMUNK_VFUNCTION, GISSCOXMUNK_VFUNCTION_DB, &
+               DO_LOCAL_WSA, DO_LOCAL_BSA,                                       & ! New line, Version 2.7
+               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                     &
+               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,     &
+               DO_USER_STREAMS, DO_SURFACE_EMISSION, N_MUQUAD, N_PHIQUAD,        &
+               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                 &
+               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                 &
+               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,               &
+               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS,               &
+               SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,       & ! New line, Version 2.7
+               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF,                     &
+               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,  &
+               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                          & ! output
+               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,               & ! Output
+               SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                               ! output, New line, Version 2.7
         ENDIF
 
 !  New code . Giss Cox_munk with Complex RI : (3 Free parameters). Shado
 
         IF ( WHICH_BRDF(K) .EQ. GISSCOXMUNK_CRI_IDX ) THEN
           CALL VBRDF_GCMCRI_MAKER &
-             ( DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-               DO_EXACTONLY, DO_USER_STREAMS, DO_SURFACE_EMISSION, &
-               DO_SHADOW_EFFECT, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS, &
+             ( DO_LOCAL_WSA, DO_LOCAL_BSA,                                        & ! New line, Version 2.7
+               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                      &
+               DO_EXACTONLY, DO_USER_STREAMS, DO_SURFACE_EMISSION,                &
+               DO_SHADOW_EFFECT, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,  &
+               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                  &
+               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                  &
+               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,                &
+               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS,                &
+               SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,        & ! New line, Version 2.7
                X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, n_muquad, n_phiquad, &
-               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC )
+               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,   &
+               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                           & ! output
+               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,                & ! Output
+               SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                                ! output, New line, Version 2.7
         ENDIF
 
 !  BPDF 2009 kernel (0 free parameters)
@@ -1583,17 +1861,20 @@
         IF ( WHICH_BRDF(K) .EQ. BPDF2009_IDX ) THEN
           CALL VBRDF_MAKER &
              ( BPDF2009_VFUNCTION, BPDF2009_VFUNCTION, &
-               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT, &
-               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER, &
-               DO_USER_STREAMS, DO_SURFACE_EMISSION, n_muquad, n_phiquad, &
-               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS, &
-               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS, &
-               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES, &
-               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS, &
-               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF, &
-               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD, &
-               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, &
-               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC )
+               DO_LOCAL_WSA, DO_LOCAL_BSA,                                       & ! New line, Version 2.7
+               DO_SOLAR_SOURCES, DO_USER_OBSGEOMS, DO_EXACT,                     &
+               DO_EXACTONLY, LOCAL_MSR, DO_MSRCORR_EXACTONLY, MSRCORR_ORDER,     &
+               DO_USER_STREAMS, DO_SURFACE_EMISSION, N_MUQUAD, N_PHIQUAD,        &
+               NSTREAMS_BRDF, NBRDF_HALF, NSTOKESSQ, BRDF_NPARS,                 &
+               NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,                 &
+               QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,               &
+               SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, PARS,               &
+               SCALING_NSTREAMS, SCALING_QUAD_STREAMS, SCALING_QUAD_SINES,       & ! New line, Version 2.7
+               X_BRDF, CX_BRDF, SX_BRDF, CXE_BRDF, SXE_BRDF,                     &
+               X_MUQUAD, W_MUQUAD, SX_MUQUAD, WXX_MUQUAD, X_PHIQUAD, W_PHIQUAD,  &
+               DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC,                          & ! output
+               BRDFUNC_0, USER_BRDFUNC_0, EBRDFUNC, USER_EBRDFUNC,               & ! Output
+               SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                               ! output, New line, Version 2.7
         ENDIF
 
 !  Compute Exact Direct Beam BRDF
@@ -1621,19 +1902,81 @@
           ENDDO
         ENDIF
 
-!  !@@. Skip Fourier section, if Exact-only
+!  Scaling Section. New code, 15 April 2014 for Version 2.7
+!  ========================================================
+
+!  Get the requisite Fourier 0 components
+
+        IF ( DO_LOCAL_WSA .or. DO_LOCAL_BSA ) THEN
+          CALL SCALING_FOURIER_ZERO &
+            ( DO_LOCAL_WSA, DO_LOCAL_BSA, LAMBERTIAN_KERNEL_FLAG(K), &
+              SCALING_NSTREAMS, NSTREAMS_BRDF,                       &
+              A_BRDF, SCALING_BRDFUNC, SCALING_BRDFUNC_0,            &
+              SCALING_BRDF_F, SCALING_BRDF_F_0 )
+        ENDIF
+
+!  White-sky Spherical albedo. Code Upgraded for Version 2.7
+!  ---------------------------------------------------------
+
+        IF ( DO_LOCAL_WSA ) THEN
+
+!  Only for non-Lambertian kernels (trivially = 1 otherwise)
+
+           WSA_CALC(K) = ONE
+           IF ( .NOT. LAMBERTIAN_KERNEL_FLAG(K) ) THEN
+              HELP_A = ZERO
+              DO I = 1, SCALING_NSTREAMS
+                 SUM = DOT_PRODUCT(SCALING_BRDF_F(I,1:SCALING_NSTREAMS),SCALING_QUAD_STRMWTS(1:SCALING_NSTREAMS))
+                HELP_A = HELP_A + SUM * SCALING_QUAD_STRMWTS(I)
+              ENDDO
+              WSA_CALC(K) = HELP_A * FOUR
+           ENDIF
+           TOTAL_WSA_CALC = TOTAL_WSA_CALC + BRDF_FACTORS(K) * WSA_CALC(K)
+
+!  Perform consistency check on total white-sky spherical albedo
+!    -- This is only done after the kernel summation is finished
+!    -- If failed, go to 899 and the error output
+
+           IF ( K.eq.N_BRDF_KERNELS ) then
+              if ( TOTAL_WSA_CALC .le. zero ) then
+                 STATUS = VLIDORT_SERIOUS ; NMESSAGES = NMESSAGES + 1
+                 MESSAGES(NMESSAGES) = 'Fatal error: Total White-sky albedo is Negative; examine BRDF Amplitudes'
+              else if ( TOTAL_WSA_CALC .gt. one ) then
+                 STATUS = VLIDORT_SERIOUS ; NMESSAGES = NMESSAGES + 1
+                 MESSAGES(NMESSAGES) = 'Fatal error: Total White-sky albedo is > 1; examine BRDF Amplitudes'
+              endif
+              IF (STATUS.NE.vlidort_success) GO TO 899
+           endif
+
+        ENDIF
+
+!  Black-sky Albedo, only for 1 solar beam. Code Upgraded for Version 2.7
+!  ---------------------------------------
+
+!  Compute it for non-Lambertian kernels
+!     No check necessary, as the WSA is always checked (regardless of whether scaling is applied)
+
+        IF (  DO_LOCAL_BSA ) THEN
+           BSA_CALC(K) = ONE
+           IF ( .NOT. LAMBERTIAN_KERNEL_FLAG(K) ) THEN
+              BSA_CALC(K) = TWO * DOT_PRODUCT(SCALING_BRDF_F_0(1:SCALING_NSTREAMS),SCALING_QUAD_STRMWTS(1:SCALING_NSTREAMS))
+           ENDIF
+           TOTAL_BSA_CALC = TOTAL_BSA_CALC + BRDF_FACTORS(K) * BSA_CALC(K)
+        ENDIF
+
+!  @@. Skip Fourier section, if Exact-only.
 
         IF ( DO_EXACTONLY ) go to 676
 
-!  Fourier Work now
-!  ================
+!  Fourier Components for the output BRDF arrays
+!  =============================================
 
         DO M = 0, NMOMENTS
 
-!  Fourier addition flag
+!  Fourier addition flags
 
           ADD_FOURIER = ( .NOT. LAMBERTIAN_KERNEL_FLAG(K) .OR. &
-                          (LAMBERTIAN_KERNEL_FLAG(K) .AND. M.EQ.0) )
+                                (LAMBERTIAN_KERNEL_FLAG(K) .AND. M.EQ.0) )
 
 !  surface reflectance factors, Weighted Azimuth factors
 
@@ -1647,8 +1990,8 @@
             DELFAC   = TWO
             DO I = 1, NSTREAMS_BRDF
               ARGUMENT = DBLE(M) * X_BRDF(I)
-              BRDF_COSAZMFAC(I) = A_BRDF(I) * DCOS ( ARGUMENT )
-              BRDF_SINAZMFAC(I) = A_BRDF(I) * DSIN ( ARGUMENT )
+              BRDF_COSAZMFAC(I) = A_BRDF(I) * COS ( ARGUMENT )
+              BRDF_SINAZMFAC(I) = A_BRDF(I) * SIN ( ARGUMENT )
             ENDDO
           ENDIF
 
@@ -1666,23 +2009,6 @@
               LOCAL_USER_BRDF_F_0, LOCAL_EMISSIVITY, &
               LOCAL_USER_EMISSIVITY )
 
-!  Spherical albedo. debug only
-
-          IF ( M .EQ. 0 ) THEN
-            Q = 1
-            IF ( .NOT. LAMBERTIAN_KERNEL_FLAG(K) ) THEN
-              HELP_A = ZERO
-              DO I = 1, NSTREAMS
-               SUM = ZERO
-               DO J = 1, NSTREAMS
-                 SUM = SUM + LOCAL_BRDF_F(Q,I,J) * QUAD_STRMWTS(J)
-               ENDDO
-               HELP_A = HELP_A + SUM * QUAD_STRMWTS(I)
-              ENDDO
-              SPHERICAL_ALBEDO(K) = HELP_A * FOUR
-             ENDIF
-          ENDIF
-
 !  Start Fourier addition
 
           IF ( ADD_FOURIER ) THEN
@@ -1694,8 +2020,7 @@
               DO I = 1, NSTREAMS
                 DO J = 1, NSTREAMS
                   VBRDF_Sup_Out%BS_BRDF_F(M,Q,I,J) = &
-                  VBRDF_Sup_Out%BS_BRDF_F(M,Q,I,J) &
-                  + BRDF_FACTORS(K) * LOCAL_BRDF_F(Q,I,J)
+                  VBRDF_Sup_Out%BS_BRDF_F(M,Q,I,J) + BRDF_FACTORS(K) * LOCAL_BRDF_F(Q,I,J)
                 ENDDO
               ENDDO
             ENDDO
@@ -1757,17 +2082,18 @@
             ENDIF
 
 !  Total emissivities
+!  VErsion 2.7, Surely need BRDF factors..........
 
             IF ( DO_SURFACE_EMISSION .AND. M .EQ. 0 ) THEN
               DO Q = 1, NSTOKES
                 DO I = 1, NSTREAMS
                   VBRDF_Sup_Out%BS_EMISSIVITY(Q,I) = &
-                  VBRDF_Sup_Out%BS_EMISSIVITY(Q,I) - LOCAL_EMISSIVITY(Q,I)
+                  VBRDF_Sup_Out%BS_EMISSIVITY(Q,I) - BRDF_FACTORS(K) * LOCAL_EMISSIVITY(Q,I)
                 ENDDO
                 IF ( DO_USER_STREAMS ) THEN
                   DO UI = 1, N_USER_STREAMS
                     VBRDF_Sup_Out%BS_USER_EMISSIVITY(Q,UI) = &
-                    VBRDF_Sup_Out%BS_USER_EMISSIVITY(Q,UI) - LOCAL_USER_EMISSIVITY(Q,UI)
+                    VBRDF_Sup_Out%BS_USER_EMISSIVITY(Q,UI) - BRDF_FACTORS(K) * LOCAL_USER_EMISSIVITY(Q,UI)
                   ENDDO
                 ENDIF
               ENDDO
@@ -1788,6 +2114,97 @@
 !  End kernel loop
 
       ENDDO
+
+!  Now perform normalizations and scaling with White-sky or Black-sky albedos. New section, 02-15 April 2014
+!  =========================================================================================================
+
+!  only if flagged.
+
+      IF ( DO_WSA_SCALING .or. DO_BSA_SCALING ) THEN
+
+!  set scaling factor
+
+         if ( DO_WSA_SCALING ) then
+            SCALING = WSA_VALUE / TOTAL_WSA_CALC
+         else
+            SCALING = BSA_VALUE / TOTAL_BSA_CALC
+         endif
+
+!  BRDF Scaling : Start loop over matrix entries
+!  ---------------------------------------------
+
+         DO Q = 1, NSTOKESSQ
+
+!  Exact Direct Beam BRDF  !@@ Observational Geometry, Optionalities 12/31/12
+
+            IF ( DO_USER_OBSGEOMS ) THEN
+               VBRDF_Sup_Out%BS_EXACTDB_BRDFUNC(Q,LUM,LUA,1:NBEAMS) = &
+                     SCALING * VBRDF_Sup_Out%BS_EXACTDB_BRDFUNC(Q,LUM,LUA,1:NBEAMS)
+            ELSE
+               VBRDF_Sup_Out%BS_EXACTDB_BRDFUNC(Q,1:N_USER_STREAMS,1:N_USER_RELAZMS,1:NBEAMS) = &
+                     SCALING * VBRDF_Sup_Out%BS_EXACTDB_BRDFUNC(Q,1:N_USER_STREAMS,1:N_USER_RELAZMS,1:NBEAMS)
+            ENDIF
+
+!  Fourier terms
+
+            IF ( .not. DO_EXACTONLY ) THEN
+               DO M = 0, NMOMENTS
+!        quadrature-quadrature    reflectance
+                  VBRDF_Sup_Out%BS_BRDF_F(M,Q,1:nstreams,1:nstreams) = &
+                   SCALING * VBRDF_Sup_Out%BS_BRDF_F(M,Q,1:nstreams,1:nstreams)
+!        Solar-quadrature         reflectance
+                  IF ( DO_SOLAR_SOURCES ) THEN
+                     VBRDF_Sup_Out%BS_BRDF_F_0(M,Q,1:nstreams,1:NBEAMS) = &
+                        SCALING * VBRDF_Sup_Out%BS_BRDF_F_0(M,Q,1:nstreams,1:NBEAMS) 
+                 ENDIF
+!        Quadrature-to-Userstream reflectance
+                  IF ( DO_USER_STREAMS ) THEN
+                     VBRDF_Sup_Out%BS_USER_BRDF_F(M,Q,1:N_USER_STREAMS,1:nstreams) = &
+                       SCALING * VBRDF_Sup_Out%BS_USER_BRDF_F(M,Q,1:N_USER_STREAMS,1:nstreams) 
+                  ENDIF
+!        Solar-to-Userstream      reflectance
+                  IF ( DO_USER_STREAMS.and.DO_SOLAR_SOURCES ) THEN
+                     IF ( DO_USER_OBSGEOMS ) THEN
+                        VBRDF_Sup_Out%BS_USER_BRDF_F_0(M,Q,LUM,1:NBEAMS) = &
+                         SCALING * VBRDF_Sup_Out%BS_USER_BRDF_F_0(M,Q,LUM,1:NBEAMS) 
+                     ELSE
+                       VBRDF_Sup_Out%BS_USER_BRDF_F_0(M,Q,1:N_USER_STREAMS,1:NBEAMS) = &
+                         SCALING * VBRDF_Sup_Out%BS_USER_BRDF_F_0(M,Q,1:N_USER_STREAMS,1:NBEAMS) 
+                     ENDIF
+                  ENDIF
+               ENDDO
+            ENDIF
+
+!  End reflectance Matrix Loop
+
+         ENDDO
+
+!  Emissivity scaling. Unscaled Emissivity will be < 0
+ 
+         IF ( DO_SURFACE_EMISSION ) THEN
+            DO Q = 1, NSTOKES
+               VBRDF_Sup_Out%BS_EMISSIVITY(Q,1:nstreams) = &
+                    ONE + SCALING * VBRDF_Sup_Out%BS_EMISSIVITY(Q,1:nstreams)
+               IF ( DO_USER_STREAMS ) THEN
+                  VBRDF_Sup_Out%BS_USER_EMISSIVITY(Q,1:N_USER_STREAMS) = &
+                       ONE + SCALING * VBRDF_Sup_Out%BS_USER_EMISSIVITY(Q,1:N_USER_STREAMS) 
+               ENDIF
+            ENDDO
+         ENDIF
+
+!  End WSA/BSA scaling option
+
+      ENDIF
+
+!  Continuation point for Error Finish from Consistency Check of WSA or BSA calculated values
+
+899   continue
+
+!  write Exception handling to output structure
+
+      VBRDF_Sup_OutputStatus%BS_STATUS_OUTPUT   = STATUS
+      VBRDF_Sup_OutputStatus%BS_NOUTPUTMESSAGES = NMESSAGES
+      VBRDF_Sup_OutputStatus%BS_OUTPUTMESSAGES  = MESSAGES
 
 !  Finish
 

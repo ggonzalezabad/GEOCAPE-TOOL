@@ -30,13 +30,17 @@
 ! #  Release Date :   October 2010   (2.4RTC)                   #
 ! #  Release Date :   March 2011     (2.5)                      #
 ! #  Release Date :   May 2012       (2.6)                      #
+! #  Release Date :   May 2014       (2.7)                      #
 ! #                                                             #
-! #       NEW: TOTAL COLUMN JACOBIANS         (2.4)             #
-! #       NEW: BPDF Land-surface KERNELS      (2.4R)            #
-! #       NEW: Thermal Emission Treatment     (2.4RT)           #
-! #       Consolidated BRDF treatment         (2.4RTC)          #
-! #       f77/f90 Release                     (2.5)             #
-! #       External SS / New I/O Structures    (2.6)             #
+! #       NEW: TOTAL COLUMN JACOBIANS          (2.4)            #
+! #       NEW: BPDF Land-surface KERNELS       (2.4R)           #
+! #       NEW: Thermal Emission Treatment      (2.4RT)          #
+! #       Consolidated BRDF treatment          (2.4RTC)         #
+! #       f77/f90 Release                      (2.5)            #
+! #       External SS / New I/O Structures     (2.6)            #
+! #                                                             #
+! #       Surface-leaving, BRDF Albedo-scaling (2.7)            # 
+! #       Taylor series, Black-body Jacobians  (2.7)            #
 ! #                                                             #
 ! ###############################################################
 
@@ -114,10 +118,27 @@ end type VBRDF_Sup_Outputs
 ! #####################################################################
 ! #####################################################################
 
+      TYPE VBRDF_Output_Exception_Handling
+
+!  Exception handling for Output. New code, 02 April 2014
+!     Message Length should be at least 120 Characters
+
+      INTEGER      :: BS_STATUS_OUTPUT
+      INTEGER      :: BS_NOUTPUTMESSAGES
+
+      CHARACTER (Len=120), dimension(0:MAX_MESSAGES)  :: BS_OUTPUTMESSAGES
+
+
+      END TYPE VBRDF_Output_Exception_Handling
+
+! #####################################################################
+! #####################################################################
+
 !  EVERYTHING PUBLIC HERE
 
    PRIVATE
-   PUBLIC :: VBRDF_Sup_Outputs, &
-             VBRDF_Input_Exception_Handling
+   PUBLIC :: VBRDF_Sup_Outputs,              &
+             VBRDF_Input_Exception_Handling, &
+             VBRDF_Output_Exception_Handling
 
 end module VBRDF_Sup_Outputs_def
