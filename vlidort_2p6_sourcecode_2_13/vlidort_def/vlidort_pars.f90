@@ -19,7 +19,7 @@
 ! #  Email :       rtsolutions@verizon.net                      #
 ! #                                                             #
 ! #  Versions     :   2.0, 2.2, 2.3, 2.4, 2.4R, 2.4RT, 2.4RTC,  #
-! #                   2.5, 2.6                                  #
+! #                   2.5, 2.6, 2.7                             #
 ! #  Release Date :   December 2005  (2.0)                      #
 ! #  Release Date :   March 2007     (2.2)                      #
 ! #  Release Date :   October 2007   (2.3)                      #
@@ -29,13 +29,17 @@
 ! #  Release Date :   October 2010   (2.4RTC)                   #
 ! #  Release Date :   March 2011     (2.5)                      #
 ! #  Release Date :   May 2012       (2.6)                      #
+! #  Release Date :   May 2014       (2.7)                      #
 ! #                                                             #
-! #       NEW: TOTAL COLUMN JACOBIANS         (2.4)             #
-! #       NEW: BPDF Land-surface KERNELS      (2.4R)            #
-! #       NEW: Thermal Emission Treatment     (2.4RT)           #
-! #       Consolidated BRDF treatment         (2.4RTC)          #
-! #       f77/f90 Release                     (2.5)             #
-! #       External SS / New I/O Structures    (2.6)             #
+! #       NEW: TOTAL COLUMN JACOBIANS          (2.4)            #
+! #       NEW: BPDF Land-surface KERNELS       (2.4R)           #
+! #       NEW: Thermal Emission Treatment      (2.4RT)          #
+! #       Consolidated BRDF treatment          (2.4RTC)         #
+! #       f77/f90 Release                      (2.5)            #
+! #       External SS / New I/O Structures     (2.6)            #
+! #                                                             #
+! #       Surface-leaving, BRDF Albedo-scaling (2.7)            # 
+! #       Taylor series, Black-body Jacobians  (2.7)            #
 ! #                                                             #
 ! ###############################################################
 
@@ -63,7 +67,7 @@
 !  Version number
 !  ==============
 
-      CHARACTER (LEN=5), PARAMETER :: VLIDORT_VERSION_NUMBER = '2.6'
+      CHARACTER (LEN=5), PARAMETER :: VLIDORT_VERSION_NUMBER = '2.7'
 
 !  File i/o unit numbers
 !  ======================
@@ -83,11 +87,11 @@
 
 !  Number of computational streams in the half-space
 
-      INTEGER, PARAMETER :: MAXSTREAMS = 10
+      INTEGER, PARAMETER :: MAXSTREAMS = 48
 
 !  Maximum number of computational layers
 
-      INTEGER, PARAMETER :: MAXLAYERS = 51
+      INTEGER, PARAMETER :: MAXLAYERS = 26
 
 !  Maximum number of fine layers used in single scattering corrections
 
@@ -108,11 +112,11 @@
 
 !  Maximum number of solar zenith angles
 
-      INTEGER, PARAMETER :: MAX_SZANGLES = 7
+      INTEGER, PARAMETER :: MAX_SZANGLES = 5
 
 !  maximum number of user-defined viewing zenith angles
 
-      INTEGER, PARAMETER :: MAX_USER_VZANGLES = 7
+      INTEGER, PARAMETER :: MAX_USER_VZANGLES = 5
 
 !  maximum number of user-defined output relative azimuth angles
 
@@ -131,6 +135,12 @@
 !   This must be less than or equal to the previous entry
 
       INTEGER, PARAMETER :: MAX_PARTLAYERS = 4
+
+!  Version 2p7. Maximum number of Terms for Taylor series expansions
+!    If you are retaining contributions of order EPS^n, 
+!    then you need at least n+2 Taylor terms
+
+   INTEGER, PARAMETER :: MAX_TAYLOR_TERMS = 7
 
 !  Fixed parameters
 !  ----------------
@@ -164,12 +174,17 @@
       INTEGER, PARAMETER :: max_msrs_muquad  = 50
       INTEGER, PARAMETER :: max_msrs_phiquad = 100
 
+!  Number of quadrature streams for internal WSA/BSA scaling
+!    New, Version 2.7. User does not need to know this value.
+
+      INTEGER, parameter :: MAXSTREAMS_SCALING = 24
+
 !  Weighting functions
 !  -------------------
 
 !  Maximum number of profile/column weighting functions
 
-      INTEGER, PARAMETER :: MAX_ATMOSWFS = 8
+      INTEGER, PARAMETER :: MAX_ATMOSWFS = 2
 
 !  Maximum number of surface property weighting functions
 
@@ -348,6 +363,11 @@
         SMALLNUM = 1.0D-15
       DOUBLE PRECISION, PARAMETER :: &
         BIGEXP = 32.0D0
+
+!  Rob fix 5/6/13 - Taylor series limiting values
+
+      DOUBLE PRECISION, PARAMETER :: TAYLOR_SMALL = 1.0D-04
+      DOUBLE PRECISION, PARAMETER :: TAYLOR_LARGE = 1.0d+04
 
 !  Control for Using L'Hopital's Rule
 !   Changed, January 2009 for Version 2.4..........

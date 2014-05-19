@@ -74,7 +74,8 @@ include $(VLIDORT_VSUP_PATH)/makefile.vsup
 
 SUP_SOURCES +=                \
    $(VBRDF_LINSUP_SOURCES)    \
-   $(VSLEAVE_LINSUP_SOURCES)
+   $(VSLEAVE_LINSUP_SOURCES)  \
+   $(VLIDORT_MAIN_PATH)/vlidort_sup_accessories.f90
 
 F90SOURCES := $(notdir $(filter %.f90, $(SOURCES)))
 F90L_SOURCES := $(notdir $(filter %.f90, $(L_SOURCES)))
@@ -167,7 +168,8 @@ include $(VLIDORT_VSUP_PATHG)/makefile.vsup
 
 SUP_SOURCESG += \
    $(VBRDF_LINSUP_SOURCESG)    \
-   $(VSLEAVE_LINSUP_SOURCESG)
+   $(VSLEAVE_LINSUP_SOURCESG)  \
+   $(VLIDORT_MAIN_PATHG)/vlidort_sup_accessories.f90
 
 F90SOURCESG := $(notdir $(filter %.f90, $(SOURCESG)))
 F90L_SOURCESG := $(notdir $(filter %.f90, $(L_SOURCESG)))
