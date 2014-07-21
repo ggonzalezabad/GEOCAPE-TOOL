@@ -55,6 +55,8 @@ subroutine netcdf_wrt ( fname,        & !Filename
      flux, qflux, uflux,              & !Total flux
      direct_flux, qdirect_flux,       & !Direct flux
      udirect_flux,                    & !Direct flux
+     brdf, nsq,                       & !Results from VBRDF supplement
+     do_brdf,                         & !Results from VBRDF supplement
      message, fail)   
   
   implicit none
@@ -66,6 +68,7 @@ subroutine netcdf_wrt ( fname,        & !Filename
   character(len=256), intent(in)                  :: fname                   !Filename
   integer(kind=4),    intent(in)                  :: nw, nz, ngas            !Number of lamdas, number of layers and number of gases
   integer(kind=4),    intent(in)                  :: nsza, nvza, naza, ngeom !Number of solar zenith angles, viewing zenith angles, azimuth angles and geometries
+  integer(kind=4),    intent(in)                  :: nsq                     !Number of stokes square
   integer(kind=4),    intent(in)                  :: nstreams, aercld_nmoms  !Number of streams and aerosols/clouds moments
   integer(kind=4),    intent(in)                  :: year, month, day
   character(len=4),   intent(in), dimension(ngas) :: gases                   !Name of gas, possible problem with string length
@@ -82,6 +85,8 @@ subroutine netcdf_wrt ( fname,        & !Filename
                                                      lam_dfw                 !lambda delta
   real(kind=8), intent(in)                        :: aer_reflam, cld_reflam  !Aerosol and cloud reference wavelength
   real(kind=8), dimension(nw), intent(in)         :: ws, surfalb             !Wavelengths and surface albedo
+  real(kind=8), dimension(nsq,nvza,naza,nsza), &
+                               intent(in)         :: brdf                    !BRDF
   real(kind=8), dimension(nw,nz), intent(in)      :: aods, assas, cods, &    !Aerosol optical depth, single scattering albedo, cloud optical depth
                                                      cssas, ods, ssas        !cloud single scattering albedo, optical depth and single scattering albedo
   real(kind=8), intent(in)                        :: windspeed               !Wind speed
@@ -96,7 +101,8 @@ subroutine netcdf_wrt ( fname,        & !Filename
                           do_norm_WFoutput, do_norm_radiance,  &
                           use_lambertian, do_lambertian_cld,   &
                           do_upwelling, do_effcrs,             &
-                          use_wavelength, use_solar_photons
+                          use_wavelength, use_solar_photons,   &
+                          do_brdf
 
   real(kind=8), dimension(nw),       intent(in) :: irradiance     !Solar spectrum
 
@@ -146,17 +152,17 @@ subroutine netcdf_wrt ( fname,        & !Filename
   !     Local variables
   !=================================
   integer :: ncid, rcode, nlen, i
-  integer :: szadim, vzadim, azadim, gasdim, lvldim, laydim, wavdim, geodim
+  integer :: szadim, vzadim, azadim, gasdim, lvldim, laydim, wavdim, geodim, nsqdim
   integer :: szaid, vzaid, azaid, gasid, lvlid, wavid, psid, tsid, airid, &
        aer0id, cld0id, radid, qid, uid, irradid, sfcid, sfcwfid, wswfid, cfracwfid, &
        sfcprswfid, aodwfid, assawfid, codwfid, cssawfid, sfcqwfid, wsqwfid, cfracqwfid, &
        sfcprsqwfid, aodqwfid, assaqwfid, codqwfid, cssaqwfid, sfcuwfid, wsuwfid, cfracuwfid,&
        sfcprsuwfid, aoduwfid, assauwfid, coduwfid, cssauwfid, gascolid, aodsid, assasid, &
        codsid, cssasid, scatwtid, odsid, ssasid, amfid, gaswfid, gasqwfid, &
-       gasuwfid, tempwfid, fluxid, dfluxid, qfluxid, ufluxid, qdfluxid, udfluxid
+       gasuwfid, tempwfid, fluxid, dfluxid, qfluxid, ufluxid, qdfluxid, udfluxid, brdfid
   integer, dimension(2)    :: gascol_dims, wavalt_dims, wavgas_dims, wavgeo_dims
   integer, dimension(3)    :: wavaltgeo_dims, wavgeogas_dims
-  integer, dimension(4)    :: wavaltgeogas_dims
+  integer, dimension(4)    :: wavaltgeogas_dims, brdfdim
   integer, dimension(ngas) :: gas_indices
   integer, dimension(1)    :: ndimstart1, ndimcount1
   integer, dimension(2)    :: ndimstart2, ndimcount2
@@ -182,6 +188,7 @@ subroutine netcdf_wrt ( fname,        & !Filename
   laydim  = ncddef (ncid, 'nlayer', nz,    rcode)
   wavdim  = ncddef (ncid, 'nw',     nw,    rcode)
   geodim  = ncddef (ncid, 'ngeom',  ngeom, rcode)
+  nsqdim  = ncddef (ncid, 'nstokessq', nsq, rcode)
   
   !=============================================================================
   ! Create the coordinate (aka independent) variables:
@@ -206,6 +213,8 @@ subroutine netcdf_wrt ( fname,        & !Filename
 
   wavaltgeogas_dims(1) = wavdim; wavaltgeogas_dims(2) = laydim
   wavaltgeogas_dims(3) = geodim; wavaltgeogas_dims(4) = gasdim
+
+  brdfdim(1) = nsqdim; brdfdim(2) = vzadim; brdfdim(3)=azadim; brdfdim(4) = szadim
 
   !=============================================================================
   ! Create the dependent variables:
@@ -357,6 +366,11 @@ subroutine netcdf_wrt ( fname,        & !Filename
         gasuwfid = ncvdef(ncid,  'gas_ujac', ncfloat, 4, wavaltgeogas_dims, rcode)
      endif
   endif
+
+  ! variables with 4d, nsqdim, nvza, naza, nsza
+  if (do_brdf) then
+     brdfid = ncvdef(ncid, 'BRDF', ncfloat, 4, brdfdim, rcode)
+  endif
   
   !=============================================================================
   ! Assign attributes (meta-data) to the various variables:
@@ -496,6 +510,11 @@ subroutine netcdf_wrt ( fname,        & !Filename
      call ncapt (ncid, ncglobal, 'do_cld_columnwf', ncbyte, 1, 1, rcode)
   else
      call ncapt (ncid, ncglobal, 'do_cld_columnwf', ncbyte, 1, 0, rcode)
+  endif                            
+  if (do_brdf) then
+     call ncapt (ncid, ncglobal, 'do_brdf', ncbyte, 1, 1, rcode)
+  else
+     call ncapt (ncid, ncglobal, 'do_brdf', ncbyte, 1, 0, rcode)
   endif                            
      
   ! write the list of gases in one string
@@ -724,7 +743,14 @@ subroutine netcdf_wrt ( fname,        & !Filename
         call ncvpt (ncid, gasuwfid, ndimstart4, ndimcount4, real(Gas_UJacobian, kind=4), rcode)  
      endif
   endif
-  
+
+  ! 4d variables, nsqdim, vzadim, azadim, szadim
+  ndimstart4 = (/ 1, 1, 1, 1 /)
+  ndimcount4 = (/ nsq, nvza, naza, nsza /) 
+  if (do_brdf) then
+     call ncvpt (ncid, brdfid, ndimstart4, ndimcount4, real(brdf, kind=4), rcode)  
+  endif
+
   !==============================================================================
   ! CLOSE the NetCDF file
   !==============================================================================

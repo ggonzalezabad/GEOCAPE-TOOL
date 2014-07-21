@@ -25,21 +25,21 @@ MODULE GC_surface_module
     ! Code starts here
     ! ----------------
     ! -----------------------------------------------------------
-    ! Surface BRDF + Lambertian cloud surface not implemented yet
-    ! Force to use lambertian ground surface
+    ! Only taking into account the Lambertian part of the surface
+    ! the BRDF option is done in geocape_tool_v2p6 using the BRDF
+    ! supplement.
     ! -----------------------------------------------------------
-    IF (do_clouds .AND. do_lambertian_cld .AND. cfrac .GT. 0.0d0 &
-         .AND. .NOT. use_lambertian) use_lambertian = .TRUE.
+!!$    IF (do_clouds .AND. do_lambertian_cld .AND. cfrac .GT. 0.0d0 &
+!!$         .AND. .NOT. use_lambertian) use_lambertian = .TRUE.
     
     IF (use_lambertian) THEN
        IF (do_clouds .AND. do_lambertian_cld .AND. cfrac .GE. 1.0d0) THEN 
-          ! surface alb wf = cld albedo wf
           ground_ler(1:nlambdas) = lambertian_cldalb
        ELSE IF (use_fixedalbedo) THEN  ! Used fixed albedo from input file
           ground_ler(1:nlambdas) = fixed_albedo
        ELSE   
           tmpwaves(1:nlambdas) = lambdas(1:nlambdas)
-          IF (.NOT. use_wavelength) CALL reverse(tmpwaves(1:nlambdas), nlambdas)                              
+          IF (.NOT. use_wavelength) CALL reverse(tmpwaves(1:nlambdas), nlambdas)
           IF (use_albspectra) THEN     ! Used albedo reflectance spectra
              
              albspectra_fname = TRIM(ADJUSTL(database_dir)) // '/ReflSpectra/'
@@ -47,7 +47,7 @@ MODULE GC_surface_module
                   ( albspectra_fname, maxlambdas, nlambdas, tmpwaves,  & ! inputs
                   ground_ler,  messages(nmessages+1), error ) ! outputs, exception handling
           ELSE                         ! Use TEMIS data
-             surface_data_path = TRIM(ADJUSTL(database_dir)) // '/TEMIS_reflectances/TEMIS/'           
+             surface_data_path = TRIM(ADJUSTL(database_dir)) // '/TEMIS_reflectances/TEMIS/' 
              CALL geocape_surface_setter_1 &
                   ( surface_data_path, latitude, longitude, month, & ! inputs
                   maxlambdas, nlambdas, tmpwaves,                  & ! inputs

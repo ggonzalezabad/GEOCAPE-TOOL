@@ -16,11 +16,7 @@ Database directory
 # Profile data filename
 # ---------------------
 Profile data filename
-/data/tropo/chliu/acam_profile/no2albedo_combidx/no2_vlidort246_Atmoshperes_29_08022_39.5680_-76.3000_72.8820_11.4900_149.110_0.0590
-#/home/ggonzale/johan_amfs/johan2.dat
-#/home/ggonzale/johan_amfs/johan2.dat
-#/data/dumbo/gonzalo/AMFcomputations/Computations/AMF/Make_Atmospheres/Atmospheres/gcsim_2007071519_1710-97.5W38.0N_atmosprof.dat
-#/data/scibo/xliu/TEMPO/GCSIM/20070715/UTC19/gcsim_2007071519_1710-97.5W38.0N_atmosprof.dat
+/data/tempo2/ggonzale/Lei_AMF/lei.dat
 
 # ------------------------------------------
 # Use footprint info in atmospheric profile:
@@ -43,7 +39,7 @@ debug_geocape_tool.log
 # Do vector calculation, logical T/F
 # ----------------------------------
 Vector calculation
-T
+F
 
 # --------------------------------
 # Do Stokes QU output, logical T/F
@@ -106,7 +102,7 @@ T
 # Use effective cross sections, logical T/F
 # -----------------------------------------
 Effective cross sections
-T
+F
 
 # -----------------------------------------------------------
 # Spectral input:
@@ -116,7 +112,7 @@ T
 # -----------------------------------------------------------
 Spectral
 T
-320.00d0 360.00d0 0.5d0
+360.00d0 360.00d0 0.5d0
 1.0d0 0.1d0
 
 # ----------------------------------------------------------
@@ -142,7 +138,7 @@ O3
 #   5. Wind speed
 # -----------------------------------------------------------------------
 Albedo
-T T
+F T
 0.03d0
 F
 grass_ASTER.dat
@@ -180,7 +176,7 @@ Number of moments
 # Number of streams
 # -----------------
 Streams
-4
+8
 
 # ---------------------------
 # Sun positions:

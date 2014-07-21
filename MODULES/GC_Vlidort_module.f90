@@ -57,7 +57,8 @@ MODULE GC_Vlidort_module
                                  GC_cfrac_QJacobians, GC_cfrac_UJacobians, GC_flux,            &
                                  GC_direct_flux, GC_Qflux, GC_Uflux, GC_Qdirect_flux,          &
                                  GC_Udirect_flux, VBRDF_Sup_Out, VBRDF_LinSup_Out,             &
-                                 VLIDORT_Sup, VLIDORT_LinSup
+                                 VLIDORT_Sup, VLIDORT_LinSup, VBRDF_Sup_In, Total_brdf, GCM,   &
+                                 NSTOKESSQ, do_brdf_surface
   USE GC_error_module
 
   IMPLICIT NONE
@@ -291,70 +292,83 @@ CONTAINS
        VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT = aercld_nmoments_input
     ENDIF
     
-    ! Lambertian surface
+    ! --------------------------
+    ! BRDF or Lambertian surface
+    ! --------------------------
     !    -- Kernel settings are automatic, but we'll put them here
     !    -- Actual Albedo comes from the data extraction, see later on.
+    ! -----------------------------------------------------------------
     VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE = use_lambertian 
     !   LAMBERTIAN_ALBEDO     = Will be set in Wavelength loop
-    VBRDF_Sup_In%BS_DO_BRDF_SURFACE = .NOT. use_lambertian
-    
-    IF (VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE) THEN
-       VBRDF_Sup_In%BS_N_BRDF_KERNELS            = 1
-       VBRDF_Sup_In%BS_LAMBERTIAN_KERNEL_FLAG(1) = .TRUE.
-       VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS   = .FALSE.
-       ! Other BRDF surface options turned off
-       VBRDF_Sup_In%BS_NSTREAMS_BRDF    = 0
-       VBRDF_Sup_In%BS_DO_SHADOW_EFFECT = .FALSE.
-       VBRDF_Sup_In%BS_BRDF_FACTORS     = 0.0d0
-       VBRDF_Sup_In%BS_BRDF_PARAMETERS  = 0.0d0
-    ELSE
-       VBRDF_Sup_In%BS_N_BRDF_KERNELS            = 1
-       VBRDF_Sup_In%BS_LAMBERTIAN_KERNEL_FLAG(1) = .FALSE.
-       VBRDF_Sup_In%BS_NSTREAMS_BRDF             = 50
-       VBRDF_Sup_In%BS_DO_SHADOW_EFFECT     = .FALSE.
-       VBRDF_Sup_In%BS_BRDF_NAMES(1)        = 'GCMcomplex'
-       VBRDF_Sup_In%BS_WHICH_BRDF(1)         = GISSCOXMUNK_CRI_IDX
-       VBRDF_Sup_In%BS_WHICH_BRDF(1)        = 11
-       VBRDF_Sup_In%BS_BRDF_FACTORS(1)      = 1.0d0
-       VBRDF_Sup_In%BS_N_BRDF_PARAMETERS(1) = 3
-       VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,1) = wind_speed
-       VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,1) = 0.5d0*(0.003d0+0.00512d0* &
-            VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,1))
+    ! Security check, if TS_DO_LAMBERTIAN and BS_DO_BRDF_SURFACE are
+    ! not compatible, stop program and print message to screen
+    IF ( VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE .EQV. &
+         VBRDF_Sup_In%BS_DO_BRDF_SURFACE ) THEN
+       WRITE(*,*) 'Or you have a Lambertian Surface or you have '//&
+            'BRDF surface but not both. Check input files.'
+       STOP
     ENDIF
+       
+!!$    VBRDF_Sup_In%BS_DO_BRDF_SURFACE = .NOT. use_lambertian
+    
+!!$    IF (VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE) THEN
+!!$       VBRDF_Sup_In%BS_N_BRDF_KERNELS            = 1
+!!$       VBRDF_Sup_In%BS_LAMBERTIAN_KERNEL_FLAG(1) = .TRUE.
+!!$       VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS   = .FALSE.
+!!$       ! Other BRDF surface options turned off
+!!$       VBRDF_Sup_In%BS_NSTREAMS_BRDF    = 0
+!!$       VBRDF_Sup_In%BS_DO_SHADOW_EFFECT = .FALSE.
+!!$       VBRDF_Sup_In%BS_BRDF_FACTORS     = 0.0d0
+!!$       VBRDF_Sup_In%BS_BRDF_PARAMETERS  = 0.0d0
+!!$    ENDIF
+!!$    ELSE
+!!$       VBRDF_Sup_In%BS_N_BRDF_KERNELS            = 1
+!!$       VBRDF_Sup_In%BS_LAMBERTIAN_KERNEL_FLAG(1) = .FALSE.
+!!$       VBRDF_Sup_In%BS_NSTREAMS_BRDF             = 50
+!!$       VBRDF_Sup_In%BS_DO_SHADOW_EFFECT     = .FALSE.
+!!$       VBRDF_Sup_In%BS_BRDF_NAMES(1)        = 'GCMcomplex'
+!!$       VBRDF_Sup_In%BS_WHICH_BRDF(1)         = GISSCOXMUNK_CRI_IDX
+!!$       VBRDF_Sup_In%BS_WHICH_BRDF(1)        = 11
+!!$       VBRDF_Sup_In%BS_BRDF_FACTORS(1)      = 1.0d0
+!!$       VBRDF_Sup_In%BS_N_BRDF_PARAMETERS(1) = 3
+!!$       VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,1) = wind_speed
+!!$       VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,1) = 0.5d0*(0.003d0+0.00512d0* &
+!!$            VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,1))
+!!$    ENDIF
     
     ! Set the linearization control for surface (albedo) linearization
     IF (VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE) THEN
        IF ( do_JACOBIANS ) THEN
           VLIDORT_LinModIn%MCont%TS_DO_SURFACE_LINEARIZATION = .TRUE.
-          VBRDF_LinSup_In%BS_do_kernel_factor_wfs(1)         = .TRUE.
-          !        surfacewf_names(1)       = '--Lambertian albedo---' Not in version 2.6 gga
-          VBRDF_LinSup_In%BS_N_SURFACE_WFS       = 1
+!!$          VBRDF_LinSup_In%BS_do_kernel_factor_wfs(1)         = .TRUE.
+!!$          !        surfacewf_names(1)       = '--Lambertian albedo---' Not in version 2.6 gga
+!!$          VBRDF_LinSup_In%BS_N_SURFACE_WFS       = 1
           VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS = 1
        ELSE
           VLIDORT_LinModIn%MCont%TS_DO_SURFACE_LINEARIZATION = .FALSE.
-          VBRDF_LinSup_In%BS_do_kernel_factor_WFS            = .FALSE.
+!!$          VBRDF_LinSup_In%BS_do_kernel_factor_WFS            = .FALSE.
        END IF
     ELSE
        IF ( DO_JACOBIANS ) THEN
           VLIDORT_LinModIn%MCont%TS_DO_SURFACE_LINEARIZATION = .TRUE.
-          VBRDF_LinSup_In%BS_DO_KERNEL_factor_WFS(1)         = .FALSE.
-          VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS(1,1)       = .TRUE.
-          VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS(1,2)       = .FALSE.
-          VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS(1,3)       = .FALSE.
-          VBRDF_LinSup_In%BS_DO_KPARAMS_DERIVS(1)            = .TRUE.      ! strictly not necessary; supplement takes care of this derived quantity
-          !        surfacewf_names(1)       = '--Wind Speed---' Not in version 2.6 gga
-          VBRDF_LinSup_In%BS_n_KERNEL_FACTOR_WFS = 0
-          VBRDF_LinSup_In%BS_n_KERNEL_PARAMS_WFS = 1
-          VBRDF_LinSup_In%BS_N_SURFACE_WFS       = 1
+!!$          VBRDF_LinSup_In%BS_DO_KERNEL_factor_WFS(1)         = .FALSE.
+!!$          VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS(1,1)       = .TRUE.
+!!$          VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS(1,2)       = .FALSE.
+!!$          VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS(1,3)       = .FALSE.
+!!$          VBRDF_LinSup_In%BS_DO_KPARAMS_DERIVS(1)            = .TRUE.      ! strictly not necessary; supplement takes care of this derived quantity
+!!$          !        surfacewf_names(1)       = '--Wind Speed---' Not in version 2.6 gga
+!!$          VBRDF_LinSup_In%BS_n_KERNEL_FACTOR_WFS = 0
+!!$          VBRDF_LinSup_In%BS_n_KERNEL_PARAMS_WFS = 1
+!!$          VBRDF_LinSup_In%BS_N_SURFACE_WFS       = 1
           VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS = 1
        ELSE
           VLIDORT_LinModIn%MCont%TS_DO_SURFACE_LINEARIZATION = .FALSE.
-          VBRDF_LinSup_In%BS_DO_KERNEL_FACTOR_WFS            = .FALSE.
-          VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS            = .FALSE.
-          VBRDF_LinSup_In%BS_DO_KPARAMS_DERIVS               = .FALSE.
-          VBRDF_LinSup_In%BS_N_KERNEL_FACTOR_WFS             = 0
-          VBRDF_LinSup_In%BS_N_KERNEL_PARAMS_WFS             = 0
-          VBRDF_LinSup_In%BS_N_SURFACE_WFS                   = 0
+!!$          VBRDF_LinSup_In%BS_DO_KERNEL_FACTOR_WFS            = .FALSE.
+!!$          VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS            = .FALSE.
+!!$          VBRDF_LinSup_In%BS_DO_KPARAMS_DERIVS               = .FALSE.
+!!$          VBRDF_LinSup_In%BS_N_KERNEL_FACTOR_WFS             = 0
+!!$          VBRDF_LinSup_In%BS_N_KERNEL_PARAMS_WFS             = 0
+!!$          VBRDF_LinSup_In%BS_N_SURFACE_WFS                   = 0
           VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS             = 0
        END IF
     END IF
@@ -363,13 +377,13 @@ CONTAINS
     IF ( .NOT. do_JACOBIANS ) THEN
        VLIDORT_LinFixIn%Cont%TS_DO_SIMULATION_ONLY        = .TRUE.
        VLIDORT_LinModIn%MCont%TS_DO_SURFACE_LINEARIZATION = .FALSE.
-       VBRDF_LinSup_In%BS_DO_KERNEL_FACTOR_WFS            = .FALSE.
-       VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS            = .FALSE.
-       VBRDF_LinSup_In%BS_DO_KPARAMS_DERIVS               = .FALSE.
+!!$       VBRDF_LinSup_In%BS_DO_KERNEL_FACTOR_WFS            = .FALSE.
+!!$       VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS            = .FALSE.
+!!$       VBRDF_LinSup_In%BS_DO_KPARAMS_DERIVS               = .FALSE.
        VLIDORT_LinModIn%MCont%TS_DO_PROFILE_LINEARIZATION = .FALSE.
-       VBRDF_LinSup_In%BS_N_KERNEL_FACTOR_WFS             = 0
-       VBRDF_LinSup_In%BS_N_KERNEL_PARAMS_WFS             = 0
-       VBRDF_LinSup_In%BS_N_SURFACE_WFS                   = 0
+!!$       VBRDF_LinSup_In%BS_N_KERNEL_FACTOR_WFS             = 0
+!!$       VBRDF_LinSup_In%BS_N_KERNEL_PARAMS_WFS             = 0
+!!$       VBRDF_LinSup_In%BS_N_SURFACE_WFS                   = 0
        VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS             = 0
        VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS        = 0
        VLIDORT_LinFixIn%Cont%TS_LAYER_VARY_FLAG           = .FALSE.
@@ -400,6 +414,23 @@ CONTAINS
     ! ============
     ! save results
     ! ============
+
+    ! ---------
+    ! Save BRDF
+    ! ---------
+    IF (do_brdf_surface) THEN
+       GCM = (VBRDF_Sup_In%BS_which_brdf(1) .eq. 10 .or. &
+            VBRDF_Sup_In%BS_which_brdf(2) .eq. 10 .or. &
+            VBRDF_Sup_In%BS_which_brdf(3) .eq. 10)
+       
+       if ( GCM ) then
+          NSTOKESSQ = VBRDF_Sup_In%BS_NSTOKES * VBRDF_Sup_In%BS_NSTOKES
+       else
+          NSTOKESSQ = 1
+       endif
+       Total_brdf = VLIDORT_Sup%BRDF%TS_EXACTDB_BRDFUNC
+    ENDIF
+
     ! ------------------------------------
     ! Save Radiances, flux and direct flux
     ! ------------------------------------
@@ -922,6 +953,10 @@ CONTAINS
           END IF
        END DO
     END IF
+
+    ! -----------------------------
+    ! Space for future BRDF results
+    ! -----------------------------
     
   END SUBROUTINE save_results
   
@@ -1032,30 +1067,30 @@ CONTAINS
 
     END IF
 
-    IF (.NOT. VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE) THEN
-       
-       ! ------------------------------------------------
-       ! VLIDORT variable | ** !  set the BRDF parameters
-       ! ------------------------------------------------
-       VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,2) = water_rn(w)
-       VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,3) = water_cn(w)
-       
-       !         !  Get BRDF and linearized BRDF functions         
-       !         CALL VLIDORT_BRDF_LS_MASTER                                        &
-       !              ( DO_USER_VZANGLES, DO_SHADOW_EFFECT, DO_COXMUNK_DBMS,        & ! Inputs
-       !              DO_SURFACE_EMISSION, .FALSE., NSTOKES,                        & ! Inputs
-       !              2*NSTREAMS-1, N_BRDF_KERNELS, WHICH_BRDF,                     & ! Inputs
-       !              LAMBERTIAN_KERNEL_FLAG, NSTREAMS_BRDF, BRDF_FACTORS,          & ! Inputs
-       !              N_BRDF_PARAMETERS, BRDF_PARAMETERS, BRDF_NAMES,               & ! Inputs
-       !              DO_KERNEL_PARAMS_WFS, DO_KERNEL_FACTOR_WFS, DO_KPARAMS_DERIVS,& ! Inputs
-       !              N_KERNEL_FACTOR_WFS, N_KERNEL_PARAMS_WFS, N_SURFACE_WFS,      & ! Inputs
-       !              N_SZANGLES, NSTREAMS, N_USER_VZANGLES, N_USER_RELAZMS,        & ! Inputs
-       !              SZANGLES, USER_VZANGLES, USER_RELAZMS,                        & ! Inputs
-       !              BRDF_F_0, BRDF_F, USER_BRDF_F_0, USER_BRDF_F,                 & ! Outputs
-       !              LS_BRDF_F_0, LS_BRDF_F, LS_USER_BRDF_F_0, LS_USER_BRDF_F,     & ! Outputs
-       !              EXACTDB_BRDFUNC, LS_EXACTDB_BRDFUNC,                          & ! Outputs
-       !              EMISSIVITY, USER_EMISSIVITY, LS_EMISSIVITY, LS_USER_EMISSIVITY )   ! Outputs
-    END IF    
+!!$    IF (.NOT. VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE) THEN
+!!$       
+!!$       ! ------------------------------------------------
+!!$       ! VLIDORT variable | ** !  set the BRDF parameters
+!!$       ! ------------------------------------------------
+!!$       VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,2) = water_rn(w)
+!!$       VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,3) = water_cn(w)
+!!$       
+!!$       !         !  Get BRDF and linearized BRDF functions         
+!!$       !         CALL VLIDORT_BRDF_LS_MASTER                                        &
+!!$       !              ( DO_USER_VZANGLES, DO_SHADOW_EFFECT, DO_COXMUNK_DBMS,        & ! Inputs
+!!$       !              DO_SURFACE_EMISSION, .FALSE., NSTOKES,                        & ! Inputs
+!!$       !              2*NSTREAMS-1, N_BRDF_KERNELS, WHICH_BRDF,                     & ! Inputs
+!!$       !              LAMBERTIAN_KERNEL_FLAG, NSTREAMS_BRDF, BRDF_FACTORS,          & ! Inputs
+!!$       !              N_BRDF_PARAMETERS, BRDF_PARAMETERS, BRDF_NAMES,               & ! Inputs
+!!$       !              DO_KERNEL_PARAMS_WFS, DO_KERNEL_FACTOR_WFS, DO_KPARAMS_DERIVS,& ! Inputs
+!!$       !              N_KERNEL_FACTOR_WFS, N_KERNEL_PARAMS_WFS, N_SURFACE_WFS,      & ! Inputs
+!!$       !              N_SZANGLES, NSTREAMS, N_USER_VZANGLES, N_USER_RELAZMS,        & ! Inputs
+!!$       !              SZANGLES, USER_VZANGLES, USER_RELAZMS,                        & ! Inputs
+!!$       !              BRDF_F_0, BRDF_F, USER_BRDF_F_0, USER_BRDF_F,                 & ! Outputs
+!!$       !              LS_BRDF_F_0, LS_BRDF_F, LS_USER_BRDF_F_0, LS_USER_BRDF_F,     & ! Outputs
+!!$       !              EXACTDB_BRDFUNC, LS_EXACTDB_BRDFUNC,                          & ! Outputs
+!!$       !              EMISSIVITY, USER_EMISSIVITY, LS_EMISSIVITY, LS_USER_EMISSIVITY )   ! Outputs
+!!$    END IF    
     
   END SUBROUTINE Vlidort_set_optical
 
@@ -1112,14 +1147,16 @@ CONTAINS
        ! ---------------------------
        ! Set lambertian cloud albedo
        ! ---------------------------
-       IF ( VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE ) THEN
-          IF (ic == 2 .AND. do_lambertian_cld) THEN
-             VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO = lambertian_cldalb
-          ELSE
-             VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO = ground_ler(w)
-          END IF
-          VBRDF_Sup_In%BS_BRDF_FACTORS(1) = VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO
-       END IF
+!!$       IF ( VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE ) THEN
+       IF (ic == 2 .AND. do_lambertian_cld) THEN
+          VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO  = lambertian_cldalb
+          VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE = .TRUE.
+       ENDIF
+!!$       ELSE
+!!$          VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO = ground_ler(w)
+!!$       END IF
+!!$          VBRDF_Sup_In%BS_BRDF_FACTORS(1) = VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO
+!!$    END IF
        
        ! ------------------------------------------------------------------
        ! Reset Rayleigh only flag, set if no aerosols and scattering clouds
@@ -1713,6 +1750,7 @@ CONTAINS
        stokes_flux(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, ic) = &
             VLIDORT_Out%Main%TS_FLUX_STOKES(1, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, &
             1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx)
+       
        ! ---------------------------------
        ! Copy direct flux only downwelling
        ! ---------------------------------

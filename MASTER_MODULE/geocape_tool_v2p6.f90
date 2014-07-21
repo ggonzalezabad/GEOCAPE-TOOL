@@ -105,7 +105,7 @@ program geocape_tools_v2p6
    ! -----------------------------------
    ! Save Vlidort BRDF control file name
    ! -----------------------------------
-   CALL GETARG(2, vlidort_vbrdf_control_file)
+   CALL GETARG(3, vlidort_vbrdf_control_file)
    vlidort_vbrdf_control_file = TRIM(ADJUSTL(vlidort_vbrdf_control_file))
    
    ! -----------------
@@ -337,6 +337,8 @@ program geocape_tools_v2p6
                                 VBRDF_LinSup_In,            & ! Outputs
                                 VBRDF_Sup_InputStatus )       ! Outputs
 
+   do_brdf_surface = VBRDF_Sup_In%BS_DO_BRDF_SURFACE
+
    ! -----------------------------------------------
    ! Exception handling. Use Type structure directly
    ! -----------------------------------------------
@@ -361,42 +363,45 @@ program geocape_tools_v2p6
       endif
    ENDIF
 
-   ! -----------------------------
-   ! Do not want debug restoration
-   ! -----------------------------
-   DO_DEBUG_RESTORATION = .false.
-
-   ! ---------------------------------
-   ! A normal calculation will require
-   ! ---------------------------------
-   BS_NMOMENTS_INPUT = 2 * VBRDF_Sup_In%BS_NSTREAMS - 1
-
-   ! -----------------
-   ! VLIDORT BRDF call
-   ! -----------------
-   CALL VBRDF_LIN_MAINMASTER ( &
-        DO_DEBUG_RESTORATION,    & ! Inputs
-        BS_NMOMENTS_INPUT,       & ! Inputs
-        VBRDF_Sup_In,            & ! Inputs
-        VBRDF_LinSup_In,         & ! Inputs
-        VBRDF_Sup_Out,           & ! Outputs
-        VBRDF_LinSup_Out,        & ! Outputs
-        VBRDF_Sup_OutputStatus )   ! Output Status
-
-   !  Exception handling
-   IF ( VBRDF_Sup_OutputStatus%BS_STATUS_OUTPUT .EQ. VLIDORT_SERIOUS ) THEN
-      write(*,*)'geocape_tool_v2p6: program failed, VBRDF calculation aborted'
-      write(*,*)'Here are the error messages from the VBRDF supplement : - '
-      write(*,*)' - Number of error messages = ',VBRDF_Sup_OutputStatus%BS_NOUTPUTMESSAGES
-      do i = 1, VBRDF_Sup_OutputStatus%BS_NOUTPUTMESSAGES
-         write(*,*) '  * ',adjustl(Trim(VBRDF_Sup_OutputStatus%BS_OUTPUTMESSAGES(I)))
-      enddo
-   ENDIF
-
-   ! -------------------------------------------
-   ! Copy VBRDF outputs to VLIDORT's BRDF inputs
-   ! -------------------------------------------
-   CALL VBRDF_TO_VLIDORT(yn_error)
+   IF (do_brdf_surface) THEN
+      
+      ! -----------------------------
+      ! Do not want debug restoration
+      ! -----------------------------
+      DO_DEBUG_RESTORATION = .false.
+      
+      ! ---------------------------------
+      ! A normal calculation will require
+      ! ---------------------------------
+      BS_NMOMENTS_INPUT = 2 * VBRDF_Sup_In%BS_NSTREAMS - 1
+      
+      ! -----------------
+      ! VLIDORT BRDF call
+      ! -----------------
+      CALL VBRDF_LIN_MAINMASTER ( &
+           DO_DEBUG_RESTORATION,    & ! Inputs
+           BS_NMOMENTS_INPUT,       & ! Inputs
+           VBRDF_Sup_In,            & ! Inputs
+           VBRDF_LinSup_In,         & ! Inputs
+           VBRDF_Sup_Out,           & ! Outputs
+           VBRDF_LinSup_Out,        & ! Outputs
+           VBRDF_Sup_OutputStatus )   ! Output Status
+      
+      !  Exception handling
+      IF ( VBRDF_Sup_OutputStatus%BS_STATUS_OUTPUT .EQ. VLIDORT_SERIOUS ) THEN
+         write(*,*)'geocape_tool_v2p6: program failed, VBRDF calculation aborted'
+         write(*,*)'Here are the error messages from the VBRDF supplement : - '
+         write(*,*)' - Number of error messages = ',VBRDF_Sup_OutputStatus%BS_NOUTPUTMESSAGES
+         do i = 1, VBRDF_Sup_OutputStatus%BS_NOUTPUTMESSAGES
+            write(*,*) '  * ',adjustl(Trim(VBRDF_Sup_OutputStatus%BS_OUTPUTMESSAGES(I)))
+         enddo
+      ENDIF
+      
+      ! -------------------------------------------
+      ! Copy VBRDF outputs to VLIDORT's BRDF inputs
+      ! -------------------------------------------
+      CALL VBRDF_TO_VLIDORT(yn_error)
+   END IF
 
    ! -------------------------------------------------------
    ! Read Vlidort control file and initialize control arrays
@@ -465,7 +470,6 @@ program geocape_tools_v2p6
       STOP'Checking fail: Look at file V2p6_VLIDORT_BRDFcheck.log'
    ENDIF
    
-
 !  ##################################################################
 !  ##################################################################
 !  M A I N    W A V E L E N G T H - L O O P    C A L C U L A T I O N
