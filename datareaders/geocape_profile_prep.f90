@@ -250,8 +250,8 @@ subroutine geocape_profile_setter_1                        &
       airc = 0.5d0 * const * ( rho1 + rho2 ) * (heights(n1)-heights(n))
       delp = pressures(n) - pressures(n1)
       gasconstants(n)   = airc * temp / delp
-      layertemp(n)   = temp
-      aircolumns(n)     = gasconstants(n) * delp / layertemp(n)
+      layertemp(n)      = temp
+      aircolumns(n)     = airc(n)
       daircolumns_dT(n) = - aircolumns(n) / layertemp(n)
    enddo
 
