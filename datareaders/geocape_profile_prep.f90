@@ -87,10 +87,11 @@ subroutine geocape_profile_reader_1 &
    endif
    read(1,*) dummy, dummy, itmp
    if (itmp .eq. 0) then
-      profile_is_level = 0
+      profile_is_level = .FALSE.
    else
-      profile_is_level = 1
+      profile_is_level = .TRUE.
    endif
+   stop
    read(1,*) dummy, dummy, footprint_data(1:4)  ! Year, mon, day, utc
    read(1,*) dummy, dummy, footprint_data(5:6)  ! longitude, latitude
    read(1,*) dummy, dummy, footprint_data(7:9)  ! SZA, VZA, AZA
@@ -251,7 +252,7 @@ subroutine geocape_profile_setter_1                        &
       delp = pressures(n) - pressures(n1)
       gasconstants(n)   = airc * temp / delp
       layertemp(n)      = temp
-      aircolumns(n)     = airc(n)
+      aircolumns(n)     = airc
       daircolumns_dT(n) = - aircolumns(n) / layertemp(n)
    enddo
 
