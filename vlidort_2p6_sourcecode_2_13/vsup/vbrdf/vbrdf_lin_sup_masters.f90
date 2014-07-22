@@ -641,7 +641,7 @@ MODULE vbrdf_LinSup_masters_m
           ENDDO
         ENDIF
         CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
- 56     FORMAT( A10, I2, F6.2, I2, 3F12.6 )
+ 56     FORMAT( A10, I2, F6.3, I2, 3F12.6 )
 
 !  Check Kernel indices are within bounds. Check BRDF name is on accepted list
 
