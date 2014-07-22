@@ -91,7 +91,7 @@ subroutine geocape_profile_reader_1 &
    else
       profile_is_level = .TRUE.
    endif
-   stop
+   
    read(1,*) dummy, dummy, footprint_data(1:4)  ! Year, mon, day, utc
    read(1,*) dummy, dummy, footprint_data(5:6)  ! longitude, latitude
    read(1,*) dummy, dummy, footprint_data(7:9)  ! SZA, VZA, AZA
@@ -200,7 +200,7 @@ subroutine geocape_profile_setter_1                        &
 !  help variables
 
    integer       :: i, n, n1, g, ngas_check
-   real(kind=8)  :: rho1, rho2, col, pp, delp, temp, airc
+   real(kind=8)  :: rho1, rho2, col, pp, delp, temp
 
 !  Parameters: Loschmidt's number (particles/cm3), STP parameters
 
@@ -216,7 +216,7 @@ subroutine geocape_profile_setter_1                        &
 
    fail    = .false.
    message = ' '
-
+   
 !  Set level data for P, T and H
 !    --- Convert to [km] units (height), hPa (pressures)
 
@@ -248,11 +248,10 @@ subroutine geocape_profile_setter_1                        &
       rho1 = pressures(n1)/ temperatures(n1)
       rho2 = pressures(n)/ temperatures(n)
       temp = 0.5d0 * (temperatures(n1)+temperatures(n))
-      airc = 0.5d0 * const * ( rho1 + rho2 ) * (heights(n1)-heights(n))
-      delp = pressures(n) - pressures(n1)
-      gasconstants(n)   = airc * temp / delp
+      aircolumns(n)     = 0.5d0 * const * ( rho1 + rho2 ) * (heights(n1)-heights(n))
+      delp              = pressures(n) - pressures(n1)
+      gasconstants(n)   = aircolumns(n) * temp / delp
       layertemp(n)      = temp
-      aircolumns(n)     = airc
       daircolumns_dT(n) = - aircolumns(n) / layertemp(n)
    enddo
 

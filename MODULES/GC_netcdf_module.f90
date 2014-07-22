@@ -121,7 +121,7 @@ CONTAINS
         GC_Uflux(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                                       &
         GC_direct_flux(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                                 &
         GC_Qdirect_flux(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                                &
-        GC_Udirect_flux(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                                &      
+        GC_Udirect_flux(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                                &
         Total_brdf(1:NSTOKESSQ,1:GC_n_view_angles,1:GC_n_azimuths,1:GC_n_sun_positions), NSTOKESSQ,     &
         do_brdf_surface, tmperror, error)
 
