@@ -42,7 +42,8 @@ MODULE GC_surface_module
           IF (.NOT. use_wavelength) CALL reverse(tmpwaves(1:nlambdas), nlambdas)
           IF (use_albspectra) THEN     ! Used albedo reflectance spectra
              
-             albspectra_fname = TRIM(ADJUSTL(database_dir)) // '/ReflSpectra/'
+             albspectra_fname = TRIM(ADJUSTL(database_dir)) //'/ReflSpectra/'&
+                  //TRIM(ADJUSTL(albspectra_fname))
              CALL geocape_surface_setter_2                             &
                   ( albspectra_fname, maxlambdas, nlambdas, tmpwaves,  & ! inputs
                   ground_ler,  messages(nmessages+1), error ) ! outputs, exception handling

@@ -67,7 +67,7 @@ MODULE GC_aerosols_module
       CHARACTER(LEN=15), PARAMETER :: aerph_jacobians_str = 'AERPH jacobians'
       CHARACTER(LEN=15), PARAMETER :: aerhw_jacobians_str = 'AERHW jacobians'
       CHARACTER(LEN=14), PARAMETER :: aod_wavelength_str  = 'AOD wavelength'
-      CHARACTER(LEN=15), PARAMETER :: aerosols_type_str   = 'Aerosols types'
+      CHARACTER(LEN=15), PARAMETER :: aerosols_type_str   = 'Aerosol types'
 
       ! ---------
       ! File unit
@@ -218,7 +218,7 @@ MODULE GC_aerosols_module
       ! ----------------
       error = .FALSE.
 
-      aer_profile = aer_profile0; naer = naer0
+!!$      aer_profile = aer_profile0; naer = naer0
       IF (use_aerprof) THEN
 
          IF (naer == 0) THEN
