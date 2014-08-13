@@ -1151,10 +1151,10 @@ CONTAINS
        IF (ic == 2 .AND. do_lambertian_cld) THEN
           VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO  = lambertian_cldalb
           VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE = .TRUE.
-       ENDIF
-!!$       ELSE
-!!$          VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO = ground_ler(w)
-!!$       END IF
+!!$       ENDIF
+       ELSE
+          VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO = ground_ler(w)
+       END IF
 !!$          VBRDF_Sup_In%BS_BRDF_FACTORS(1) = VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO
 !!$    END IF
        
