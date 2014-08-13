@@ -30,7 +30,7 @@
 ! #  Release Date :   October 2010   (2.4RTC)                   #
 ! #  Release Date :   March 2011     (2.5)                      #
 ! #  Release Date :   May 2012       (2.6)                      #
-! #  Release Date :   May 2014       (2.7)                      #
+! #  Release Date :   August 2014    (2.7)                      #
 ! #                                                             #
 ! #       NEW: TOTAL COLUMN JACOBIANS          (2.4)            #
 ! #       NEW: BPDF Land-surface KERNELS       (2.4R)           #
@@ -39,8 +39,8 @@
 ! #       f77/f90 Release                      (2.5)            #
 ! #       External SS / New I/O Structures     (2.6)            #
 ! #                                                             #
-! #       Surface-leaving, BRDF Albedo-scaling (2.7)            # 
-! #       Taylor series, Black-body Jacobians  (2.7)            #
+! #       SURFACE-LEAVING / BRDF-SCALING      (2.7)             #
+! #       TAYLOR Series / OMP THREADSAFE      (2.7)             #
 ! #                                                             #
 ! ###############################################################
 

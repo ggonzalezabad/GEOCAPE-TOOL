@@ -29,7 +29,7 @@
 ! #  Release Date :   October 2010   (2.4RTC)                   #
 ! #  Release Date :   March 2011     (2.5)                      #
 ! #  Release Date :   May 2012       (2.6)                      #
-! #  Release Date :   May 2014       (2.7)                      #
+! #  Release Date :   August 2014    (2.7)                      #
 ! #                                                             #
 ! #       NEW: TOTAL COLUMN JACOBIANS          (2.4)            #
 ! #       NEW: BPDF Land-surface KERNELS       (2.4R)           #
@@ -38,8 +38,8 @@
 ! #       f77/f90 Release                      (2.5)            #
 ! #       External SS / New I/O Structures     (2.6)            #
 ! #                                                             #
-! #       Surface-leaving, BRDF Albedo-scaling (2.7)            # 
-! #       Taylor series, Black-body Jacobians  (2.7)            #
+! #       SURFACE-LEAVING / BRDF-SCALING      (2.7)             #
+! #       TAYLOR Series / OMP THREADSAFE      (2.7)             #
 ! #                                                             #
 ! ###############################################################
 
@@ -58,13 +58,17 @@
 ! #              LIN_SCALING_FOURIER_ZERO                       #
 ! #              VBRDF_LIN_FOURIER                              #
 ! #                                                             #
+! # New Cox-Munk Subroutine in this Module  (Version 2.7)       #
+! #                                                             #
+! #              VBRDF_LIN_NewCM_MAKER                          #
+! #                                                             #
 ! ###############################################################
 
 
       MODULE vbrdf_LinSup_routines_m
 
       PRIVATE
-      PUBLIC :: VBRDF_LIN_MAKER, &
+      PUBLIC :: VBRDF_LIN_MAKER, VBRDF_LIN_NewCM_MAKER, &
                 VBRDF_LIN_FOURIER, LIN_SCALING_FOURIER_ZERO
 
       CONTAINS
@@ -91,7 +95,10 @@
 
 !  include file of dimensions and numbers
 
-      USE VLIDORT_PARS
+      USE VLIDORT_PARS,        only : MAXBEAMS, MAX_USER_RELAZMS, MAX_USER_STREAMS, &
+                                      MAXSTOKES_SQ, MAXSTREAMS, MAXSTREAMS_SCALING, & 
+                                      MAX_BRDF_PARAMETERS, MAXSTREAMS_BRDF, MAXSTHALF_BRDF, &
+                                      max_msrs_muquad, max_msrs_phiquad
 
       IMPLICIT NONE
 
@@ -399,8 +406,8 @@
                         KERNEL, D_KERNEL )
                ELSE
                   CALL BRDF_VFUNCTION_PLUS &
-                      ( MAX_BRDF_PARAMETERS, BRDF_NPARS, BRDF_PARS,     &
-                        NSQ, SZASURCOS(IB), SZASURSIN(IB),              &
+                      ( MAX_BRDF_PARAMETERS, BRDF_NPARS, BRDF_PARS, BRDF_DERIVS, NSQ, &
+                        SZASURCOS(IB), SZASURSIN(IB),                   &
                         SCALING_QUAD_STREAMS(I), SCALING_QUAD_SINES(I), &
                         X_BRDF(K), CX_BRDF(K), SX_BRDF(K),              &
                         KERNEL, D_KERNEL )
@@ -482,7 +489,7 @@
                    EBRDFUNC(:,I,KE,K), D_EBRDFUNC(:,:,I,KE,K)  )
              ELSE
               CALL BRDF_VFUNCTION_PLUS &
-                 ( MAX_BRDF_PARAMETERS, BRDF_NPARS, BRDF_PARS, BRDF_DERIVS, &
+                 ( MAX_BRDF_PARAMETERS, BRDF_NPARS, BRDF_PARS, BRDF_DERIVS,  &
                    NSTOKESSQ, CXE_BRDF(KE), SXE_BRDF(KE), QUAD_STREAMS(I),   &
                    QUAD_SINES(I), X_BRDF(K),  CX_BRDF(K), SX_BRDF(K),        &
                    EBRDFUNC(:,I,KE,K), D_EBRDFUNC(:,:,I,KE,K) )
@@ -598,6 +605,337 @@
 
       RETURN
       END SUBROUTINE VBRDF_LIN_MAKER
+
+!
+
+      SUBROUTINE VBRDF_Lin_NewCM_MAKER &
+         ( DO_GlintShadow, DO_FacetIsotropy, WINDSPEED, WINDDIR, Refrac_R, Refrac_I, &
+           WC_Reflectance, WC_Lambertian, DWC_Reflectance, DWC_Lambertian,           &
+           DO_USER_OBSGEOMS, DO_USER_STREAMS, DO_EXACT, DO_EXACTONLY,                &
+           NSTREAMS_BRDF, NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,          &
+           QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,                       &
+           SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, X_BRDF, CX_BRDF, SX_BRDF,   &
+           DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, BRDFUNC_0, USER_BRDFUNC_0,       &
+           D_DBKERNEL_BRDFUNC, D_BRDFUNC, D_USER_BRDFUNC, D_BRDFUNC_0, D_USER_BRDFUNC_0 )     
+
+!  include file of dimensions and numbers
+
+      USE VLIDORT_PARS,        only : MAXBEAMS, MAX_USER_RELAZMS, MAX_USER_STREAMS, &
+                                      MAXSTOKES_SQ, MAXSTREAMS, MAXSTREAMS_BRDF,   &
+                                      MAX_BRDF_PARAMETERS, zero, one, DEG_TO_RAD
+
+      USE vbrdf_LinSup_kernels_m, only : VBRDF_Generalized_Glint_plus
+
+      IMPLICIT NONE
+
+!  Prepares the bidirectional reflectance scatter matrices
+
+!  Input arguments
+!  ===============
+
+!  NewCM Glitter options (bypasses the usual Kernel system)
+!  --------------------------------------------------------
+
+!  Flags for glint shadowing, Facet Isotropy
+
+      LOGICAL   :: DO_GlintShadow
+      LOGICAL   :: DO_FacetIsotropy
+
+!  Input Wind speed in m/s, and azimuth directions relative to Sun positions
+
+      DOUBLE PRECISION:: WINDSPEED, WINDDIR ( MAXBEAMS )
+
+!  Refractive Index
+
+      DOUBLE PRECISION :: Refrac_R, Refrac_I
+
+!  Whitecap correction (Zero if not flagged), linearization w.r.t Windspeed
+
+      DOUBLE PRECISION :: WC_Reflectance, WC_Lambertian
+      DOUBLE PRECISION :: DWC_Reflectance, DWC_Lambertian
+
+!  Local flags
+
+      LOGICAL ::          DO_USER_OBSGEOMS
+      LOGICAL ::          DO_USER_STREAMS
+
+!  Exact only flag (no Fourier term calculations)
+
+      LOGICAL ::          DO_EXACT
+      LOGICAL ::          DO_EXACTONLY
+
+!  Number of Azimuth quadrature streams
+
+      INTEGER ::          NSTREAMS_BRDF
+
+!  Local angle control
+
+      INTEGER ::          NSTREAMS
+      INTEGER ::          NBEAMS
+      INTEGER ::          N_USER_STREAMS
+      INTEGER ::          N_USER_RELAZMS
+
+!  Local angles
+
+      DOUBLE PRECISION :: PHIANG(MAX_USER_RELAZMS)
+      DOUBLE PRECISION :: COSPHI(MAX_USER_RELAZMS)
+      DOUBLE PRECISION :: SINPHI(MAX_USER_RELAZMS)
+
+      DOUBLE PRECISION :: SZASURCOS(MAXBEAMS)
+      DOUBLE PRECISION :: SZASURSIN(MAXBEAMS)
+
+      DOUBLE PRECISION :: QUAD_STREAMS(MAXSTREAMS)
+      DOUBLE PRECISION :: QUAD_SINES  (MAXSTREAMS)
+
+      DOUBLE PRECISION :: USER_STREAMS(MAX_USER_STREAMS)
+      DOUBLE PRECISION :: USER_SINES  (MAX_USER_STREAMS)
+
+!  azimuth quadrature streams for BRDF
+
+      DOUBLE PRECISION :: X_BRDF  ( MAXSTREAMS_BRDF )
+      DOUBLE PRECISION :: CX_BRDF ( MAXSTREAMS_BRDF )
+      DOUBLE PRECISION :: SX_BRDF ( MAXSTREAMS_BRDF )
+
+!  Output BRDF functions
+!  =====================
+
+!  at quadrature (discrete ordinate) angles
+
+      DOUBLE PRECISION :: BRDFUNC &
+          ( MAXSTOKES_SQ, MAXSTREAMS, MAXSTREAMS, MAXSTREAMS_BRDF )
+      DOUBLE PRECISION :: BRDFUNC_0 &
+          ( MAXSTOKES_SQ, MAXSTREAMS, MAXBEAMS, MAXSTREAMS_BRDF )
+
+!  at user-defined stream directions
+
+      DOUBLE PRECISION :: USER_BRDFUNC &
+          ( MAXSTOKES_SQ, MAX_USER_STREAMS, MAXSTREAMS, MAXSTREAMS_BRDF )
+      DOUBLE PRECISION :: USER_BRDFUNC_0 &
+          ( MAXSTOKES_SQ, MAX_USER_STREAMS, MAXBEAMS, MAXSTREAMS_BRDF )
+
+!  Exact DB values
+
+      DOUBLE PRECISION :: DBKERNEL_BRDFUNC &
+          ( MAXSTOKES_SQ, MAX_USER_STREAMS, MAX_USER_RELAZMS, MAXBEAMS )
+
+!  Output Linearizations of BRDF functions (parameter derivatives)
+!  ===============================================================
+
+!  at quadrature (discrete ordinate) angles
+
+      DOUBLE PRECISION :: D_BRDFUNC   ( MAX_BRDF_PARAMETERS, MAXSTOKES_SQ, &
+                                        MAXSTREAMS, MAXSTREAMS, MAXSTREAMS_BRDF )
+      DOUBLE PRECISION :: D_BRDFUNC_0 ( MAX_BRDF_PARAMETERS, MAXSTOKES_SQ, &
+                                        MAXSTREAMS, MAXBEAMS, MAXSTREAMS_BRDF )
+
+!  at user-defined stream directions
+
+      DOUBLE PRECISION :: D_USER_BRDFUNC &
+                     ( MAX_BRDF_PARAMETERS, MAXSTOKES_SQ, &
+                       MAX_USER_STREAMS, MAXSTREAMS, MAXSTREAMS_BRDF )
+      DOUBLE PRECISION :: D_USER_BRDFUNC_0 &
+                     ( MAX_BRDF_PARAMETERS, MAXSTOKES_SQ, &
+                       MAX_USER_STREAMS, MAXBEAMS,   MAXSTREAMS_BRDF )
+
+!  Exact DB values
+
+      DOUBLE PRECISION :: D_DBKERNEL_BRDFUNC &
+                     ( MAX_BRDF_PARAMETERS, MAXSTOKES_SQ, &
+                       MAX_USER_STREAMS, MAX_USER_RELAZMS, MAXBEAMS )
+
+!  local variables
+!  ---------------
+
+      LOGICAL          :: DO_COEFFS, Local_Isotropy
+      INTEGER          :: I, UI, J, K, IB
+      DOUBLE PRECISION :: PHI_W(MAXBEAMS), CPHI_W(MAXBEAMS), SPHI_W(MAXBEAMS)
+      DOUBLE PRECISION :: SUNGLINT_COEFFS(7), DSUNGLINT_COEFFS(7)
+      DOUBLE PRECISION :: WC_correction, DWC_correction, KERNEL, DKERNEL
+
+      INTEGER, PARAMETER :: LUM = 1
+      INTEGER, PARAMETER :: LUA = 1
+
+!   Wind-direction and coefficient set-up
+
+      DO_COEFFS = .true.
+      PHI_W = zero ; CPHI_W = one ; SPHI_W = zero
+      Local_Isotropy = DO_FacetIsotropy 
+      if ( .not.Local_Isotropy ) then
+         DO IB = 1, nbeams
+            PHI_W(IB)  = WINDDIR(IB)
+            CPHI_W(IB) = cos(WINDDIR(IB) * deg_to_rad) 
+            SPHI_W(IB) = sin(WINDDIR(IB) * deg_to_rad)
+         ENDDO
+      endif
+
+!  Whitecap correction to glint
+
+      WC_correction  = one - WC_Lambertian
+      DWC_correction = - DWC_Lambertian
+
+!  Exact DB calculation
+!  --------------------
+
+      IF ( DO_EXACT ) THEN
+        IF ( .NOT. DO_USER_OBSGEOMS ) THEN
+          DO K = 1, N_USER_RELAZMS
+            DO IB = 1, NBEAMS
+              DO UI = 1, N_USER_STREAMS
+                CALL VBRDF_Generalized_Glint_plus &
+                 ( Local_Isotropy, DO_GlintShadow, DO_Coeffs,       &
+                   REFRAC_R, REFRAC_I, WINDSPEED,                   &
+                   PHI_W(IB), CPHI_W(IB), SPHI_W(IB),               &
+                   SZASURCOS(IB), SZASURSIN(IB), USER_STREAMS(UI),  &
+                   USER_SINES(UI), PHIANG(K), COSPHI(K), SINPHI(K), &
+                   SUNGLINT_COEFFS, DSUNGLINT_COEFFS, KERNEL, DKERNEL )
+                DBKERNEL_BRDFUNC  (1,UI,K,IB)   = WC_Reflectance  +  WC_correction * KERNEL
+                D_DBKERNEL_BRDFUNC(1,1,UI,K,IB) = DWC_Reflectance + DWC_correction * KERNEL &
+                                                                  +  WC_correction * DKERNEL
+              ENDDO
+            ENDDO
+          ENDDO
+        ELSE
+          DO IB = 1, NBEAMS
+            CALL VBRDF_Generalized_Glint_plus &
+             ( Local_Isotropy, DO_GlintShadow, DO_Coeffs,          &
+               REFRAC_R, REFRAC_I, WINDSPEED,                      &
+               PHI_W(IB), CPHI_W(IB), SPHI_W(IB),                  &
+               SZASURCOS(IB), SZASURSIN(IB), USER_STREAMS(IB),     &
+               USER_SINES(IB), PHIANG(IB), COSPHI(IB), SINPHI(IB), &
+               SUNGLINT_COEFFS, DSUNGLINT_COEFFS, KERNEL, DKERNEL )
+            DBKERNEL_BRDFUNC  (1,LUM,LUA,IB)   = WC_Reflectance  + WC_correction  * KERNEL
+            D_DBKERNEL_BRDFUNC(1,1,LUM,LUA,IB) = DWC_Reflectance + DWC_correction * KERNEL &
+                                                                 +  WC_correction * DKERNEL
+          ENDDO
+        ENDIF
+      ENDIF
+
+!      pause'after exact'
+
+!  Return if this is all you require
+
+      IF ( DO_EXACTONLY ) RETURN
+
+!  Incident Solar beam
+!  ===================
+
+!  Quadrature outgoing directions
+
+      DO IB = 1, NBEAMS
+        DO I = 1, NSTREAMS
+          DO K = 1, NSTREAMS_BRDF
+            CALL VBRDF_Generalized_Glint_plus &
+             ( Local_Isotropy, DO_GlintShadow, DO_Coeffs,        &
+               REFRAC_R, REFRAC_I, WINDSPEED,                    &
+               PHI_W(IB), CPHI_W(IB), SPHI_W(IB),                &
+               SZASURCOS(IB), SZASURSIN(IB), QUAD_STREAMS(I),    &
+               QUAD_SINES(I), X_BRDF(K), CX_BRDF(K), SX_BRDF(K), &
+               SUNGLINT_COEFFS, DSUNGLINT_COEFFS, KERNEL, DKERNEL )
+            BRDFUNC_0  (1,I,IB,K)   = WC_Reflectance  + WC_correction  * KERNEL
+            D_BRDFUNC_0(1,1,I,IB,K) = DWC_Reflectance + DWC_correction * KERNEL &
+                                                      +  WC_correction * DKERNEL
+          ENDDO
+        ENDDO
+      ENDDO
+
+!  User-streams outgoing directions
+
+      IF ( DO_USER_STREAMS ) THEN
+        IF (.NOT. DO_USER_OBSGEOMS ) THEN
+          DO IB = 1, NBEAMS
+            DO UI = 1, N_USER_STREAMS
+              DO K = 1, NSTREAMS_BRDF
+                CALL VBRDF_Generalized_Glint_plus &
+                 ( Local_Isotropy, DO_GlintShadow, DO_Coeffs,         &
+                   REFRAC_R, REFRAC_I, WINDSPEED,                     &
+                   PHI_W(IB), CPHI_W(IB), SPHI_W(IB),                 &
+                   SZASURCOS(IB), SZASURSIN(IB), USER_STREAMS(UI),    &
+                   USER_SINES(UI), X_BRDF(K), CX_BRDF(K), SX_BRDF(K), &
+                   SUNGLINT_COEFFS, DSUNGLINT_COEFFS, KERNEL, DKERNEL )
+                USER_BRDFUNC_0  (1,UI,IB,K)   = WC_Reflectance  + WC_correction  * KERNEL
+                D_USER_BRDFUNC_0(1,1,UI,IB,K) = DWC_Reflectance + DWC_correction * KERNEL &
+                                                                +  WC_correction * DKERNEL
+              ENDDO
+            ENDDO
+          ENDDO
+        ELSE
+          DO IB = 1, NBEAMS
+            DO K = 1, NSTREAMS_BRDF
+              CALL VBRDF_Generalized_Glint_plus &
+               ( Local_Isotropy, DO_GlintShadow, DO_Coeffs,         &
+                 REFRAC_R, REFRAC_I, WINDSPEED,                     &
+                 PHI_W(IB), CPHI_W(IB), SPHI_W(IB),                 &
+                 SZASURCOS(IB), SZASURSIN(IB), USER_STREAMS(IB),    &
+                 USER_SINES(IB), X_BRDF(K), CX_BRDF(K), SX_BRDF(K), &
+                 SUNGLINT_COEFFS, DSUNGLINT_COEFFS, KERNEL, DKERNEL )
+              USER_BRDFUNC_0  (1,LUM,IB,K)   = WC_Reflectance  + WC_correction  * KERNEL
+              D_USER_BRDFUNC_0(1,1,LUM,IB,K) = DWC_Reflectance + DWC_correction * KERNEL &
+                                                               +  WC_correction * DKERNEL
+            ENDDO
+          ENDDO
+        ENDIF
+      ENDIF
+
+!  incident quadrature directions (MULTIPLE SCATTERING)
+!  ==============================
+
+!   Can only be treated with 1 Wind direction.....
+!     if ( NBEAMS > 1) MUST assume local Facet Isotropy
+!            --> set up Local Wind-direction and re-set coefficients flag.
+!     if ( NBAMS = 1 ) use the first wind direction, no need to re-calculate coefficients
+
+      if ( NBEAMS .gt. 1 ) then
+         local_Isotropy = .false.
+         PHI_W      = zero 
+         CPHI_W     = one
+         SPHI_W     = zero
+         DO_COEFFS  = .true.
+      endif
+ 
+!  Outgoing quadrature directions
+
+      DO I = 1, NSTREAMS
+        DO J = 1, NSTREAMS
+          DO K = 1, NSTREAMS_BRDF
+            CALL VBRDF_Generalized_Glint_plus &
+             ( Local_Isotropy, DO_GlintShadow, DO_Coeffs,        &
+               REFRAC_R, REFRAC_I, WINDSPEED,                    &
+               PHI_W(1), CPHI_W(1), SPHI_W(1),                   &
+               QUAD_STREAMS(J), QUAD_SINES(J), QUAD_STREAMS(I),  &
+               QUAD_SINES(I), X_BRDF(K), CX_BRDF(K), SX_BRDF(K), &
+               SUNGLINT_COEFFS, DSUNGLINT_COEFFS, KERNEL, DKERNEL )
+            BRDFUNC  (1,I,J,K)   = WC_Reflectance  + WC_correction  * KERNEL
+            D_BRDFUNC(1,1,I,J,K) = DWC_Reflectance + DWC_correction * KERNEL &
+                                                   +  WC_correction * DKERNEL
+          ENDDO
+        ENDDO
+      ENDDO
+
+!  User stream outgoing directions
+
+      IF ( DO_USER_STREAMS ) THEN
+        DO UI = 1, N_USER_STREAMS
+          DO J = 1, NSTREAMS
+            DO K = 1, NSTREAMS_BRDF
+              CALL VBRDF_Generalized_Glint_plus &
+               ( Local_Isotropy, DO_GlintShadow, DO_Coeffs,         &
+                 REFRAC_R, REFRAC_I, WINDSPEED,                     &
+                 PHI_W(1), CPHI_W(1), SPHI_W(1),                    &
+                 QUAD_STREAMS(J), QUAD_SINES(J), USER_STREAMS(UI),  &
+                 USER_SINES(UI), X_BRDF(K), CX_BRDF(K), SX_BRDF(K), &
+                 SUNGLINT_COEFFS, DSUNGLINT_COEFFS, KERNEL, DKERNEL )
+              USER_BRDFUNC  (1,UI,J,K)   = WC_Reflectance  + WC_correction  * KERNEL
+              D_USER_BRDFUNC(1,1,UI,J,K) = DWC_Reflectance + DWC_correction * KERNEL &
+                                                           +  WC_correction * DKERNEL
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+!  Finish
+
+      RETURN
+      END SUBROUTINE VBRDF_Lin_NewCM_MAKER
 
 !
 

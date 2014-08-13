@@ -444,11 +444,13 @@ program geocape_tools_v2p6
    ! This is the checking routine for compatibility between
    ! VLIDORT and VBRDF setup
    ! ------------------------------------------------------
-   CALL VLIDORT_VBRDF_INPUT_CHECKER ( &
-        VBRDF_Sup_In,             & ! Inputs
-        VLIDORT_FixIn,            & ! Inputs
-        VLIDORT_ModIn,            & ! Inputs
-        VLIDORT_VBRDFCheck_Status ) ! Outputs
+   IF (do_brdf_surface) THEN
+      CALL VLIDORT_VBRDF_INPUT_CHECKER ( &
+           VBRDF_Sup_In,             & ! Inputs
+           VLIDORT_FixIn,            & ! Inputs
+           VLIDORT_ModIn,            & ! Inputs
+           VLIDORT_VBRDFCheck_Status ) ! Outputs
+   ENDIF
 
    ! ------------------
    ! Exception handling

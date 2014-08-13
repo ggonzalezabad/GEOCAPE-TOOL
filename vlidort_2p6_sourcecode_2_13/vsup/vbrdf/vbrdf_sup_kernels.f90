@@ -19,7 +19,7 @@
 ! #  Email :       rtsolutions@verizon.net                      #
 ! #                                                             #
 ! #  Versions     :   2.0, 2.2, 2.3, 2.4, 2.4R, 2.4RT, 2.4RTC,  #
-! #                   2.5, 2.6                                  #
+! #                   2.5, 2.6, 2.7                             #
 ! #  Release Date :   December 2005  (2.0)                      #
 ! #  Release Date :   March 2007     (2.2)                      #
 ! #  Release Date :   October 2007   (2.3)                      #
@@ -30,6 +30,7 @@
 ! #  Release Date :   March 2011     (2.5)                      #
 ! #  Release Date :   May 2012       (2.6)                      #
 ! #  Release Date :   May 2014       (2.7)                      #
+! #  Release Date :   August 2014    (2.7)                      #
 ! #                                                             #
 ! #       NEW: TOTAL COLUMN JACOBIANS          (2.4)            #
 ! #       NEW: BPDF Land-surface KERNELS       (2.4R)           #
@@ -38,8 +39,8 @@
 ! #       f77/f90 Release                      (2.5)            #
 ! #       External SS / New I/O Structures     (2.6)            #
 ! #                                                             #
-! #       Surface-leaving, BRDF Albedo-scaling (2.7)            # 
-! #       Taylor series, Black-body Jacobians  (2.7)            #
+! #       SURFACE-LEAVING / BRDF-SCALING      (2.7)             #
+! #       TAYLOR Series / OMP THREADSAFE      (2.7)             #
 ! #                                                             #
 ! ###############################################################
 
@@ -79,30 +80,40 @@
 ! #                                                             #
 ! #            BPDF2009_VFUNCTION                               #
 ! #                                                             #
+! # New Cox-Munk Subroutines in this Module (Version 2.7)       #
+! #                                                             #
+! #            VBRDF_Generalized_glint                          #
+! #            VBRDF_Water_RefracIndex                          #
+! #            VBRDF_WhiteCap_Reflectance                       #
+! #                                                             #
 ! ###############################################################
 
 
       MODULE vbrdf_sup_kernels_m
 
       use VLIDORT_PARS
-      use vbrdf_sup_aux_m
+      use vbrdf_sup_aux_m, only : derfc_e, VBRDF_Fresnel_Complex
 
       PRIVATE
-      PUBLIC :: LAMBERTIAN_VFUNCTION, &
-                ROSSTHIN_VFUNCTION, &
-                ROSSTHICK_VFUNCTION, &
-                LISPARSE_VFUNCTION, &
-                LIDENSE_VFUNCTION, &
-                ROUJEAN_VFUNCTION, &
-                HAPKE_VFUNCTION, &
-                RAHMAN_VFUNCTION, &
-                COXMUNK_VFUNCTION, &
-                COXMUNK_VFUNCTION_DB, &
-                GISSCOXMUNK_VFUNCTION, &
+      PUBLIC :: LAMBERTIAN_VFUNCTION,     &
+                ROSSTHIN_VFUNCTION,       &
+                ROSSTHICK_VFUNCTION,      &
+                LISPARSE_VFUNCTION,       &
+                LIDENSE_VFUNCTION,        &
+                ROUJEAN_VFUNCTION,        &
+                HAPKE_VFUNCTION,          &
+                RAHMAN_VFUNCTION,         &
+                COXMUNK_VFUNCTION,        &
+                COXMUNK_VFUNCTION_DB,     &
+                GISSCOXMUNK_VFUNCTION,    &
                 GISSCOXMUNK_VFUNCTION_DB, &
-                GCMCRI_VFUNCTION, &
-                GCMCRI_VFUNCTION_DB, &
-                BPDF2009_VFUNCTION
+                GCMCRI_VFUNCTION,         &
+                GCMCRI_VFUNCTION_DB,      &
+                BPDF2009_VFUNCTION,       &
+                VBRDF_Generalized_Glint,  &
+                VBRDF_Water_RefracIndex,  &
+                VBRDF_WhiteCap_Reflectance       
+
 
       CONTAINS
 
@@ -341,8 +352,8 @@
       CKPHI = - CPHI
 
 !  (1,1) Function (scalar form)
-
-      IF ( ( XI .EQ. XJ ) .AND. ( CKPHI.EQ.ONE ) ) RETURN
+!   No this is not right
+!      IF ( ( XI .EQ. XJ ) .AND. ( CKPHI.EQ.ONE ) ) RETURN
 
 !  Function
 !  ========
@@ -448,8 +459,8 @@
       CKPHI = - CPHI
 
 !  (1,1) Function (scalar form)
-
-      IF ( ( XI .EQ. XJ ) .AND. ( CKPHI.EQ.ONE ) ) RETURN
+!   No this is not right
+!      IF ( ( XI .EQ. XJ ) .AND. ( CKPHI.EQ.ONE ) ) RETURN
 
 !  Function
 !  ========
@@ -2592,6 +2603,438 @@
 
       RETURN
       END SUBROUTINE BPDF2009_VFUNCTION
+
+!
+
+subroutine VBRDF_WhiteCap_Reflectance &
+    ( WindSpeed, Wavelength, WC_Reflectance, WC_Lambertian )
+
+!  Stand-alone routine for computing the WhiteCap Reflectance
+!   Based on 6S code, as updated by A. Sayer (2011)
+
+!   Made compatible with VLIDORT SURFACE LEAVING code
+!   renamed for VBRDF code (useful if BRDF and SLEAVE are operating together)
+!   R. Spurr, 23 April 2014, 28 April 2014
+
+   implicit none
+
+!  Inputs
+!    (Wind speed in [m/s], Wavelength in Microns)
+
+   double precision, intent(in)  :: WindSpeed
+   double precision, intent(in)  :: Wavelength
+
+!  output
+
+   double precision, intent(out) :: WC_Reflectance
+   double precision, intent(out) :: WC_Lambertian
+
+!  Data
+!  ----
+
+!  Single precision
+
+   real :: Effective_WCRef(39)
+
+! effective reflectance of the whitecaps (Koepke, 1984)
+! These are the original values - superseded, A Sayer 05 Jul 2011.
+!      data Effective_WCRef/ &
+!     0.220,0.220,0.220,0.220,0.220,0.220,0.215,0.210,0.200,0.190,&
+!     0.175,0.155,0.130,0.080,0.100,0.105,0.100,0.080,0.045,0.055,&
+!     0.065,0.060,0.055,0.040,0.000,0.000,0.000,0.000,0.000,0.000,&
+!     0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000/
+
+! effective reflectance of the whitecaps (Frouin et al, 1996)
+! Assume linear trends between the node points they give
+! This is the spectral shape
+
+      data Effective_WCRef/ &
+     1.000,1.000,1.000,1.000,0.950,0.900,0.700,0.550,0.500,0.450,&
+     0.400,0.350,0.300,0.250,0.200,0.150,0.100,0.050,0.000,0.000,&
+     0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,&
+     0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000/
+
+!  Local variables
+!  ---------------
+
+!  Single precision in the original code
+
+   integer :: iwl, iref
+   real    :: Wlb, WLP, Ref(39), wspd, wl, Ref_i, Rwc
+
+!  Initialize
+
+   WC_Reflectance = zero
+   WC_Lambertian  = zero
+
+!  Single precision inputs in the original
+
+   wspd = real(WindSpeed)
+   wl   = real(Wavelength)
+
+!  Scale data for value of 0.22 in the midvisible.
+
+   DO iref = 1,39
+      Ref(iref) = 0.22 * Effective_WCRef(iref)
+   ENDDO
+
+!  COMPUTE WHITECAPS REFLECTANCE (LAMBERTIAN)
+
+   Wlb    = 0.0
+   IF (wspd .le. 9.25) THEN
+       Wlb = 0.01*((3.18e-03)*((wspd-3.7)**3.0))
+   ELSE IF (wspd .gt. 9.25) THEN
+       Wlb = 0.01*((4.82e-04)*((wspd+1.8)**3.0))
+   END IF
+
+! Original whitecap calculation - superseded, A. Sayer 05 Jul 2011.
+!      W=2.95e-06*(wspd**3.52)
+
+!  Find data point, Linearly interpolate
+
+   iwl   = 1+int((wl-0.2)/0.1)
+   wlp   = 0.5+(iwl-1)*0.1
+   Ref_i = Ref(iwl+1) + ( wl-wlp)/0.1*(Ref(iwl)-Ref(iwl+1))
+   Rwc   = Wlb*Ref_i
+
+!  Final values
+
+   WC_Lambertian  = real(Wlb,fpk)
+   WC_Reflectance = real(Rwc,fpk)
+
+!  Finish
+
+   return
+end subroutine VBRDF_WhiteCap_Reflectance
+
+!
+
+subroutine VBRDF_Water_RefracIndex &
+     ( Wavelength, Salinity, Refrac_R, Refrac_I )
+
+!  THIS IS FORMERLY CALLED "INDWAT" in 6S
+
+   implicit none
+   integer, parameter :: fpk = SELECTED_REAL_KIND(15)
+
+!  Input/Output
+!  ------------
+
+   double precision, intent(in)   :: Wavelength
+   double precision, intent(in)   :: Salinity
+   double precision, intent(out)  :: Refrac_R
+   double precision, intent(out)  :: Refrac_I
+
+!  Local (Real-valued quantities)
+!  -----
+
+!subroutine indwat(wl,xsal,nr,ni)
+!
+! input parameters:  wl=wavelength (in micrometers)
+!                    xsal=salinity (in ppt), if xsal<0 then 34.3ppt by default
+! output parameters: nr=index of refraction of sea water
+!                    ni=extinction coefficient of sea water
+
+       real twl(62),tnr(62),tni(62)
+       real nr,ni,wl,xwl,yr,yi,nrc,nic,xsal
+       integer i
+
+! Indices of refraction for pure water from Hale and Querry, 
+! Applied Optics, March 1973, Vol. 12,  No. 3, pp. 555-563
+       data twl/&
+        0.250,0.275,0.300,0.325,0.345,0.375,0.400,0.425,0.445,0.475,&
+        0.500,0.525,0.550,0.575,0.600,0.625,0.650,0.675,0.700,0.725,&
+        0.750,0.775,0.800,0.825,0.850,0.875,0.900,0.925,0.950,0.975,&
+        1.000,1.200,1.400,1.600,1.800,2.000,2.200,2.400,2.600,2.650,&
+        2.700,2.750,2.800,2.850,2.900,2.950,3.000,3.050,3.100,3.150,&
+        3.200,3.250,3.300,3.350,3.400,3.450,3.500,3.600,3.700,3.800,&
+        3.900,4.000/
+        data tnr/&
+        1.362,1.354,1.349,1.346,1.343,1.341,1.339,1.338,1.337,1.336,&
+        1.335,1.334,1.333,1.333,1.332,1.332,1.331,1.331,1.331,1.330,&
+        1.330,1.330,1.329,1.329,1.329,1.328,1.328,1.328,1.327,1.327,&
+        1.327,1.324,1.321,1.317,1.312,1.306,1.296,1.279,1.242,1.219,&
+        1.188,1.157,1.142,1.149,1.201,1.292,1.371,1.426,1.467,1.483,&
+        1.478,1.467,1.450,1.432,1.420,1.410,1.400,1.385,1.374,1.364,&
+        1.357,1.351/
+        data tni/&
+        3.35E-08,2.35E-08,1.60E-08,1.08E-08,6.50E-09,&
+        3.50E-09,1.86E-09,1.30E-09,1.02E-09,9.35E-10,&
+        1.00E-09,1.32E-09,1.96E-09,3.60E-09,1.09E-08,&
+        1.39E-08,1.64E-08,2.23E-08,3.35E-08,9.15E-08,&
+        1.56E-07,1.48E-07,1.25E-07,1.82E-07,2.93E-07,&
+        3.91E-07,4.86E-07,1.06E-06,2.93E-06,3.48E-06,&
+        2.89E-06,9.89E-06,1.38E-04,8.55E-05,1.15E-04,&
+        1.10E-03,2.89E-04,9.56E-04,3.17E-03,6.70E-03,&
+        1.90E-02,5.90E-02,1.15E-01,1.85E-01,2.68E-01,&
+        2.98E-01,2.72E-01,2.40E-01,1.92E-01,1.35E-01,&
+        9.24E-02,6.10E-02,3.68E-02,2.61E-02,1.95E-02,&
+        1.32E-02,9.40E-03,5.15E-03,3.60E-03,3.40E-03,&
+        3.80E-03,4.60E-03/
+
+!  Assign input
+
+      wl   = real(WAVELENGTH)
+      xsal = real(SALINITY)
+      Refrac_R = zero
+      Refrac_I = zero
+
+!  Find wavelength point for interpolation
+
+        i=2
+ 10     if (wl.lt.twl(i)) goto 20
+        if (i.lt.62) then
+           i=i+1
+           goto 10
+         endif
+
+!  Interpolate
+
+ 20     xwl=twl(i)-twl(i-1)
+        yr=tnr(i)-tnr(i-1)
+        yi=tni(i)-tni(i-1)
+        nr=tnr(i-1)+(wl-twl(i-1))*yr/xwl
+        ni=tni(i-1)+(wl-twl(i-1))*yi/xwl
+!
+! Correction to be applied to the index of refraction and to the extinction 
+! coefficients of the pure water to obtain the ocean water one (see for 
+! example Friedman). By default, a typical sea water is assumed 
+! (Salinity=34.3ppt, Chlorinity=19ppt) as reported by Sverdrup. 
+! In that case there is no correction for the extinction coefficient between 
+! 0.25 and 4 microns. For the index of refraction, a correction of +0.006 
+! has to be applied (McLellan). For a chlorinity of 19.0ppt the correction 
+! is a linear function of the salt concentration. Then, in 6S users are able 
+! to enter the salt concentration (in ppt).
+! REFERENCES:
+! Friedman D., Applied Optics, 1969, Vol.8, No.10, pp.2073-2078.
+! McLellan H.J., Elements of physical Oceanography, Pergamon Press, Inc.,
+!        New-York, 1965, p 129.
+! Sverdrup H.V. et al., The Oceans (Prentice-Hall, Inc., Englewood Cliffs,
+!        N.J., 1942, p 173.
+
+        nrc=0.006
+        nic=0.000
+        nr=nr+nrc*(xsal/34.3)
+        ni=ni+nic*(xsal/34.3)
+
+!  Assign output
+
+    REFRAC_R = real(nr,fpk)
+    REFRAC_I = real(ni,fpk)
+
+    return
+end subroutine VBRDF_Water_RefracIndex
+
+
+SUBROUTINE VBRDF_Generalized_Glint &
+         ( DO_ISOTROPIC, DO_SHADOW, DO_COEFFS,    &
+           REFRAC_R, REFRAC_I, WINDSPEED,         &
+           PHI_W, CPHI_W, SPHI_W,                 &
+           XJ, SXJ, XI, SXI, PHI, CPHI, SPHI,     &
+           SUNGLINT_COEFFS, SUNGLINT_REFLEC )
+
+      implicit none
+
+!  Subroutine Input arguments
+!  --------------------------
+
+!  Flag for using Isotropic Facet distribution
+
+      LOGICAL  , intent(in)    :: DO_ISOTROPIC
+
+!  Flag for including Shadow effect
+
+      LOGICAL  , intent(in)    :: DO_SHADOW
+
+!  Flag for Calculating Cox-Munk Coefficients
+!     Only needs to be done once, so intent(inout)
+
+      LOGICAL  , intent(inout) :: DO_COEFFS
+
+!  Real and imaginary parts of refractive index
+
+      double precision, intent(in)    :: REFRAC_R
+      double precision, intent(in)    :: REFRAC_I
+
+!  Windspeed m/s
+
+      double precision, intent(in)    :: WINDSPEED
+
+!  Azimuth between Sun and Wind directions. angle in Radians + Cosine/sine
+
+      double precision, intent(in)    :: PHI_W, CPHI_W, SPHI_W
+
+!  Incident and reflected ddirections: sines/cosines. Relative azimuth (angle in radians)
+
+      double precision, intent(in)  :: XI, SXI, XJ, SXJ, PHI, CPHI, SPHI
+
+!  Subroutine output arguments
+!  ---------------------------
+
+!   Glitter reflectance
+
+      double precision, intent(out)   :: SUNGLINT_REFLEC
+
+!  Cox-Munk Coefficients. Intent(inout).
+
+      double precision, intent(inout) :: SUNGLINT_COEFFS(7)
+
+!  Local arguments
+!  ---------------
+
+      double precision, PARAMETER :: CRITEXP = 88.0D0
+      double precision, PARAMETER :: six = two * three, twentyfour = six * four
+
+!  Local variables
+
+      double precision  :: B, ZX, ZY, Z, Z1, Z2, XMP
+      double precision  :: TILT, TANTILT, TANTILT_SQ, COSTILT
+      double precision  :: ARGUMENT, PROB, FAC2, COEFF, VAR, WSigC, WSigU
+      double precision  :: XE, XN, XE_sq, XN_sq, XE_sq_1, XN_sq_1
+      double precision  :: XPHI, CKPHI, SKPHI, XPHI_W, CKPHI_W, SKPHI_W
+      double precision  :: S1, S2, S3, XXI, XXJ, T1, T2, DCOT
+      double precision  :: SHADOWI, SHADOWR, SHADOW
+
+!  Initialise output
+
+      SUNGLINT_REFLEC = ZERO
+
+!  Compute coefficients, according to 6S formulation
+
+      IF ( DO_COEFFS ) THEN
+         SUNGLINT_COEFFS = zero
+         IF ( DO_ISOTROPIC ) THEN
+            SUNGLINT_COEFFS(1) = 0.003d0 + 0.00512d0 * WINDSPEED
+         ELSE
+            SUNGLINT_COEFFS(1) = 0.003d0 + 0.00192d0 * WINDSPEED ! sigmaC
+            SUNGLINT_COEFFS(2) =           0.00316d0 * WINDSPEED ! sigmaU
+            SUNGLINT_COEFFS(3) = 0.010d0 - 0.00860d0 * WINDSPEED ! C21
+            SUNGLINT_COEFFS(4) = 0.040d0 - 0.03300d0 * WINDSPEED ! C03
+            SUNGLINT_COEFFS(5) = 0.400d0                         ! C40
+            SUNGLINT_COEFFS(6) = 0.230d0                         ! C04
+            SUNGLINT_COEFFS(7) = 0.120d0                         ! C22
+         ENDIF
+         DO_COEFFS = .false.
+      ENDIF
+
+!  Local angles
+
+      XPHI   = PIE - PHI       ! Not used
+!     CKPHI  = - CPHI          ! Original, not correct.
+
+      CKPHI  = + CPHI
+      SKPHI  = + SPHI
+
+      XPHI_W  = PHI_W
+      CKPHI_W = CPHI_W
+      SKPHI_W = SPHI_W
+
+!  Tilt angle
+
+      B  = ONE / ( XI + XJ )
+      ZX = - SXI * SKPHI * B
+      ZY = ( SXJ + SXI * CKPHI ) * B
+      TANTILT_SQ = ZX * ZX + ZY * ZY
+      TANTILT    = SQRT ( TANTILT_SQ )
+      TILT       = ATAN(TANTILT)
+      COSTILT    = COS(TILT)
+
+!  Scatter angle
+
+      Z = XI * XJ + SXI * SXJ * CKPHI
+      IF ( Z .GT. ONE) Z = ONE
+      Z1 = ACOS(Z)
+      Z2 = COS(Z1*HALF)
+
+!  Fresnel
+!  -------
+
+       CALL VBRDF_Fresnel_Complex ( REFRAC_R, REFRAC_I, Z2, XMP )
+
+!  Anisotropic
+!  -----------
+
+      IF ( .not. DO_ISOTROPIC ) THEN
+
+!  Variance
+
+         WSigC = ONE / Sqrt(SUNGLINT_COEFFS(1))
+         WSigU = ONE / Sqrt(SUNGLINT_COEFFS(2))
+         VAR   = WSigC * WSigU * HALF 
+
+!  angles
+
+         XE = (  CKPHI_W * ZX + SKPHI_W * ZY ) * WSigC ; XE_sq = XE * XE ; XE_sq_1 = xe_sq - one
+         XN = ( -SKPHI_W * ZX + CKPHI_W * ZY ) * WSigU ; XN_sq = XN * XN ; XN_sq_1 = xn_sq - one
+
+!  GC Coefficient
+
+         Coeff = ONE - SUNGLINT_COEFFS(3) *      XE_sq_1      * XN * half &
+                     - SUNGLINT_COEFFS(4) * ( XN_sq - three ) * XN / six  &
+                     + SUNGLINT_COEFFS(5) * ( XE_sq * XE_sq - six * XE_sq + three ) / twentyfour &
+                     + SUNGLINT_COEFFS(6) * ( XN_sq * XN_sq - six * XN_sq + three ) / twentyfour &
+                     + SUNGLINT_COEFFS(7) * XE_sq_1 * XN_sq_1 / four
+
+!  Probability and finish
+
+         ARGUMENT = ( XE_sq  + XN_sq ) * HALF
+         IF ( ARGUMENT .LT. CRITEXP ) THEN
+            PROB = COEFF * EXP ( - ARGUMENT ) * VAR
+            FAC2 = QUARTER / XI / XJ / ( COSTILT ** FOUR )
+            SUNGLINT_REFLEC = XMP * PROB * FAC2
+         ENDIF
+
+      ENDIF
+
+!  Isotropic
+!  ---------
+
+      IF ( DO_ISOTROPIC ) THEN
+
+!  Compute Probability and finish
+
+         COEFF = ONE
+         VAR   = SUNGLINT_COEFFS(1)
+         ARGUMENT = TANTILT_SQ / VAR
+         IF ( ARGUMENT .LT. CRITEXP ) THEN
+            PROB = COEFF * EXP ( - ARGUMENT ) / VAR
+            FAC2 = QUARTER / XI / XJ / ( COSTILT ** FOUR )
+            SUNGLINT_REFLEC = XMP * PROB * FAC2
+         ENDIF
+
+      ENDIF
+
+!  No Shadow code if not flagged
+
+      IF ( .not. DO_SHADOW  ) RETURN
+
+!  Shadow code
+
+      S1 = SQRT ( VAR / PIE )
+      S3 = ONE / ( SQRT(VAR) )
+      S2 = S3 * S3
+
+      XXI  = XI*XI
+      DCOT = XI / SQRT ( ONE - XXI )
+      T1   = EXP ( - DCOT * DCOT * S2 )
+      T2   = DERFC_E ( DCOT * S3 )
+!      T2   = DCOT * S3 ; CALL HOMEGROWN_ERRFUNC ( T2 )     !  Error function usage in SLEAVE code
+      SHADOWI = HALF * ( S1 * T1 / DCOT - T2 )
+
+      XXJ  = XJ*XJ
+      DCOT = XJ / SQRT ( ONE - XXJ )
+      T1   = EXP ( - DCOT * DCOT * S2 )
+      T2   = DERFC_E ( DCOT * S3 )
+!      T2   = DCOT * S3 ; CALL HOMEGROWN_ERRFUNC ( T2 )     !  Error function usage in SLEAVE code
+      SHADOWR = HALF * ( S1 * T1 / DCOT - T2 )
+
+      SHADOW = ONE / ( ONE + SHADOWI + SHADOWR )
+      SUNGLINT_REFLEC = SUNGLINT_REFLEC * SHADOW
+
+!     Finish
+
+      RETURN
+      END SUBROUTINE VBRDF_Generalized_Glint
 
 !  End module
 

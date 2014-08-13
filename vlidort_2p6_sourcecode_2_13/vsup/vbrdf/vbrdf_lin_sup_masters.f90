@@ -29,7 +29,7 @@
 ! #  Release Date :   October 2010   (2.4RTC)                   #
 ! #  Release Date :   March 2011     (2.5)                      #
 ! #  Release Date :   May 2012       (2.6)                      #
-! #  Release Date :   May 2014       (2.7)                      #
+! #  Release Date :   August 2014    (2.7)                      #
 ! #                                                             #
 ! #       NEW: TOTAL COLUMN JACOBIANS          (2.4)            #
 ! #       NEW: BPDF Land-surface KERNELS       (2.4R)           #
@@ -38,8 +38,8 @@
 ! #       f77/f90 Release                      (2.5)            #
 ! #       External SS / New I/O Structures     (2.6)            #
 ! #                                                             #
-! #       Surface-leaving, BRDF Albedo-scaling (2.7)            # 
-! #       Taylor series, Black-body Jacobians  (2.7)            #
+! #       SURFACE-LEAVING / BRDF-SCALING      (2.7)             #
+! #       TAYLOR Series / OMP THREADSAFE      (2.7)             #
 ! #                                                             #
 ! ###############################################################
 
@@ -76,6 +76,9 @@ MODULE vbrdf_LinSup_masters_m
 
 !  Input routine for BRDF program
 
+!  Version 2.6 notes
+!  -----------------
+
 !  Observational Geometry Inputs. Marked with !@@
 !     Installed 31 december 2012. 
 !       Observation-Geometry input control.       DO_USER_OBSGEOMS
@@ -83,6 +86,75 @@ MODULE vbrdf_LinSup_masters_m
 !       User-defined Observation Geometry angles. USER_OBSGEOMS
 !     Added solar_sources flag for better control (DO_SOLAR_SOURCES)
 !     Added Overall-exact flag for better control (DO_EXACT)
+
+!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+!  VBRDF Upgrades for Version 2.7
+!  ------------------------------
+
+!  A. White-sky and Black-sky scaling options
+!  ==========================================
+
+!  WSA and BSA scaling options.
+!   first introduced 02 April 2014, Revised, 14-15 April 2014
+!      WSA = White-sky albedo. BSA = Black-sky albedo.
+
+!  These options are mutually exclusive. If either is set, the VBRDF code
+!  will automatically perform an albedo calculation (either WS or BS) for
+!  the (1,1) component of the complete 3-kernel BRDF, then normalize the
+!  entire BRDF with this albedo before scaling up with the externally chosen
+!  WSA or BSA (from input).
+
+!  Additional exception handling has been introduced to make sure that
+!  the spherical or planar albedos for a complete 3-kernel BRDF are in
+!  the [0,1] range. Otherwise, the WSA/BSA scaling makes no sense. It is
+!  still the case that some of the MODIS-tpe kernels give NEGATIVE albedos.
+
+!  The albedo scaling process has been linearized for all existing surface
+!  property Jacobians available to the VBRDF linearized supplement. In
+!  addition, it is also possible to derive single Jacobians of the BRDFs
+!  with respect to the WS or BS albedo - this is separate from (and orthogonal
+!  to) the usual kernel derivatives.
+
+!  B. Alternative Cox-Munk Glint Reflectance
+!  =========================================
+
+!  In conjunction with new Water-leaving code developed for the VSLEAVE
+!  supplement, we have given the VBRDF supplement a new option to 
+!  return the (scalar) Cox-Munk glint reflectance, based on code originally
+!  written for the 6S code.
+
+!  Developed and tested by R. Spurr, 21-29  April 2014
+!  Based in part on Modified-6S code by A. Sayer (NASA-GSFC).
+!  Validated against Modified-6S OCEABRDF.F code, 24-28 April 2014.
+
+!  The new glint option depends on Windspeed/direction, with refractive
+!  indices now computed using salinity and wavelength. There is now an 
+!  optional correction for (Foam) Whitecaps (Foam). These choices come from
+!  the 6S formulation.
+
+!  Need to make sure that the wind input information is the same as that
+!  use for glint calculations in the VSLEAVE supplement when the Glitter
+!  kernels are in use. Also, the Foam correction applied here in the
+!  surface-leaving code should also be applied in the VSLEAVE system..
+
+!  Choosing this new glint option bypasses the normal kernel inputs (and
+!  also the WSA/BSA inputs). Instead, a single-kernel glint reflectance
+!  is calculated with amplitude 1.0, based on a separate set of dedicated
+!  inputs. This option does not apply for surface emission - the solar
+!  sources flag must be turned on. There is only 1 Jacobian available - 
+!  with respect to the windspeed. 
+
+!  Note that the use of the facet isotropy flag is recommended for
+!  multi-beam runs. This is because the wind-direction is a function of
+!  the solar angle, and including this wind-direction in the glint
+!  calculations for VBRDF will only work if there is just one SZA. This
+!  condition is checked for internally.
+
+!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+! #####################################################################
+! #####################################################################
 
       USE VLIDORT_PARS
       USE VBRDF_FINDPAR_M
@@ -194,9 +266,15 @@ MODULE vbrdf_LinSup_masters_m
 !  WSA and BSA scaling options. Weighting function flags.
 !   Revised, 14-15 April 2014, first introduced 02 April 2014, Version 2.7
 !      WSA = White-sky albedo. BSA = Black-sky albedo.
+!   Revised 12 August 2014; added output option flag
 
+      LOGICAL ::          DO_WSABSA_OUTPUT
       LOGICAL ::          DO_WSAVALUE_WF
       LOGICAL ::          DO_BSAVALUE_WF
+
+!  Windspeed Jacobian for the NewCM option
+
+       LOGICAL ::         DO_WINDSPEED_WF
 
 !  Number of surface weighting functions
 
@@ -225,7 +303,34 @@ MODULE vbrdf_LinSup_masters_m
       INTEGER ::          N_USER_OBSGEOMS
       DOUBLE PRECISION :: USER_OBSGEOMS (MAX_USER_OBSGEOMS,3)
 
-!  Exception handling. New code, 18 May 2010
+!  New Cox-Munk Glint reflectance options (bypasses the usual Kernel system)
+!  -------------------------------------------------------------------------
+
+!  Overall flag for this option
+
+      LOGICAL   :: DO_NewCMGLINT
+
+!  Input Salinity in [ppt]
+
+      REAL(fpk) :: SALINITY
+
+!  Input wavelength in [Microns]
+
+      REAL(fpk) :: WAVELENGTH
+
+!  Input Wind speed in m/s, and azimuth directions relative to Sun positions
+
+      REAL(fpk) :: WINDSPEED, WINDDIR ( MAXBEAMS )
+
+!  Flags for glint shadowing, Foam Correction, facet Isotropy
+
+      LOGICAL   :: DO_GlintShadow
+      LOGICAL   :: DO_FoamOption
+      LOGICAL   :: DO_FacetIsotropy
+
+!  Exception handling
+!  ------------------
+
 !     Message Length should be at least 120 Characters
 
       INTEGER ::             STATUS
@@ -260,7 +365,8 @@ MODULE vbrdf_LinSup_masters_m
                            'Cox-Munk  ', &
                            'GissCoxMnk', &
                            'GCMcomplex', &
-                           'BPDF2009  '/)
+                           'BPDF2009  ', &
+                           'NewCMGlint'/)
 
 !  Initialize Exception handling
 
@@ -331,6 +437,8 @@ MODULE vbrdf_LinSup_masters_m
       MSRCORR_NMUQUAD      = 0
       MSRCORR_NPHIQUAD     = 0
 
+      WHICH_BRDF = 0
+      BRDF_NAMES = '          '
       DO K = 1, MAX_BRDF_KERNELS
         LAMBERTIAN_KERNEL_FLAG(K) = .FALSE.
         BRDF_FACTORS(K) = ZERO
@@ -342,13 +450,27 @@ MODULE vbrdf_LinSup_masters_m
 !  WSA and BSA scaling options.
 !   Revised, 14-15 April 2014, first introduced 02 April 2014, Version 2.7
 !      WSA = White-sky albedo. BSA = Black-sky albedo.
+!   Revised 12 August 2014; added output option flag
 
+      DO_WSABSA_OUTPUT = .false.
       DO_WSA_SCALING = .false.
       DO_BSA_SCALING = .false.
       WSA_VALUE      = zero
       BSA_VALUE      = zero
       DO_WSAVALUE_WF = .false.
       DO_BSAVALUE_WF = .false.
+
+!  NewCM options
+
+      DO_NewCMGLINT = .false.
+      SALINITY   = zero
+      WAVELENGTH = zero
+      WINDSPEED  = zero
+      WINDDIR    = zero
+      DO_GlintShadow   = .false.
+      DO_FoamOption    = .false.
+      DO_FacetIsotropy = .false.
+      DO_WINDSPEED_WF  = .false.
 
 !  Linearized stuff
 
@@ -582,19 +704,99 @@ MODULE vbrdf_LinSup_masters_m
            READ (FILUNIT,*,ERR=998) DO_BRDF_SURFACE
       CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
 
-!  Surface emission flag
+!  NewCM Flag. New for Version 2.7
 
-      PAR_STR = 'Do surface emission?'
-      IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) &
-           READ (FILUNIT,*,ERR=998) DO_SURFACE_EMISSION
-      CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+      IF ( DO_BRDF_SURFACE ) THEN
+        PAR_STR = 'Do NewCM Ocean BRDF reflectance?'
+        IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) &
+              READ (FILUNIT,*,ERR=998) DO_NewCMGLINT
+        CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+      ENDIF
+
+!  Surface emission flag. Not for NewCM
+
+      IF ( .not. DO_NewCMGLINT ) then
+        PAR_STR = 'Do surface emission?'
+        IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) &
+             READ (FILUNIT,*,ERR=998) DO_SURFACE_EMISSION
+        CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+      ENDIF
 
 !  Only if set
 
       IF ( DO_BRDF_SURFACE ) THEN
 
-!  Basic BRDF inputs
-!  -----------------
+!  Get the NewCM parameters
+!  ------------------------
+
+        IF ( DO_NewCMGLINT ) then
+
+!  Flags
+
+          PAR_STR = 'Do NewCM glint shadowing?'
+          IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) &
+             READ (FILUNIT,*,ERR=998) DO_GlintShadow
+          CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+
+          PAR_STR = 'Do NewCM whitecap (foam) reflectance?'
+          IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) &
+             READ (FILUNIT,*,ERR=998) DO_FoamOption
+          CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+
+          PAR_STR = 'Do NewCM facet isotropy?'
+          IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) &
+             READ (FILUNIT,*,ERR=998) DO_FacetIsotropy
+          CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+
+!  Wavelength, Salinity
+
+          PAR_STR = 'NewCM Wavelength [Microns]?'
+          IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) &
+             READ (FILUNIT,*,ERR=998) WAVELENGTH
+          CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+
+          PAR_STR = 'NewCM Ocean water salinity [ppt]'
+          IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) &
+             READ (FILUNIT,*,ERR=998) SALINITY
+          CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+
+!  Windspeed and direction
+
+          PAR_STR = 'NewCM Windspeed in [m/s]'
+          IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) &
+             READ (FILUNIT,*,ERR=998) WINDSPEED
+          CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+
+          PAR_STR = 'NewCM Wind directions (degrees) relative to sun positions'
+          IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) THEN
+            DO I = 1, NBEAMS
+              READ (FILUNIT,*,ERR=998) WINDDIR(I)
+            ENDDO
+          ENDIF
+          CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+
+        ENDIF
+
+!  NewCM input: Set kernel defaults
+!     One kernel, scalar only, no surface emission, no scaling
+
+        IF ( DO_NewCMGLINT ) then
+           NSTOKES              = 1
+           N_BRDF_KERNELS       = 1
+           BRDF_NAMES(1)        = 'NewCMGlint'
+           WHICH_BRDF(1)        = NewCMGLINT_IDX
+           BRDF_FACTORS(1)      = one
+           N_BRDF_PARAMETERS(1) = 2
+           BRDF_PARAMETERS(1,1) = WINDSPEED
+           BRDF_PARAMETERS(1,2) = SALINITY
+        endif
+
+!  Skip next section if doing the NewCM kernel
+
+        IF ( DO_NewCMGLINT ) go to 656
+
+!  Basic KERNEL BRDF inputs
+!  ------------------------
 
 !  number of kernels
 
@@ -609,22 +811,6 @@ MODULE vbrdf_LinSup_masters_m
           NM = NM + 1
           MESSAGES(NM) = 'Number of BRDF Kernels > maximum dimension (=3)'
           ACTIONS(NM)  = 'Re-set input value or increase MAX_BRDF_KERNELS dimension'
-          STATUS = VLIDORT_SERIOUS
-          NMESSAGES = NM
-          GO TO 764
-        ENDIF
-
-!  number of BRDF azimuth streams, check this value
-
-        PAR_STR = 'Number of BRDF azimuth angles'
-        IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) &
-            READ (FILUNIT,*,ERR=998) NSTREAMS_BRDF
-        CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
-
-        IF ( NSTREAMS_BRDF .GT. MAXSTREAMS_BRDF ) THEN
-          NM = NM + 1
-          MESSAGES(NM) = 'Number of  BRDF streams > maximum dimension'
-          ACTIONS(NM)  = 'Re-set input value or increase MAXSTREAMS_BRDF dimension'
           STATUS = VLIDORT_SERIOUS
           NMESSAGES = NM
           GO TO 764
@@ -686,6 +872,29 @@ MODULE vbrdf_LinSup_masters_m
           ENDIF
         ENDDO
         CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+
+!  Continuation point for skipping Regular kernel input
+
+656     continue
+
+!  General inputs, all types
+!  -------------------------
+
+!  number of BRDF azimuth streams, check this value
+
+        PAR_STR = 'Number of BRDF azimuth angles'
+        IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) &
+            READ (FILUNIT,*,ERR=998) NSTREAMS_BRDF
+        CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS )
+
+        IF ( NSTREAMS_BRDF .GT. MAXSTREAMS_BRDF ) THEN
+          NM = NM + 1
+          MESSAGES(NM) = 'Number of  BRDF streams > maximum dimension'
+          ACTIONS(NM)  = 'Re-set input value or increase MAXSTREAMS_BRDF dimension'
+          STATUS = VLIDORT_SERIOUS
+          NMESSAGES = NM
+          GO TO 764
+        ENDIF
 
 !  !@@ Overall-Exact flag
 
@@ -809,9 +1018,25 @@ MODULE vbrdf_LinSup_masters_m
 !  White-Sky and Black-Sky Albedo scalings. New for Version 2.7
 !  ============================================================
 
+!  Skip this section for NewCM kernel
+
+        if ( DO_NewCMGLINT ) go to 646
+
 !  WSA and BSA scaling options.
 !   Revised, 14-15 April 2014, first introduced 02 April 2014, Version 2.7
 !      WSA = White-sky albedo. BSA = Black-sky albedo.
+
+!  Output option flag.
+!  -------------------
+
+!   Revised 12 August 2014; added output option flag.
+!   If you are doing WSA or BSA scaling, this should be set automatically
+
+        PAR_STR = 'Do white-sky and black-sky albedo output?'
+        IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) THEN
+           READ (FILUNIT,*,ERR=998)DO_WSABSA_OUTPUT
+        ENDIF
+        CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS)
 
 !  White-Sky inputs
 !  ----------------
@@ -907,8 +1132,9 @@ MODULE vbrdf_LinSup_masters_m
         ENDIF
 
 !  Check that there is only one beam for Black sky albedo
+!   Revision 12 august 2014. Same check applies to the output option
 
-        IF ( DO_BSA_SCALING  ) THEN
+        IF ( DO_BSA_SCALING .or. DO_WSABSA_OUTPUT ) THEN
            IF ( NBEAMS.gt.1 ) THEN
               NM = NM + 1
               MESSAGES(NM) = 'Bad input: Cannot have Black-sky albedo with more than 1 solar angle'
@@ -919,8 +1145,47 @@ MODULE vbrdf_LinSup_masters_m
            ENDIF
         ENDIF
 
+!  continuation point for avoiding the WSA/BSA albedos
+
+646     continue
+
+!  Checking NewCM Kernel. New for Version 2.7
+!    Single kernel, Solar Sources only, No Surface Emission. 
+!         Scalar only, No MSR (Multiple-surface reflections), No Scaling
+
+        if ( DO_NewCMGLINT ) then
+
+           IF ( WINDSPEED .le.zero ) then
+              NM = NM + 1
+              MESSAGES(NM) = 'Bad input: NewCM windspeed value is negative'
+              ACTIONS(NM)  = 'Fix the input'
+              STATUS = VLIDORT_SERIOUS
+              NMESSAGES = NM
+              GO TO 764
+           ENDIF
+
+!  NOT SURE IF WE NEED ANYTHING ELSE HERE..............
+
+        endif
+
 !  Linearized input
 !  ----------------
+
+!  NewCM kernel, Wind speed Jacobian. Version 2.7
+
+        if ( DO_NewCMGLINT ) then
+           PAR_STR = 'Do wind-speed (NewCM) Jacobian?'
+           IF (GFINDPAR ( FILUNIT, PREFIX, ERROR, PAR_STR)) THEN
+              READ (FILUNIT,*,ERR=998)DO_WINDSPEED_WF
+           ENDIF
+           CALL FINDPAR_ERROR ( ERROR, PAR_STR, STATUS, NM, MESSAGES, ACTIONS)
+           IF (DO_WINDSPEED_WF) THEN
+              N_KERNEL_PARAMS_WFS = 1 ; N_SURFACE_WFS = 1
+              DO_KERNEL_PARAMS_WFS(1,1) = .true.
+              DO_KPARAMS_DERIVS(1)      = .true.
+           endif
+           go to 675
+         endif
 
 !  WSA and BSA scaling options.
 !   Revised, 14-15 April 2014, first introduced 02 April 2014, Version 2.7
@@ -953,6 +1218,8 @@ MODULE vbrdf_LinSup_masters_m
         ENDIF
 
 !  Kernel Amplitude/parameter Jacobian inputs.
+!  ------------------------------------------
+
 !  Not allowed linearized inputs with GCMCRI
 
         PAR_STR = 'Kernels, indices, # pars, Factor Jacobian flag, Par Jacobian flags'
@@ -1032,28 +1299,6 @@ MODULE vbrdf_LinSup_masters_m
           GO TO 764
         ENDIF
 
-!  Check Kernel indices are within bounds. Check BRDF name is on accepted list
-
-        DO K = 1, N_BRDF_KERNELS
-          IF ( WHICH_BRDF(K).GT.MAXBRDF_IDX.OR.WHICH_BRDF(K).LE.0) THEN
-            NM = NM + 1
-            MESSAGES(NM) = 'Bad input: BRDF Index not on list of indices'
-            ACTIONS(NM)  = 'Re-set input value: Look in VLIDORT_PARS for correct index'
-            STATUS = VLIDORT_SERIOUS
-            NMESSAGES = NM
-            GO TO 764
-          ELSE
-            IF ( BRDF_NAMES(K).NE.BRDF_CHECK_NAMES(WHICH_BRDF(K)) ) THEN
-              NM = NM + 1
-              MESSAGES(NM) = 'Bad input: BRDF kernel name not one of accepted list'
-              ACTIONS(NM)  = 'Re-set input value: Look in VLIDORT_PARS for correct name'
-              STATUS = VLIDORT_SERIOUS
-              NMESSAGES = NM
-              GO TO 764
-            ENDIF
-          ENDIF
-        ENDDO
-
 !  End BRDF surface clause
 
       ENDIF
@@ -1110,11 +1355,26 @@ MODULE vbrdf_LinSup_masters_m
 !  WSA and BSA scaling options.
 !   Revised, 14-15 April 2014, first introduced 02 April 2014, Version 2.7
 !      WSA = White-sky albedo. BSA = Black-sky albedo.
+!   Revised 12 August 2014; added output option flag.
 
+      VBRDF_Sup_In%BS_DO_WSABSA_OUTPUT = DO_WSABSA_OUTPUT
       VBRDF_Sup_In%BS_DO_WSA_SCALING = DO_WSA_SCALING
       VBRDF_Sup_In%BS_DO_BSA_SCALING = DO_BSA_SCALING
       VBRDF_Sup_In%BS_WSA_VALUE      = WSA_VALUE
       VBRDF_Sup_In%BS_BSA_VALUE      = BSA_VALUE
+
+!  NewCM options
+
+      VBRDF_Sup_In%BS_DO_NewCMGLINT = DO_NewCMGLINT
+      VBRDF_Sup_In%BS_SALINITY      = SALINITY
+      VBRDF_Sup_In%BS_WAVELENGTH    = WAVELENGTH
+
+      VBRDF_Sup_In%BS_WINDSPEED = WINDSPEED
+      VBRDF_Sup_In%BS_WINDDIR   = WINDDIR
+
+      VBRDF_Sup_In%BS_DO_GlintShadow   = DO_GlintShadow
+      VBRDF_Sup_In%BS_DO_FoamOption    = DO_FoamOption
+      VBRDF_Sup_In%BS_DO_FacetIsotropy = DO_FacetIsotropy
 
 !  Copy linearized BRDF inputs
 
@@ -1126,6 +1386,7 @@ MODULE vbrdf_LinSup_masters_m
       VBRDF_LinSup_In%BS_N_KERNEL_PARAMS_WFS    = N_KERNEL_PARAMS_WFS
       VBRDF_LinSup_In%BS_DO_WSAVALUE_WF         = DO_WSAVALUE_WF         ! New Version 2.7
       VBRDF_LinSup_In%BS_DO_BSAVALUE_WF         = DO_BSAVALUE_WF         ! New Version 2.7
+      VBRDF_LinSup_In%BS_DO_WINDSPEED_WF        = DO_WINDSPEED_WF        ! New Version 2.7
 
 !  Exception handling
 
@@ -1184,6 +1445,9 @@ MODULE vbrdf_LinSup_masters_m
 
 !  Prepares the bidirectional reflectance functions necessary for VLIDORT.
 
+!  Version 2.6 notes
+!  -----------------
+
 !  Observational Geometry Inputs. Marked with !@@
 !     Installed 31 december 2012. 
 !       Observation-Geometry input control.       DO_USER_OBSGEOMS
@@ -1192,7 +1456,71 @@ MODULE vbrdf_LinSup_masters_m
 !     Added solar_sources flag for better control (DO_SOLAR_SOURCES)
 !     Added Overall-exact flag for better control (DO_EXACT)
 
-!  Upgrade Version 2.7 for WSA/BSA implementation. Marked with !{2.7}
+!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+!  VBRDF Upgrades for Version 2.7
+!  ------------------------------
+
+!  A. White-sky and Black-sky scaling options
+!  ==========================================
+
+!  WSA and BSA scaling options.
+!   first introduced 02 April 2014, Revised, 14-15 April 2014
+!      WSA = White-sky albedo. BSA = Black-sky albedo.
+
+!  These options are mutually exclusive. If either is set, the VBRDF code
+!  will automatically perform an albedo calculation (either WS or BS) for
+!  the (1,1) component of the complete 3-kernel BRDF, then normalize the
+!  entire BRDF with this albedo before scaling up with the externally chosen
+!  WSA or BSA (from input).
+
+!  Additional exception handling has been introduced to make sure that
+!  the spherical or planar albedos for a complete 3-kernel BRDF are in
+!  the [0,1] range. Otherwise, the WSA/BSA scaling makes no sense. It is
+!  still the case that some of the MODIS-tpe kernels give NEGATIVE albedos.
+
+!  The albedo scaling process has been linearized for all existing surface
+!  property Jacobians available to the VBRDF linearized supplement. In
+!  addition, it is also possible to derive single Jacobians of the BRDFs
+!  with respect to the WS or BS albedo - this is separate from (and orthogonal
+!  to) the usual kernel derivatives.
+
+!  B. Alternative Cox-Munk Glint Reflectance
+!  =========================================
+
+!  In conjunction with new Water-leaving code developed for the VSLEAVE
+!  supplement, we have given the VBRDF supplement a new option to 
+!  return the (scalar) Cox-Munk glint reflectance, based on code originally
+!  written for the 6S code.
+
+!  Developed and tested by R. Spurr, 21-29  April 2014
+!  Based in part on Modified-6S code by A. Sayer (NASA-GSFC).
+!  Validated against Modified-6S OCEABRDF.F code, 24-28 April 2014.
+
+!  The new glint option depends on Windspeed/direction, with refractive
+!  indices now computed using salinity and wavelength. There is now an 
+!  optional correction for (Foam) Whitecaps (Foam). These choices come from
+!  the 6S formulation.
+
+!  Need to make sure that the wind input information is the same as that
+!  use for glint calculations in the VSLEAVE supplement when the Glitter
+!  kernels are in use. Also, the Foam correction applied here in the
+!  surface-leaving code should also be applied in the VSLEAVE system..
+
+!  Choosing this new glint option bypasses the normal kernel inputs (and
+!  also the WSA/BSA inputs). Instead, a single-kernel glint reflectance
+!  is calculated with amplitude 1.0, based on a separate set of dedicated
+!  inputs. This option does not apply for surface emission - the solar
+!  sources flag must be turned on. There is only 1 Jacobian available - 
+!  with respect to the windspeed. 
+
+!  Note that the use of the facet isotropy flag is recommended for
+!  multi-beam runs. This is because the wind-direction is a function of
+!  the solar angle, and including this wind-direction in the glint
+!  calculations for VBRDF will only work if there is just one SZA. This
+!  condition is checked for internally.
+
+!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
       USE VLIDORT_PARS
 
@@ -1286,7 +1614,9 @@ MODULE vbrdf_LinSup_masters_m
 !  WSA and BSA scaling options.
 !   Revised, 14-15 April 2014, first introduced 02 April 2014, Version 2.7
 !      WSA = White-sky albedo. BSA = Black-sky albedo.
+!   Revised 12 August 2014; added output option flag
 
+      LOGICAL   :: DO_WSABSA_OUTPUT
       LOGICAL   :: DO_WSA_SCALING
       LOGICAL   :: DO_BSA_SCALING
       REAL(fpk) :: WSA_VALUE, BSA_VALUE
@@ -1332,6 +1662,10 @@ MODULE vbrdf_LinSup_masters_m
       LOGICAL ::          DO_WSAVALUE_WF
       LOGICAL ::          DO_BSAVALUE_WF
 
+!  NewCM option (only the Windspeed Jacobian). Version 2.7
+
+      LOGICAL ::          DO_WINDSPEED_WF
+
 !  number of surfaceweighting functions
 
       INTEGER ::          N_SURFACE_WFS
@@ -1355,6 +1689,31 @@ MODULE vbrdf_LinSup_masters_m
 
       INTEGER ::          N_USER_OBSGEOMS
       DOUBLE PRECISION :: USER_OBSGEOMS (MAX_USER_OBSGEOMS,3)
+
+!  NewCM Glitter options (bypasses the usual Kernel system)
+!  -------------------------------------------------------
+
+!  Overall flag for this option
+
+      LOGICAL   :: DO_NewCMGLINT
+
+!  Input Salinity in [ppt]
+
+      DOUBLE PRECISION :: SALINITY
+
+!  Input wavelength in [Microns]
+
+      DOUBLE PRECISION :: WAVELENGTH
+
+!  Input Wind speed in m/s, and azimuth directions relative to Sun positions
+
+      DOUBLE PRECISION :: WINDSPEED, WINDDIR ( MAXBEAMS )
+
+!  Flags for glint shadowing, Foam Correction, facet Isotropy
+
+      LOGICAL   :: DO_GlintShadow
+      LOGICAL   :: DO_FoamOption
+      LOGICAL   :: DO_FacetIsotropy
 
 !  BRDF External functions
 !  =======================
@@ -1608,6 +1967,14 @@ MODULE vbrdf_LinSup_masters_m
       DOUBLE PRECISION :: WSA_CALC (MAX_BRDF_KERNELS), TOTAL_WSA_CALC, D_TOTAL_WSA_CALC (MAX_SURFACEWFS )
       DOUBLE PRECISION :: BSA_CALC (MAX_BRDF_KERNELS), TOTAL_BSA_CALC, D_TOTAL_BSA_CALC (MAX_SURFACEWFS )
 
+!  Local NewCM variables
+
+      DOUBLE PRECISION :: Refrac_R, Refrac_I, WC_Reflectance, WC_Lambertian, DWC_Reflectance, DWC_Lambertian
+
+!  Local check of Albedo, for all regular kernel options
+
+      LOGICAL :: DO_CHECK_ALBEDO
+
 !  help
 
       INTEGER          :: WOFFSET ( MAX_BRDF_KERNELS)
@@ -1625,10 +1992,6 @@ MODULE vbrdf_LinSup_masters_m
 !  Default, use Gaussian quadrature
 
       LOGICAL, PARAMETER :: DO_BRDFQUAD_GAUSSIAN = .true.
-
-!  Local check of Albedo
-
-      LOGICAL, PARAMETER :: DO_CHECK_ALBEDO = .true.
 
 !  Initialize Exception handling
 !  -----------------------------
@@ -1712,16 +2075,36 @@ MODULE vbrdf_LinSup_masters_m
 !  WSA and BSA scaling options.
 !   Revised, 14-15 April 2014, first introduced 02 April 2014, Version 2.7
 !      WSA = White-sky albedo. BSA = Black-sky albedo.
+!   Revised 12 August 2014, Added WSBSA output flag option
 
+      DO_WSABSA_OUTPUT    = VBRDF_Sup_In%BS_DO_WSABSA_OUTPUT
       DO_WSA_SCALING      = VBRDF_Sup_In%BS_DO_WSA_SCALING
       DO_BSA_SCALING      = VBRDF_Sup_In%BS_DO_BSA_SCALING
       WSA_VALUE           = VBRDF_Sup_In%BS_WSA_VALUE
       BSA_VALUE           = VBRDF_Sup_In%BS_BSA_VALUE
 
-!  Local flags
+!  NewCM options
 
-      DO_LOCAL_WSA = DO_WSA_SCALING .or.  DO_CHECK_ALBEDO
-      DO_LOCAL_BSA = DO_BSA_SCALING .and. DO_SOLAR_SOURCES
+      DO_NewCMGLINT = VBRDF_Sup_In%BS_DO_NewCMGLINT
+      SALINITY      = VBRDF_Sup_In%BS_SALINITY
+      WAVELENGTH    = VBRDF_Sup_In%BS_WAVELENGTH
+
+      WINDSPEED = VBRDF_Sup_In%BS_WINDSPEED
+      WINDDIR   = VBRDF_Sup_In%BS_WINDDIR
+
+      DO_GlintShadow   = VBRDF_Sup_In%BS_DO_GlintShadow
+      DO_FoamOption    = VBRDF_Sup_In%BS_DO_FoamOption
+      DO_FacetIsotropy = VBRDF_Sup_In%BS_DO_FacetIsotropy 
+
+!  Local check of albedo
+
+      DO_CHECK_ALBEDO = .not. DO_NewCMGLINT
+
+!  Local flags
+!   Revised 12 August 2014; added output option flag
+
+      DO_LOCAL_WSA = ( DO_WSA_SCALING .or. DO_WSABSA_OUTPUT ) .or.  DO_CHECK_ALBEDO
+      DO_LOCAL_BSA = ( DO_BSA_SCALING .or. DO_WSABSA_OUTPUT ) .and. DO_SOLAR_SOURCES
 
 !  Copy linearized BRDF inputs
 
@@ -1733,6 +2116,7 @@ MODULE vbrdf_LinSup_masters_m
       N_KERNEL_PARAMS_WFS    = VBRDF_LinSup_In%BS_N_KERNEL_PARAMS_WFS
       DO_WSAVALUE_WF         = VBRDF_LinSup_In%BS_DO_WSAVALUE_WF           ! New, Version 2.7
       DO_BSAVALUE_WF         = VBRDF_LinSup_In%BS_DO_BSAVALUE_WF           ! New, Version 2.7
+      DO_WINDSPEED_WF        = VBRDF_LinSup_In%BS_DO_WINDSPEED_WF          ! New, Version 2.7
 
 !  Local flag
 
@@ -1860,11 +2244,12 @@ MODULE vbrdf_LinSup_masters_m
       ENDIF
 
 !  Number of weighting functions, and offset
-!    * Offset not required for WSA/BSA Jacobians. New code Version 2.7
+!    * Offset not required for WSA/BSA      Jacobians. New code Version 2.7
+!    * Offset not required for 6S/Windspeed Jacobians. New code Version 2.7
 !    * Exception handling introduced Version 2.7
 
       WOFFSET = 0
-      IF ( .not. DO_BSAVALUE_WF .and. .not. DO_WSAVALUE_WF ) then
+      IF ( .not. DO_NewCMGLINT .and. (.not. DO_BSAVALUE_WF .and. .not. DO_WSAVALUE_WF ) ) then
          W = 0 ;  WOFFSET(1) = 0
          DO K = 1, N_BRDF_KERNELS
             IF ( DO_KERNEL_FACTOR_WFS(K) ) W = W + 1
@@ -1924,6 +2309,11 @@ MODULE vbrdf_LinSup_masters_m
       VBRDF_Sup_Out%BS_BRDF_F   = ZERO
       VBRDF_Sup_Out%BS_USER_BRDF_F_0 = ZERO
       VBRDF_Sup_Out%BS_USER_BRDF_F   = ZERO
+
+!  zero the WSABSA output (new feature, 12 august 2014)
+
+      VBRDF_Sup_Out%BS_WSA_CALCULATED     = ZERO
+      VBRDF_Sup_Out%BS_BSA_CALCULATED     = ZERO
 
 !  Initialize surface emissivity
 !    Set to zero if you are using Albedo Scaling
@@ -2368,8 +2758,61 @@ MODULE vbrdf_LinSup_masters_m
                SCALING_BRDFUNC, SCALING_BRDFUNC_0  )                               ! output, New line, Version 2.7
         ENDIF
 
-!  Exact BRDFUNC
-!  ------------
+!  NewCM Kernel. New for Version 2.7
+!  ---------------------------------
+
+!    Single kernel, Solar Sources only, No Surface Emission. 
+!         Scalar only, No MSR (Multiple-surface reflections), No Scaling
+
+!  Sequence is (1) Salinity, WhiteCap, Cox-Munk
+
+        IF ( WHICH_BRDF(K) .EQ. NewCMGLINT_IDX ) THEN
+
+!  Reverse angle effect !!!!!
+!   NewCM Convention is opposite from VLIDORT, that is, Phi(6S) = 180 - Phi(VL)
+!   Once this is realized, NewCM and Regular Cox-Munk will agree perfectly
+!          ( Have to turn off Whitecaps in 6S and use Facet Isotropy, make sure RI same)
+
+          IF ( DO_EXACT.and.DO_SOLAR_SOURCES ) THEN
+             DO IA = 1, N_USER_RELAZMS
+                PHIANG(IA) = PIE - PHIANG(IA)
+                COSPHI(IA) = - COSPHI(IA)
+             ENDDO
+             DO I = 1, NSTREAMS_BRDF
+                CX_BRDF(I) = - CX_BRDF(I)
+             ENDDO
+          ENDIF
+  
+!  Refractive index. Formerly INDWAT
+
+          Call VBRDF_Water_RefracIndex  ( Wavelength, Salinity, Refrac_R, Refrac_I )
+
+!  Foam-reflectance correction.
+
+          WC_Reflectance  = zero ; WC_Lambertian  = zero
+          DWC_Reflectance = zero ; DWC_Lambertian = zero
+          if ( Do_FoamOption ) then
+             call VBRDF_WhiteCap_Reflectance_plus &
+               ( WindSpeed, Wavelength, &
+                     WC_Reflectance, WC_Lambertian, DWC_Reflectance, DWC_Lambertian )
+          endif
+  
+!  Make the reflectance. Includes the WhiteCap term.
+
+          CALL  VBRDF_Lin_NewCM_MAKER &
+            ( DO_GlintShadow, DO_FacetIsotropy, WINDSPEED, WINDDIR, Refrac_R, Refrac_I, &
+              WC_Reflectance, WC_Lambertian, DWC_Reflectance, DWC_Lambertian,           &
+              DO_USER_OBSGEOMS, DO_USER_STREAMS, DO_EXACT, DO_EXACTONLY,                &
+              NSTREAMS_BRDF, NSTREAMS, NBEAMS, N_USER_STREAMS, N_USER_RELAZMS,          &
+              QUAD_STREAMS, QUAD_SINES, USER_STREAMS, USER_SINES,                       &
+              SZASURCOS, SZASURSIN, PHIANG, COSPHI, SINPHI, X_BRDF, CX_BRDF, SX_BRDF,   &
+              DBKERNEL_BRDFUNC, BRDFUNC, USER_BRDFUNC, BRDFUNC_0, USER_BRDFUNC_0,       &
+              D_DBKERNEL_BRDFUNC, D_BRDFUNC, D_USER_BRDFUNC, D_BRDFUNC_0, D_USER_BRDFUNC_0 )     
+
+        ENDIF
+
+!  Compute Exact Direct Beam BRDF
+!  ==============================
 
 !  factor
 
@@ -2433,7 +2876,7 @@ MODULE vbrdf_LinSup_masters_m
 !  Linearization w.r.t Kernel parameters
 
         DO P = 1, BRDF_NPARS
-          IF ( DERIVS(P) ) THEN
+         IF ( DERIVS(P) ) THEN
             W = W + 1
             IF ( DO_USER_OBSGEOMS ) THEN
               DO O1 = 1, NSTOKESSQ
@@ -2970,6 +3413,17 @@ MODULE vbrdf_LinSup_masters_m
 
 !  Now perform normalizations and scaling with White-sky or Black-sky albedos. New section, 02-15 April 2014
 !  =========================================================================================================
+
+!  WSABSA OUTPUT
+!  -------------
+
+!  Revision 12 August 2014. Added output option.
+
+      IF ( DO_WSABSA_OUTPUT ) THEN
+         VBRDF_Sup_Out%BS_WSA_CALCULATED = TOTAL_WSA_CALC
+         VBRDF_Sup_Out%BS_BSA_CALCULATED = TOTAL_BSA_CALC
+      ENDIF
+
 !  only if flagged.
 
       IF ( DO_WSA_SCALING .or. DO_BSA_SCALING ) THEN

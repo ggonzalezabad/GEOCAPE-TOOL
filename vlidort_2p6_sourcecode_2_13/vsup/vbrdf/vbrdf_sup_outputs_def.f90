@@ -20,7 +20,7 @@
 ! #  Email :       rtsolutions@verizon.net                      #
 ! #                                                             #
 ! #  Versions     :   2.0, 2.2, 2.3, 2.4, 2.4R, 2.4RT, 2.4RTC,  #
-! #                   2.5, 2.6                                  #
+! #                   2.5, 2.6, 2.7                             #
 ! #  Release Date :   December 2005  (2.0)                      #
 ! #  Release Date :   March 2007     (2.2)                      #
 ! #  Release Date :   October 2007   (2.3)                      #
@@ -30,7 +30,7 @@
 ! #  Release Date :   October 2010   (2.4RTC)                   #
 ! #  Release Date :   March 2011     (2.5)                      #
 ! #  Release Date :   May 2012       (2.6)                      #
-! #  Release Date :   May 2014       (2.7)                      #
+! #  Release Date :   August 2014    (2.7)                      #
 ! #                                                             #
 ! #       NEW: TOTAL COLUMN JACOBIANS          (2.4)            #
 ! #       NEW: BPDF Land-surface KERNELS       (2.4R)           #
@@ -39,8 +39,8 @@
 ! #       f77/f90 Release                      (2.5)            #
 ! #       External SS / New I/O Structures     (2.6)            #
 ! #                                                             #
-! #       Surface-leaving, BRDF Albedo-scaling (2.7)            # 
-! #       Taylor series, Black-body Jacobians  (2.7)            #
+! #       SURFACE-LEAVING / BRDF-SCALING      (2.7)             #
+! #       TAYLOR Series / OMP THREADSAFE      (2.7)             #
 ! #                                                             #
 ! ###############################################################
 
@@ -94,6 +94,10 @@ type VBRDF_Sup_Outputs
    REAL(fpk), dimension ( MAXSTOKES, MAXSTREAMS )       :: BS_EMISSIVITY
    REAL(fpk), dimension ( MAXSTOKES, MAX_USER_STREAMS ) :: BS_USER_EMISSIVITY
 
+!  Revision 12 august 2014. Add WSA and BSA output
+
+   REAL(FPK) :: BS_WSA_CALCULATED
+   REAL(FPK) :: BS_BSA_CALCULATED
 
 end type VBRDF_Sup_Outputs
 

@@ -185,7 +185,7 @@ Streams
 # ---------------------------
 Sun positions
 1
-0.01d0
+0.01
 15.0d0
 30.0d0
 45.0d0
@@ -200,7 +200,7 @@ Sun positions
 # ---------------------------
 View angles
 1
-0.01d0
+0.01
 15.0d0
 30.0d0
 45.0d0
@@ -215,7 +215,7 @@ View angles
 # ---------------------------
 Azimuth angles
 1
-0.01d0
+0.01
 
 # -------------------------------------------------
 # User level to output radiances:
@@ -232,14 +232,14 @@ User levels
 #   2. Values (one each line, as many as user levels)
 # ---------------------------------------------------
 User altitudes
-T
+F
 0.0d0
 
 # ------------------------
 # Do upwelling logical T/F
 # ------------------------
 Upwelling
-F
+T
 
 # ------------------------------------------------------------------
 # Footprint information:

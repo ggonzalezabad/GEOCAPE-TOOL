@@ -20,7 +20,7 @@
 ! #  Email :       rtsolutions@verizon.net                      #
 ! #                                                             #
 ! #  Versions     :   2.0, 2.2, 2.3, 2.4, 2.4R, 2.4RT, 2.4RTC,  #
-! #                   2.5, 2.6                                  #
+! #                   2.5, 2.6, 2.7                             #
 ! #  Release Date :   December 2005  (2.0)                      #
 ! #  Release Date :   March 2007     (2.2)                      #
 ! #  Release Date :   October 2007   (2.3)                      #
@@ -30,7 +30,7 @@
 ! #  Release Date :   October 2010   (2.4RTC)                   #
 ! #  Release Date :   March 2011     (2.5)                      #
 ! #  Release Date :   May 2012       (2.6)                      #
-! #  Release Date :   May 2014       (2.7)                      #
+! #  Release Date :   August 2014    (2.7)                      #
 ! #                                                             #
 ! #       NEW: TOTAL COLUMN JACOBIANS          (2.4)            #
 ! #       NEW: BPDF Land-surface KERNELS       (2.4R)           #
@@ -39,8 +39,8 @@
 ! #       f77/f90 Release                      (2.5)            #
 ! #       External SS / New I/O Structures     (2.6)            #
 ! #                                                             #
-! #       Surface-leaving, BRDF Albedo-scaling (2.7)            # 
-! #       Taylor series, Black-body Jacobians  (2.7)            #
+! #       SURFACE-LEAVING / BRDF-SCALING       (2.7)            #
+! #       TAYLOR Series / OMP THREADSAFE       (2.7)            #
 ! #                                                             #
 ! ###############################################################
 
@@ -55,18 +55,19 @@
 ! #                                                             #
 ! #  This is vbrdf_aux.f. Utility routines                      #
 ! #  The subroutines in vbrdf_aux are listed below with their   #
-! #  source of origin (order of appearance).                    #
+! #      source of origin (order of appearance).                #
 ! #                                                             #
-! #      brdf_gauleg:                Numerical Recipes, 1992    #
-! #      derfc_e:                    V. Natraj, 2005            #
-! #      BRDF_QUADRATURE_Gaussian    R. Spurr, 2004             #
-! #      BRDF_QUADRATURE_Trapezoid*  R. Spurr, 2004 (not used)  #
+! #     brdf_gauleg:               Numerical Recipes, 1992      #
+! #     derfc_e:                   V. Natraj, 2005              #
+! #     VBRDF_Fresnel_Complex      R. Spurr, 2014 (Version 2.7) #
+! #     BRDF_QUADRATURE_Gaussian   R. Spurr, 2004               #
+! #     BRDF_QUADRATURE_Trapezoid  R. Spurr, 2004 (not used)    #
 ! #                                                             #
 ! ###############################################################
 
       MODULE vbrdf_sup_aux_m
 
-      USE VLIDORT_PARS
+      USE VLIDORT_PARS, only : zero, one, two, half, pie
  
 !  Everything public here
 
@@ -132,6 +133,72 @@
       END function derfc_e
 
 !
+
+Subroutine VBRDF_Fresnel_Complex ( MR, MI, COSCHI, FP )
+
+!  Renamed for the BRDF supplement.
+!    (Same routine occurs also in the VSLEAVE suite)
+!    Adapted from SixS code, this is essentially Born/Wolf computation
+
+   implicit none
+  
+!  Arguments
+
+   double precision, intent(in)  :: MR, MI, COSCHI
+   double precision, intent(out) :: FP
+
+!  Local
+
+   double precision :: MRSQ, MISQ, MSQ, MRMI2, SINCHI_SQ, AA, A1, A2, B1, B2
+   double precision :: U, V, VSQ, CMU, CPU, RR2
+   double precision :: B1MU, B1PU, B2MV, B2PV, RL2
+
+!  Calculation of FP, Complex RI
+
+   IF ( MI.eq.zero) goto 67
+
+   MRSQ = MR * MR ; MISQ = MI * MI
+   MSQ   = MRSQ - MISQ
+   MRMI2 = two * MR * MI
+
+   SINCHI_SQ = one - COSCHI * COSCHI 
+   AA = MSQ - SINCHI_SQ
+   A1 = abs(AA)
+   A2 = SQRT ( AA*AA + MRMI2 * MRMI2 )
+
+   U = sqrt(half*abs(A1+A2))
+   V = sqrt(half*abs(-A1+A2))
+   VSQ = V * V
+   CMU = ( COSCHI - U ) ; CPU = ( COSCHI + U )
+   RR2 = ( CMU*CMU + VSQ ) / ( CPU*CPU + VSQ )
+
+   B1 = MSQ   * COSCHI
+   B2 = MRMI2 * COSCHI
+   B1MU = B1 - U ; B1PU = B1 + U 
+   B2PV = B2 + V ; B2MV = B2 - V 
+
+   RL2 = ( B1MU*B1MU + B2PV*B2PV ) / ( B1PU*B1PU + B2MV*B2MV )
+   FP = half * ( RR2 + RL2 )
+   return
+
+!  Calculation of FP. Real RI
+
+67 continue
+   MSQ = MR * MR
+   SINCHI_SQ = one - COSCHI * COSCHI 
+   U = sqrt(abs(MSQ - SINCHI_SQ))
+   CMU = ( COSCHI - U ) ; CPU = ( COSCHI + U )
+   RR2  = CMU*CMU / ( CPU*CPU )
+   B1   = MSQ * COSCHI
+   B1MU = B1 - U ; B1PU = B1 + U 
+   RL2  = B1MU*B1MU / ( B1PU*B1PU )
+   FP   = half * ( RR2 + RL2 )
+
+!  Finish
+
+   return
+end subroutine VBRDF_Fresnel_Complex
+
 
       SUBROUTINE BRDF_QUADRATURE_GAUSSIAN &
          ( DO_BRDF_SURFEMISSION, NSTREAMS_BRDF, NBRDF_HALF, &

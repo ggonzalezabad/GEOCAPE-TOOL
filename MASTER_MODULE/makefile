@@ -55,19 +55,19 @@ VLIDORT_MODG       = $(TOOL_PATH)/VLIDORT_v2p6G_MODULES
 #LAPACK_NOPT_COMPILE = g77 -c -ffortran-bounds-check
 #F77 = g77
 
-TOOL_COMPILE = gfortran -c -O3 -mcmodel=medium
-VLIDORT_COMPILE = gfortran -c -O3
-LAPACK_COMPILE  = gfortran -c -O3
-LAPACK_NOPT_COMPILE = gfortran -c -O3
-F77 = gfortran -O3
-LIBS = -L/usr/lib64 -lnetcdff
-
-#TOOL_COMPILE = gfortran -c -O3 -mcmodel=medium #-fbounds-check -Wall -fbacktrace
-#VLIDORT_COMPILE = gfortran -c -O3 #-fbounds-check -Wall -fbacktrace
-#LAPACK_COMPILE  = gfortran -c -O3 #-fbounds-check -Wall -fbacktrace
-#LAPACK_NOPT_COMPILE = gfortran -c -O3 #-fbounds-check -Wall -fbacktrace
-#F77 = gfortran -O3 #-fbounds-check -Wall -fbacktrace
+#TOOL_COMPILE = gfortran -c -O3 -mcmodel=medium
+#VLIDORT_COMPILE = gfortran -c -O3
+#LAPACK_COMPILE  = gfortran -c -O3
+#LAPACK_NOPT_COMPILE = gfortran -c -O3
+#F77 = gfortran -O3
 #LIBS = -L/usr/lib64 -lnetcdff
+
+TOOL_COMPILE = gfortran -c -O3 -mcmodel=medium #-fbounds-check -Wall -fbacktrace
+VLIDORT_COMPILE = gfortran -c -O3 #-mcmodel=medium -fbounds-check -Wall -fbacktrace
+LAPACK_COMPILE  = gfortran -c -O3 #-fbounds-check -Wall -fbacktrace
+LAPACK_NOPT_COMPILE = gfortran -c -O3 #-fbounds-check -Wall -fbacktrace
+F77 = gfortran -O3 #-fbounds-check -Wall -fbacktrace -mcmodel=medium
+LIBS = -L/usr/lib64 -lnetcdff
 
 #TOOL_COMPILE        = ifort -c -O3 -zero -mcmodel=medium -shared-intel #-g -traceback -check all -warn all
 #VLIDORT_COMPILE     = ifort -c -O3 -zero #-g -traceback -check all -warn all

@@ -32,7 +32,7 @@ subroutine solarspec_prep_newkur &
    character*(*), intent(INOUT) :: message
 
 !  Local variables
-   integer, parameter             :: nwmax = 80093
+   integer, parameter             :: nwmax = 80095
    integer                        :: i, nr, np, io
    character(LEN=10)              :: charnw
    real(kind=8), dimension(nwmax) :: solar_spec_raw_data   
