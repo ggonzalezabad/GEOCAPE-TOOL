@@ -119,10 +119,8 @@ GC_OBJECTSG      = $(OBJECTS_GEOCAPE_PREP) $(OBJECTS_NETCDF) $(OBJECTS_MODULEG)\
 
 install  : mk_folders all
 distclean: clean_all rm_folders
-all:   $(VLIDORT_OBJECTS)  $(VLIDORT_OBJECTSG) $(GC_OBJECTS)      \
-       $(GC_OBJECTSG)      $(GCTOOLV2P6).exe   $(GCTOOLV2P6G).exe
+all:   $(VLIDORT_OBJECTS)  $(GC_OBJECTS) $(GCTOOLV2P6).exe
 v2p6:  $(VLIDORT_OBJECTS)  $(GC_OBJECTS)       $(GCTOOLV2P6).exe
-v2p6G: $(VLIDORT_OBJECTSG) $(GC_OBJECTSG)      $(GCTOOLV2P6G).exe
 
 # --------------------
 # The main executables
@@ -130,9 +128,6 @@ v2p6G: $(VLIDORT_OBJECTSG) $(GC_OBJECTSG)      $(GCTOOLV2P6G).exe
 $(GCTOOLV2P6).exe: $(VLIDORT_OBJECTS) $(GC_OBJECTS)
 			$(LINK.f) -o $(GCTOOLV2P6).exe $(VLIDORT_OBJECTS) $(GC_OBJECTS) $(LIBS)
 			mv -fv *genmod* $(WARN_PATH); chmod a+x $(GCTOOLV2P6).exe
-$(GCTOOLV2P6G).exe: $(VLIDORT_OBJECTSG) $(GC_OBJECTSG)
-			$(LINK.f) -o $(GCTOOLV2P6G).exe $(VLIDORT_OBJECTSG) $(GC_OBJECTSG) $(LIBS)
-			mv -fv *genmod* $(WARN_PATH); chmod a+x $(GCTOOLV2P6G).exe
 
 .PHONY : clean
 
@@ -158,20 +153,13 @@ clean_tool:
 clean_v2p6_vlidort:
 	rm -vf $(VLIDORT_MOD)/*.mod \
 	       $(VLIDORT_OBJ)/*.o
-clean_v2p6G_vlidort:
-	rm -vf $(VLIDORT_MODG)/*.mod \
-	       $(VLIDORT_OBJG)/*.o
 
 mk_folders:
 	mkdir -p $(OBJ) $(VLIDORT_MOD) $(VLIDORT_OBJ) \
-             $(VLIDORT_MODG)       $(VLIDORT_OBJG)\
-             $(WARN_PATH) $(GC_MOD) $(GC_OBJ)     \
-             $(GC_MODG) $(GC_OBJG)
+             $(WARN_PATH) $(GC_MOD) $(GC_OBJ) 
 rm_folders:
 	rm -rf   $(OBJ) $(VLIDORT_MOD) $(VLIDORT_OBJ) \
-             $(VLIDORT_MODG)       $(VLIDORT_OBJG)\
-             $(WARN_PATH) $(GC_MOD) $(GC_OBJ)     \
-             $(GC_MODG) $(GC_OBJG)
+             $(WARN_PATH) $(GC_MOD) $(GC_OBJ)
 
 # #########################
 # Pattern rules out sourced
