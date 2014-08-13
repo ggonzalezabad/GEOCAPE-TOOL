@@ -112,15 +112,15 @@
 
 !  Maximum number of solar zenith angles
 
-      INTEGER, PARAMETER :: MAX_SZANGLES = 1
+      INTEGER, PARAMETER :: MAX_SZANGLES = 2
 
 !  maximum number of user-defined viewing zenith angles
 
-      INTEGER, PARAMETER :: MAX_USER_VZANGLES = 1
+      INTEGER, PARAMETER :: MAX_USER_VZANGLES = 2
 
 !  maximum number of user-defined output relative azimuth angles
 
-      INTEGER, PARAMETER :: MAX_USER_RELAZMS = 1
+      INTEGER, PARAMETER :: MAX_USER_RELAZMS = 2
 
 !  Maximum number of Observational Geometries
 !   New parameter, 25 October 2012

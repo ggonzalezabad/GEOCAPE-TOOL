@@ -435,12 +435,12 @@ CONTAINS
     ! Save Radiances, flux and direct flux
     ! ------------------------------------
     DO IB = 1, VLIDORT_ModIn%MSunrays%TS_N_SZANGLES
+       GC_flux(W,IB)        = VLIDORT_Out%Main%TS_FLUX_STOKES(1,IB,1,didx)
+       GC_direct_flux(W,IB) = VLIDORT_Out%Main%TS_FLUX_DIRECT(1,IB,1)
        DO UM = 1, VLIDORT_ModIn%MUserVal%TS_N_USER_VZANGLES
           DO UA = 1, VLIDORT_ModIn%MUserVal%TS_N_USER_RELAZMS
              V = VLIDORT_Out%Main%TS_VZA_OFFSETS(IB,UM) + UA
              GC_Radiances(W,V)   = VLIDORT_Out%Main%TS_STOKES(1,V,1,didx)
-             GC_flux(W,V)        = VLIDORT_Out%Main%TS_FLUX_STOKES(1,V,1,didx)
-             GC_direct_flux(W,V) = VLIDORT_Out%Main%TS_FLUX_DIRECT(1,V,1)
           END DO
        END DO
     END DO
@@ -450,15 +450,15 @@ CONTAINS
     ! -------------------------------------------------
     IF ( do_vector_calculation .AND. do_StokesQU_output ) THEN
        DO IB = 1, VLIDORT_ModIn%MSunrays%TS_N_SZANGLES
+                GC_Qflux(W,IB)        = VLIDORT_Out%Main%TS_FLUX_STOKES(1,IB,2,didx)
+                GC_Uflux(W,IB)        = VLIDORT_Out%Main%TS_FLUX_STOKES(1,IB,3,didx)
+                GC_Qdirect_flux(W,IB) = VLIDORT_Out%Main%TS_FLUX_DIRECT(1,IB,2)
+                GC_Udirect_flux(W,IB) = VLIDORT_Out%Main%TS_FLUX_DIRECT(1,IB,3)
           DO UM = 1, VLIDORT_ModIn%MUserVal%TS_N_USER_VZANGLES   
              DO UA = 1, VLIDORT_ModIn%MUserVal%TS_N_USER_RELAZMS
                 V = VLIDORT_Out%Main%TS_VZA_OFFSETS(IB,UM) + UA
                 GC_Qvalues(W,V)      = VLIDORT_Out%Main%TS_STOKES(1,V,2,didx)
                 GC_Uvalues(W,V)      = VLIDORT_Out%Main%TS_STOKES(1,V,3,didx)
-                GC_Qflux(W,V)        = VLIDORT_Out%Main%TS_FLUX_STOKES(1,V,2,didx)
-                GC_Uflux(W,V)        = VLIDORT_Out%Main%TS_FLUX_STOKES(1,V,3,didx)
-                GC_Qdirect_flux(W,V) = VLIDORT_Out%Main%TS_FLUX_DIRECT(1,V,2)
-                GC_Udirect_flux(W,V) = VLIDORT_Out%Main%TS_FLUX_DIRECT(1,V,3)
              END DO
           END DO
        END DO
@@ -1747,15 +1747,15 @@ CONTAINS
        ! ---------
        ! Copy flux
        ! ---------
-       stokes_flux(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, ic) = &
-            VLIDORT_Out%Main%TS_FLUX_STOKES(1, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, &
+       stokes_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, ic) = &
+            VLIDORT_Out%Main%TS_FLUX_STOKES(1, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, &
             1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx)
        
-       ! ---------------------------------
-       ! Copy direct flux only downwelling
-       ! ---------------------------------
-       stokes_direct_flux(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, ic) = &
-            VLIDORT_Out%Main%TS_FLUX_DIRECT(1, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, &
+       ! -----------------------------------
+       ! Copy direct flux (only downwelling)
+       ! -----------------------------------
+       stokes_direct_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, ic) = &
+            VLIDORT_Out%Main%TS_FLUX_DIRECT(1, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, &
             1:VLIDORT_FixIn%Cont%TS_NSTOKES)
        
        IF (do_jacobians) THEN
@@ -1798,18 +1798,18 @@ CONTAINS
          + stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES,          &
          1:VLIDORT_FixIn%Cont%TS_NSTOKES, 2) * cfrac
 
-    VLIDORT_Out%Main%TS_FLUX_STOKES(1, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, &
+    VLIDORT_Out%Main%TS_FLUX_STOKES(1, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,   &
          1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx) =                          &
-         stokes_flux(1:VLIDORT_Out%Main%TS_N_GEOMETRIES,                   &
+         stokes_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,                     &
          1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1) * (1.0 - cfrac )              &
-         + stokes_flux(1:VLIDORT_Out%Main%TS_N_GEOMETRIES,                 &
+         + stokes_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,                   &
          1:VLIDORT_FixIn%Cont%TS_NSTOKES, 2) * cfrac
 
-    VLIDORT_Out%Main%TS_FLUX_DIRECT(1, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, &
-         1:VLIDORT_FixIn%Cont%TS_NSTOKES) =                                 &
-         stokes_direct_flux(1:VLIDORT_Out%Main%TS_N_GEOMETRIES,            &
+    VLIDORT_Out%Main%TS_FLUX_DIRECT(1, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,   &
+         1:VLIDORT_FixIn%Cont%TS_NSTOKES) =                                &
+         stokes_direct_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,              &
          1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1) * (1.0 - cfrac )              &
-         + stokes_direct_flux(1:VLIDORT_Out%Main%TS_N_GEOMETRIES,          &
+         + stokes_direct_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,            &
          1:VLIDORT_FixIn%Cont%TS_NSTOKES, 2) * cfrac
     
     IF (do_jacobians) THEN

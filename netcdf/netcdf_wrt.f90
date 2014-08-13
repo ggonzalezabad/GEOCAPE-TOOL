@@ -108,8 +108,8 @@ subroutine netcdf_wrt ( fname,        & !Filename
 
   real(kind=8), dimension(nw,ngeom), intent(in) :: radiance, q, u !Radiance, q and u values
 
-  real(kind=8), dimension(nw,ngeom), intent(in) :: flux, qflux, uflux !Flux, q and u values
-  real(kind=8), dimension(nw,ngeom), intent(in) :: direct_flux, qdirect_flux, udirect_flux !Direct flux, q and u values
+  real(kind=8), dimension(nw,nsza), intent(in) :: flux, qflux, uflux !Flux, q and u values
+  real(kind=8), dimension(nw,nsza), intent(in) :: direct_flux, qdirect_flux, udirect_flux !Direct flux, q and u values
 
   real(kind=8), dimension(nw,ngeom), intent(in) :: SurfalbJacobian,  & !Surface albedo Jacobian
                                                     SurfalbQJacobian, & !Surface albedo QJacobian
@@ -160,7 +160,7 @@ subroutine netcdf_wrt ( fname,        & !Filename
        sfcprsuwfid, aoduwfid, assauwfid, coduwfid, cssauwfid, gascolid, aodsid, assasid, &
        codsid, cssasid, scatwtid, odsid, ssasid, amfid, gaswfid, gasqwfid, &
        gasuwfid, tempwfid, fluxid, dfluxid, qfluxid, ufluxid, qdfluxid, udfluxid, brdfid
-  integer, dimension(2)    :: gascol_dims, wavalt_dims, wavgas_dims, wavgeo_dims
+  integer, dimension(2)    :: gascol_dims, wavalt_dims, wavgas_dims, wavgeo_dims, wavsza_dims
   integer, dimension(3)    :: wavaltgeo_dims, wavgeogas_dims
   integer, dimension(4)    :: wavaltgeogas_dims, brdfdim
   integer, dimension(ngas) :: gas_indices
@@ -207,6 +207,7 @@ subroutine netcdf_wrt ( fname,        & !Filename
   wavalt_dims(1) = wavdim; wavalt_dims(2) = laydim
   wavgas_dims(1) = wavdim; wavgas_dims(2) = gasdim
   wavgeo_dims(1) = wavdim; wavgeo_dims(2) = geodim
+  wavsza_dims(1) = wavdim; wavsza_dims(2) = szadim
 
   wavaltgeo_dims(1) = wavdim; wavaltgeo_dims(2) = laydim; wavaltgeo_dims(3) = geodim
   wavgeogas_dims(1) = wavdim; wavgeogas_dims(2) = geodim; wavgeogas_dims(3) = gasdim
@@ -245,15 +246,15 @@ subroutine netcdf_wrt ( fname,        & !Filename
 
   ! variables with 2D, wavdim, geodim
   radid   = ncvdef(ncid, 'radiance',    ncfloat, 2, wavgeo_dims, rcode)
-  fluxid  = ncvdef(ncid, 'flux',        ncfloat, 2, wavgeo_dims, rcode)
-  dfluxid = ncvdef(ncid, 'direct_flux', ncfloat, 2, wavgeo_dims, rcode)
+  fluxid  = ncvdef(ncid, 'flux',        ncfloat, 2, wavsza_dims, rcode)
+  dfluxid = ncvdef(ncid, 'direct_flux', ncfloat, 2, wavsza_dims, rcode)
   if (do_vector_calc .and. do_QU_output) then
      qid      = ncvdef(ncid, 'q',            ncfloat, 2, wavgeo_dims, rcode)
      uid      = ncvdef(ncid, 'u',            ncfloat, 2, wavgeo_dims, rcode)
-     qfluxid  = ncvdef(ncid, 'qflux',        ncfloat, 2, wavgeo_dims, rcode)
-     ufluxid  = ncvdef(ncid, 'uflux',        ncfloat, 2, wavgeo_dims, rcode)
-     qdfluxid = ncvdef(ncid, 'qdirect_flux', ncfloat, 2, wavgeo_dims, rcode)
-     udfluxid = ncvdef(ncid, 'udirect_flux', ncfloat, 2, wavgeo_dims, rcode)
+     qfluxid  = ncvdef(ncid, 'qflux',        ncfloat, 2, wavsza_dims, rcode)
+     ufluxid  = ncvdef(ncid, 'uflux',        ncfloat, 2, wavsza_dims, rcode)
+     qdfluxid = ncvdef(ncid, 'qdirect_flux', ncfloat, 2, wavsza_dims, rcode)
+     udfluxid = ncvdef(ncid, 'udirect_flux', ncfloat, 2, wavsza_dims, rcode)
   endif
 
   if (do_Jacobian) then
@@ -601,17 +602,25 @@ subroutine netcdf_wrt ( fname,        & !Filename
   ndimstart2 = (/ 1, 1 /)
   ndimcount2 = (/ nw, ngeom /)  
   call ncvpt (ncid, radid,   ndimstart2, ndimcount2, real(radiance,    kind=4), rcode)
+  ndimstart2 = (/ 1, 1 /)
+  ndimcount2 = (/ nw, nsza /)  
   call ncvpt (ncid, fluxid,  ndimstart2, ndimcount2, real(flux,        kind=4), rcode)
   call ncvpt (ncid, dfluxid, ndimstart2, ndimcount2, real(direct_flux, kind=4), rcode)
   if (do_vector_calc .and. do_QU_output) then
+     ndimstart2 = (/ 1, 1 /)
+     ndimcount2 = (/ nw, ngeom /)
      call ncvpt (ncid, qid,      ndimstart2, ndimcount2, real(q,            kind=4), rcode)
      call ncvpt (ncid, uid,      ndimstart2, ndimcount2, real(u,            kind=4), rcode)
+     ndimstart2 = (/ 1, 1 /)
+     ndimcount2 = (/ nw, nsza /)  
      call ncvpt (ncid, qfluxid,  ndimstart2, ndimcount2, real(qflux,        kind=4), rcode)
      call ncvpt (ncid, ufluxid,  ndimstart2, ndimcount2, real(uflux,        kind=4), rcode)
      call ncvpt (ncid, qdfluxid, ndimstart2, ndimcount2, real(qdirect_flux, kind=4), rcode)
      call ncvpt (ncid, udfluxid, ndimstart2, ndimcount2, real(udirect_flux, kind=4), rcode)
   endif
 
+  ndimstart2 = (/ 1, 1 /)
+  ndimcount2 = (/ nw, ngeom /)  
   if (do_Jacobian) then
      if (use_lambertian) then
         call ncvpt (ncid, sfcwfid, ndimstart2, ndimcount2, real(SurfalbJacobian, kind=4), rcode)

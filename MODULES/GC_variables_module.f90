@@ -29,8 +29,8 @@ MODULE GC_variables_module
 ! Variables to store partial clear/cloudy calculations directly from VLIDORT
 ! --------------------------------------------------------------------------
   REAL(KIND=8), DIMENSION(max_geometries, maxstokes, 2)                       :: stokes_clrcld
-  REAL(KIND=8), DIMENSION(max_geometries, maxstokes, 2)                       :: stokes_flux
-  REAL(KIND=8), DIMENSION(max_geometries, maxstokes, 2)                       :: stokes_direct_flux
+  REAL(KIND=8), DIMENSION(max_szangles, maxstokes, 2)                         :: stokes_flux
+  REAL(KIND=8), DIMENSION(max_szangles, maxstokes, 2)                         :: stokes_direct_flux
   REAL(KIND=8), DIMENSION(max_atmoswfs, maxlayers, max_geometries, maxstokes) :: profilewf_sum
   REAL(KIND=8), DIMENSION(max_surfacewfs, max_geometries, maxstokes, 2)       :: surfacewf_clrcld
 

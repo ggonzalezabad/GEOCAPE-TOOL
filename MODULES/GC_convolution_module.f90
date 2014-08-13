@@ -31,7 +31,7 @@ MODULE GC_convolution_module
                                  GC_Temperature_Jacobians, nlambdas, lambdas,  &
                                  clambdas, wavnums, GC_flux, GC_Uflux,         &
                                  GC_Qflux, GC_direct_flux, GC_Qdirect_flux,    &
-                                 GC_Udirect_flux
+                                 GC_Udirect_flux, VLIDORT_ModIn
                                  
   USE GC_error_module
 
@@ -71,6 +71,7 @@ CONTAINS
          nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
     GC_radiances(1:nclambdas, 1:nspec) = temp_rad(1:nclambdas, 1:nspec)
 
+    nspec = VLIDORT_ModIn%MSunrays%TS_N_SZANGLES
     CALL gauss_f2c (tmpwaves(1:nflambdas), GC_flux(1:nflambdas, 1:nspec), nflambdas, &
          nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
     GC_flux(1:nclambdas, 1:nspec) = temp_rad(1:nclambdas, 1:nspec)
@@ -79,8 +80,9 @@ CONTAINS
          nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
     GC_direct_flux(1:nclambdas, 1:nspec) = temp_rad(1:nclambdas, 1:nspec)
 
-    
     IF ( do_vector_calculation .AND. do_StokesQU_output ) THEN
+
+       nspec = VLIDORT_Out%Main%TS_N_GEOMETRIES
        CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Qvalues(1:nflambdas, 1:nspec), nflambdas, &
             nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
        GC_Qvalues(1:nclambdas, 1:nspec) = temp_rad(1:nclambdas, 1:nspec)
@@ -91,6 +93,8 @@ CONTAINS
 
        CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Qflux(1:nflambdas, 1:nspec), nflambdas, &
             nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
+
+       nspec = VLIDORT_ModIn%MSunrays%TS_N_SZANGLES
        GC_Qflux(1:nclambdas, 1:nspec) = temp_rad(1:nclambdas, 1:nspec)
 
        CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Uflux(1:nflambdas, 1:nspec), nflambdas, &

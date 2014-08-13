@@ -116,12 +116,12 @@ CONTAINS
         GC_sfcprs_Jacobians(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                            &
         GC_sfcprs_QJacobians(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                           &
         GC_sfcprs_UJacobians(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                           &
-        GC_flux(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                                        &
-        GC_Qflux(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                                       &
-        GC_Uflux(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                                       &
-        GC_direct_flux(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                                 &
-        GC_Qdirect_flux(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                                &
-        GC_Udirect_flux(1:nlambdas, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                                &
+        GC_flux(1:nlambdas, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                                    &
+        GC_Qflux(1:nlambdas, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                                   &
+        GC_Uflux(1:nlambdas, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                                   &
+        GC_direct_flux(1:nlambdas, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                             &
+        GC_Qdirect_flux(1:nlambdas, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                            &
+        GC_Udirect_flux(1:nlambdas, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                            &
         Total_brdf(1:NSTOKESSQ,1:GC_n_view_angles,1:GC_n_azimuths,1:GC_n_sun_positions), NSTOKESSQ,     &
         do_brdf_surface, tmperror, error)
 
