@@ -62,7 +62,7 @@ subroutine geocape_xsec_setter_1                                            &
    character(LEN=256) :: filename, xsec_file_name
 
    logical       :: reading, is_wavenum
-   integer       :: nbuff, ndata, n, g, np, nf, ngas_check, maxdata, errstat, io
+   integer       :: nbuff, ndata, n, g, np, nf, ngas_check, errstat, io
    real(kind=8)  :: lamb1, lamb2, wav, val, c1, c2,conversion, xsec, fwhm
    real(kind=8)  :: CO2_PPMV_MIXRATIO
    real(kind=8)  :: x(maxspline), y(maxspline), y2(maxspline)
@@ -554,7 +554,7 @@ END SUBROUTINE RAYLEIGH_FUNCTION
        goto 1
        endif
        h=xa(khi)-xa(klo)
-       if (h.eq.0.0d0) pause
+       if (h.eq.0.0d0) stop
        a=(xa(khi)-x)/h
        b=(x-xa(klo))/h
        y=a*ya(klo)+b*ya(khi)+ &

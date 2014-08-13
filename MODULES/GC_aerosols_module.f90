@@ -261,7 +261,7 @@ MODULE GC_aerosols_module
             CALL generate_plume                                            &
                  ( GC_maxlayers, aer_z_upperlimit(i), aer_z_lowerlimit(i), & ! input
                  aer_z_peakheight(i), aer_tau0s(i), aer_half_width(i),     & ! input
-                 aer_types(i), GC_nlayers, heights(0:GC_maxlayers),        & ! input
+                 GC_nlayers, heights(0:GC_maxlayers),                      & ! input
                  aer_profile(i, 1:GC_maxlayers),                           & ! output
                  aer_d_profile_dtau(i, 1:GC_maxlayers),                    & ! output   
                  aer_d_profile_dpkh(i,1:GC_maxlayers),                     & ! output

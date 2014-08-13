@@ -54,7 +54,7 @@ SUBROUTINE SPLINE1 (x, y, n, y2)
   REAL (KIND=dp), DIMENSION(n), INTENT(IN) :: x, y  
   REAL (KIND=dp), DIMENSION(n), INTENT(OUT) :: y2
   
-  REAL (KIND=dp), DIMENSION(n)     		 :: u
+  REAL (KIND=dp), DIMENSION(n) :: u
   INTEGER       :: i, k
   REAL(KIND=dp) :: sig, p, qn, un
   

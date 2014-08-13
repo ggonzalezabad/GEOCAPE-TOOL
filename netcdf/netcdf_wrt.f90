@@ -544,7 +544,7 @@ subroutine netcdf_wrt ( fname,        & !Filename
   if (do_norm_radiance) then
      rad_unitc='unitless'
   else
-     rad_unitc=irrad_unitc // '/sr'
+     rad_unitc=irrad_unitc//'/sr'
   endif
   call ncaptc(ncid, radid,    'units', ncchar, len_trim(rad_unitc), rad_unitc, rcode) 
   call ncaptc(ncid, gascolid, 'units', ncchar, 13, 'molecules/cm2',            rcode)

@@ -3,7 +3,7 @@
 subroutine generate_plume                       &
      ( max_layers, z_upperlimit, z_lowerlimit,  & ! input
      z_peakheight, total_column, half_width,    & ! input
-     aer_type, nlayers, level_heights,                    & ! input
+     nlayers, level_heights,                    & ! input
      profile, d_profile_dcol,                   & ! output
      d_profile_dpkh, d_profile_dhfw,            & ! output
      fail, message)                               ! output
@@ -33,9 +33,6 @@ subroutine generate_plume                       &
 !  Total column between upper and lower limits
 
   REAL(KIND=8), INTENT(IN) :: total_column
-
-! Aerosol type
-  CHARACTER(LEN=2), INTENT(IN) :: aer_type
 
 !  H level input
   REAL(kind=8), DIMENSION(0:MAX_LAYERS), INTENT(IN) :: level_heights   

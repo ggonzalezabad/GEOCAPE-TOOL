@@ -1420,7 +1420,7 @@ CONTAINS
              ! ------------------------------------------------------------
              IF (do_sfcprs_Jacobians .AND. n == GC_nlayers) THEN
                 q = sfcprswfidx
-                pvar = total_molsca / total_tau	       
+                pvar = total_molsca / total_tau
                 VLIDORT_LinFixIn%Optical%TS_L_OMEGA_TOTAL_INPUT(q, n) =     &
                      (1.0 - VLIDORT_ModIn%MOptical%TS_OMEGA_TOTAL_INPUT(n)) &
                      * total_molsca / total_tau / VLIDORT_ModIn%MOptical%TS_OMEGA_TOTAL_INPUT(n)

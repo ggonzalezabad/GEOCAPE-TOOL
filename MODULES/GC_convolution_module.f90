@@ -108,9 +108,9 @@ CONTAINS
     END IF
     
     nspec = 1
-    CALL gauss_f2c (tmpwaves(1:nflambdas), ground_ler(1:nlambdas), nflambdas, &
+    CALL gauss_f2c (tmpwaves(1:nflambdas), ground_ler(1:nflambdas), nflambdas, &
          nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
-    ground_ler(1:nlambdas) = temp_rad(1:nclambdas, 1)
+    ground_ler(1:nclambdas) = temp_rad(1:nclambdas, 1)
     
     IF (do_Jacobians) THEN
        DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
