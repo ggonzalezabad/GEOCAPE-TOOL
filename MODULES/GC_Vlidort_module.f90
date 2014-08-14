@@ -58,7 +58,8 @@ MODULE GC_Vlidort_module
                                  GC_direct_flux, GC_Qflux, GC_Uflux, GC_Qdirect_flux,          &
                                  GC_Udirect_flux, VBRDF_Sup_Out, VBRDF_LinSup_Out,             &
                                  VLIDORT_Sup, VLIDORT_LinSup, VBRDF_Sup_In, Total_brdf, GCM,   &
-                                 NSTOKESSQ, do_brdf_surface
+                                 NSTOKESSQ, do_brdf_surface, OUTPUT_WSABSA, WSA_CALCULATED,    &
+                                 BSA_CALCULATED
   USE GC_error_module
 
   IMPLICIT NONE
@@ -429,6 +430,12 @@ CONTAINS
           NSTOKESSQ = 1
        endif
        Total_brdf = VLIDORT_Sup%BRDF%TS_EXACTDB_BRDFUNC
+       OUTPUT_WSABSA = .FALSE.
+       IF (VBRDF_Sup_In%BS_DO_WSABSA_OUTPUT) THEN
+         WSA_CALCULATED = VBRDF_Sup_Out%BS_WSA_CALCULATED
+         BSA_CALCULATED = VBRDF_Sup_Out%BS_BSA_CALCULATED
+         OUTPUT_WSABSA = .TRUE.
+      END IF
     ENDIF
 
     ! ------------------------------------

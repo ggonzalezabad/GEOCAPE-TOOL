@@ -56,7 +56,10 @@ subroutine netcdf_wrt ( fname,        & !Filename
      direct_flux, qdirect_flux,       & !Direct flux
      udirect_flux,                    & !Direct flux
      brdf, nsq,                       & !Results from VBRDF supplement
-     do_brdf,                         & !Results from VBRDF supplement
+     do_brdf,                         & !Logical from VBRDF supplement
+     do_output_wsabsa,                & !Logical for WSA and BSA albedo output
+     wsa_value,                       & !WSA value
+     bsa_value,                       & !BSA value
      message, fail)   
   
   implicit none
@@ -87,6 +90,7 @@ subroutine netcdf_wrt ( fname,        & !Filename
   real(kind=8), dimension(nw), intent(in)         :: ws, surfalb             !Wavelengths and surface albedo
   real(kind=8), dimension(nsq,nvza,naza,nsza), &
                                intent(in)         :: brdf                    !BRDF
+  real(kind=8), intent(in)                        :: WSA_VALUE, BSA_VALUE    !BSA,WSA, values
   real(kind=8), dimension(nw,nz), intent(in)      :: aods, assas, cods, &    !Aerosol optical depth, single scattering albedo, cloud optical depth
                                                      cssas, ods, ssas        !cloud single scattering albedo, optical depth and single scattering albedo
   real(kind=8), intent(in)                        :: windspeed               !Wind speed
@@ -102,7 +106,7 @@ subroutine netcdf_wrt ( fname,        & !Filename
                           use_lambertian, do_lambertian_cld,   &
                           do_upwelling, do_effcrs,             &
                           use_wavelength, use_solar_photons,   &
-                          do_brdf
+                          do_brdf, do_output_wsabsa
 
   real(kind=8), dimension(nw),       intent(in) :: irradiance     !Solar spectrum
 
@@ -152,14 +156,15 @@ subroutine netcdf_wrt ( fname,        & !Filename
   !     Local variables
   !=================================
   integer :: ncid, rcode, nlen, i
-  integer :: szadim, vzadim, azadim, gasdim, lvldim, laydim, wavdim, geodim, nsqdim
+  integer :: szadim, vzadim, azadim, gasdim, lvldim, laydim, wavdim, geodim, nsqdim, onedim
   integer :: szaid, vzaid, azaid, gasid, lvlid, wavid, psid, tsid, airid, &
        aer0id, cld0id, radid, qid, uid, irradid, sfcid, sfcwfid, wswfid, cfracwfid, &
        sfcprswfid, aodwfid, assawfid, codwfid, cssawfid, sfcqwfid, wsqwfid, cfracqwfid, &
        sfcprsqwfid, aodqwfid, assaqwfid, codqwfid, cssaqwfid, sfcuwfid, wsuwfid, cfracuwfid,&
        sfcprsuwfid, aoduwfid, assauwfid, coduwfid, cssauwfid, gascolid, aodsid, assasid, &
        codsid, cssasid, scatwtid, odsid, ssasid, amfid, gaswfid, gasqwfid, &
-       gasuwfid, tempwfid, fluxid, dfluxid, qfluxid, ufluxid, qdfluxid, udfluxid, brdfid
+       gasuwfid, tempwfid, fluxid, dfluxid, qfluxid, ufluxid, qdfluxid, udfluxid, brdfid, &
+       wsaid, bsaid
   integer, dimension(2)    :: gascol_dims, wavalt_dims, wavgas_dims, wavgeo_dims, wavsza_dims
   integer, dimension(3)    :: wavaltgeo_dims, wavgeogas_dims
   integer, dimension(4)    :: wavaltgeogas_dims, brdfdim
@@ -180,6 +185,7 @@ subroutine netcdf_wrt ( fname,        & !Filename
   endif
   
   ! Create the dimensions of the dataset:
+  onedim  = ncddef (ncid, 'one',       1,  rcode)
   szadim  = ncddef (ncid, 'nsza',   nsza,  rcode)
   vzadim  = ncddef (ncid, 'nvza',   nvza,  rcode)
   azadim  = ncddef (ncid, 'naza',   naza,  rcode)
@@ -228,6 +234,10 @@ subroutine netcdf_wrt ( fname,        & !Filename
   airid  = ncvdef(ncid, 'aircol', ncfloat, 1, laydim, rcode)
   aer0id = ncvdef(ncid, 'aods0',  ncfloat, 1, laydim, rcode)
   cld0id = ncvdef(ncid, 'cods0',  ncfloat, 1, laydim, rcode)
+
+  ! WSA and BSA
+  wsaid = ncvdef(ncid, 'WSA', ncfloat, 1, onedim, rcode)
+  bsaid = ncvdef(ncid, 'BSA', ncfloat, 1, onedim, rcode)
 
   ! varaibles with 1D, wavdim
   irradid = ncvdef(ncid, 'irradiance', ncfloat, 1, wavdim, rcode)
@@ -517,6 +527,11 @@ subroutine netcdf_wrt ( fname,        & !Filename
   else
      call ncapt (ncid, ncglobal, 'do_brdf', ncbyte, 1, 0, rcode)
   endif                            
+  if (do_output_wsabsa) then
+     call ncapt (ncid, ncglobal, 'do_output_wsabsa', ncbyte, 1, 1, rcode)
+  else
+     call ncapt (ncid, ncglobal, 'do_output_wsabsa', ncbyte, 1, 0, rcode)
+  endif                            
      
   ! write the list of gases in one string
   write(gasstr, '(10(I2,A1,A4,A1))') (i,':',gases(i),',', i=1, ngas)
@@ -758,6 +773,12 @@ subroutine netcdf_wrt ( fname,        & !Filename
   ndimcount4 = (/ nsq, nvza, naza, nsza /) 
   if (do_brdf) then
      call ncvpt (ncid, brdfid, ndimstart4, ndimcount4, real(brdf, kind=4), rcode)  
+     if (do_output_wsabsa) then
+        ndimstart1 = (/ 1 /)
+        ndimcount1 = (/ 1 /)  
+        call ncvpt (ncid, wsaid, ndimstart1, ndimcount1, real(wsa_value, kind=4), rcode)
+        call ncvpt (ncid, bsaid, ndimstart1, ndimcount1, real(bsa_value, kind=4), rcode)
+     endif
   endif
 
   !==============================================================================

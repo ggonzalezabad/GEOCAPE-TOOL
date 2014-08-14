@@ -29,7 +29,8 @@ MODULE GC_netcdf_module
                                   GC_sfcprs_UJacobians, results_dir, GC_n_sun_positions,               &
                                   GC_n_view_angles, GC_n_azimuths, VLIDORT_Out,                        &
                                   GC_flux, GC_Qflux, GC_Uflux, GC_direct_flux, GC_Qdirect_flux,        &
-                                  GC_Udirect_flux, Total_brdf, NSTOKESSQ, do_brdf_surface
+                                  GC_Udirect_flux, Total_brdf, NSTOKESSQ, do_brdf_surface,             &
+                                  OUTPUT_WSABSA, WSA_CALCULATED, BSA_CALCULATED
   USE GC_error_module
 
   IMPLICIT NONE
@@ -123,7 +124,7 @@ CONTAINS
         GC_Qdirect_flux(1:nlambdas, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                            &
         GC_Udirect_flux(1:nlambdas, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                            &
         Total_brdf(1:NSTOKESSQ,1:GC_n_view_angles,1:GC_n_azimuths,1:GC_n_sun_positions), NSTOKESSQ,     &
-        do_brdf_surface, tmperror, error)
+        do_brdf_surface, OUTPUT_WSABSA, WSA_CALCULATED, BSA_CALCULATED, tmperror, error)
 
     IF (error) CALL write_err_message (.TRUE., tmperror)
 

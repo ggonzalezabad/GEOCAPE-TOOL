@@ -381,7 +381,8 @@ MODULE GC_variables_module
   REAL(KIND=8), dimension(maxlambdas) :: ground_ler
   REAL(KIND=8), dimension(MAXSTOKES_SQ, MAX_USER_STREAMS, &
      MAX_USER_RELAZMS, MAXBEAMS ) :: Total_brdf
-  LOGICAL :: GCM
+  REAL(KIND=8) :: WSA_CALCULATED, BSA_CALCULATED
+  LOGICAL :: GCM, OUTPUT_WSABSA
   INTEGER :: NSTOKESSQ
 
 ! =============================

@@ -102,7 +102,7 @@ T
 # Use effective cross sections, logical T/F
 # -----------------------------------------
 Effective cross sections
-F
+T
 
 # -----------------------------------------------------------
 # Spectral input:
@@ -216,7 +216,7 @@ View angles
 Azimuth angles
 1
 0.01
-
+15.0
 # -------------------------------------------------
 # User level to output radiances:
 #   1. Number of user levels (1 for this interface)
@@ -232,14 +232,14 @@ User levels
 #   2. Values (one each line, as many as user levels)
 # ---------------------------------------------------
 User altitudes
-F
+T
 0.0d0
 
 # ------------------------
 # Do upwelling logical T/F
 # ------------------------
 Upwelling
-T
+F
 
 # ------------------------------------------------------------------
 # Footprint information:
