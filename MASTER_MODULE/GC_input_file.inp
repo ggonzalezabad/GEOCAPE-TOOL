@@ -16,7 +16,7 @@ Database directory
 # Profile data filename
 # ---------------------
 Profile data filename
-/data/tempo2/ggonzale/Lei_AMF/lei.dat
+/data/tempo1/Shared/VLIDORT/GEOCAPE-TOOL/geocape_data/AFGL_atmospheres/geocape_afglus.dat
 
 # ------------------------------------------
 # Use footprint info in atmospheric profile:
