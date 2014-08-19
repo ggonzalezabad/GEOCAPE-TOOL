@@ -20,15 +20,13 @@ MODULE GC_read_input_module
   USE GC_variables_module,  ONLY: database_dir, results_dir, profile_data_filename,   &
                                   debug_filename, albspectra_fname, aerfile, cldfile, &
                                   do_aerosols, do_clouds, do_lambertian_cld,          &
-                                  use_aerprof, use_cldprof, do_vector_calculation,    &
-                                  do_StokesQU_output, do_Jacobians, do_QU_Jacobians,  &
+                                  use_aerprof, use_cldprof,                           &
+                                  do_StokesQU_output,                                 &
                                   do_AMF_calculation, do_T_Jacobians,                 &
                                   do_sfcprs_Jacobians, do_normalized_WFoutput,        &
-                                  do_normalized_radiance, nstreams_choice,            &
+                                  do_normalized_radiance,                             &
                                   aercld_nmoments_input, GC_do_upwelling, didx,       &
-                                  GC_n_sun_positions, GC_sun_positions,               &
-                                  GC_n_view_angles, GC_view_angles, GC_n_azimuths,    &
-                                  GC_azimuths, GC_n_user_levels, GC_user_levels,      &
+                                  GC_n_user_altitudes,                                &
                                   GC_user_altitudes, GC_do_user_altitudes,            &
                                   lambda_start, lambda_finish, use_wavelength,        &
                                   do_effcrs, lambda_resolution, lambda_dw,            &
@@ -40,7 +38,8 @@ MODULE GC_read_input_module
                                   use_albspectra, fixed_albedo, is_ocean, wavlens_um, &
                                   wind_speed, water_rn, water_cn, do_sat_viewcalc,    &
                                   year, month, day, latitude, longitude, satlon,      &
-                                  satlat, satalt, utc, geometry_data
+                                  satlat, satalt, utc, geometry_data,                 &
+                                  solar_spec_filename
   USE GC_error_module
 ! 
   IMPLICIT NONE
@@ -117,10 +116,7 @@ MODULE GC_read_input_module
       CHARACTER(LEN=21), PARAMETER :: profile_str       = 'Profile data filename'
       CHARACTER(LEN=18), PARAMETER :: footprint_str     = 'Use footprint info'
       CHARACTER(LEN=13), PARAMETER :: debug_str         = 'Debug geocape'
-      CHARACTER(LEN=18), PARAMETER :: vector_str        = 'Vector calculation'
       CHARACTER(LEN=13), PARAMETER :: stokes_str        = 'Stokes output'
-      CHARACTER(LEN= 9), PARAMETER :: jacobians_str     = 'Jacobians'
-      CHARACTER(LEN=12), PARAMETER :: qujacobians_str   = 'QU jacobians'
       CHARACTER(LEN=16), PARAMETER :: airmass_str       = 'Air mass factors'
       CHARACTER(LEN=21), PARAMETER :: tjacobians_str    = 'Temperature jacobians'
       CHARACTER(LEN=26), PARAMETER :: spjacobians_str   = 'Surface pressure jacobians'
@@ -134,14 +130,12 @@ MODULE GC_read_input_module
       CHARACTER(LEN= 8), PARAMETER :: aerosols_str      = 'Aerosols'
       CHARACTER(LEN= 6), PARAMETER :: clouds_str        = 'Clouds'
       CHARACTER(LEN=17), PARAMETER :: moments_str       = 'Number of moments'
-      CHARACTER(LEN= 7), PARAMETER :: streams_str       = 'Streams'
       CHARACTER(LEN=13), PARAMETER :: sun_str           = 'Sun positions'
       CHARACTER(LEN=11), PARAMETER :: view_str          = 'View angles'
       CHARACTER(LEN=14), PARAMETER :: azimuth_str       = 'Azimuth angles'
       CHARACTER(LEN=11), PARAMETER :: userlevels_str    = 'User levels'
       CHARACTER(LEN=14), PARAMETER :: useraltitudes_str = 'User altitudes'
       CHARACTER(LEN= 9), PARAMETER :: upwelling_str     = 'Upwelling'
-      CHARACTER(LEN= 9), PARAMETER :: footprintinfo_str = 'Footprint'
 
       ! ----------------
       ! Code starts here
@@ -210,6 +204,13 @@ MODULE GC_read_input_module
          CALL error_exit (error)
       END IF
       READ (UNIT=funit, FMT=*, IOSTAT=ios) use_footprint_info
+      ! ---------
+      ! Footprint
+      ! ---------
+      READ (UNIT=funit, FMT=*, IOSTAT=ios) year, month, day, utc
+      READ (UNIT=funit, FMT=*, IOSTAT=ios) longitude, latitude
+      READ (UNIT=funit, FMT=*, IOSTAT=ios) satlon, satlat, satalt
+      READ (UNIT=funit, FMT=*, IOSTAT=ios) do_sat_viewcalc
 
       ! -------------
       ! Debug Geocape
@@ -223,17 +224,6 @@ MODULE GC_read_input_module
       READ (UNIT=funit, FMT=*, IOSTAT=ios) do_debug_geocape_tool
       READ (UNIT=funit, FMT='(A)', IOSTAT=ios) debug_filename
 
-      ! ------------------
-      ! Vector calculation
-      ! ------------------
-      REWIND (funit)
-      CALL skip_to_filemark ( funit, vector_str , tmpstr, error )
-      IF ( error ) THEN
-         CALL write_err_message ( .TRUE., "ERROR: Can't find "//vector_str )
-         CALL error_exit (error)
-      END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) do_vector_calculation
-
       ! -------------
       ! Stokes output
       ! -------------
@@ -244,28 +234,6 @@ MODULE GC_read_input_module
          CALL error_exit (error)
       END IF
       READ (UNIT=funit, FMT=*, IOSTAT=ios) do_StokesQU_output
-
-      ! ---------
-      ! Jacobians 
-      ! ---------
-      REWIND (funit)
-      CALL skip_to_filemark ( funit, jacobians_str , tmpstr, error )
-      IF ( error ) THEN
-         CALL write_err_message ( .TRUE., "ERROR: Can't find "//jacobians_str )
-         CALL error_exit (error)
-      END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) do_Jacobians
-
-      ! ------------
-      ! QU jacobians
-      ! ------------
-      REWIND (funit)
-      CALL skip_to_filemark ( funit, qujacobians_str , tmpstr, error )
-      IF ( error ) THEN
-         CALL write_err_message ( .TRUE., "ERROR: Can't find "//qujacobians_str )
-         CALL error_exit (error)
-      END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) do_QU_Jacobians
 
       ! ---------------
       ! AMF calculation
@@ -321,6 +289,7 @@ MODULE GC_read_input_module
          CALL error_exit (error)
       END IF
       READ (UNIT=funit, FMT=*, IOSTAT=ios) do_normalized_radiance
+      READ (UNIT=funit, FMT='(A)', IOSTAT=ios) solar_spec_filename
 
       ! -------------
       ! Solar photons
@@ -422,65 +391,6 @@ MODULE GC_read_input_module
       END IF
       READ (UNIT=funit, FMT=*, IOSTAT=ios) aercld_nmoments_input
 
-      ! -----------------
-      ! Number of streams
-      ! -----------------
-      REWIND (funit)
-      CALL skip_to_filemark ( funit, streams_str , tmpstr, error )
-      IF ( error ) THEN
-         CALL write_err_message ( .TRUE., "ERROR: Can't find "//streams_str )
-         CALL error_exit (error)
-      END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) nstreams_choice
-
-      ! -------------
-      ! Sun positions
-      ! -------------
-      REWIND (funit)
-      CALL skip_to_filemark ( funit, sun_str , tmpstr, error )
-      IF ( error ) THEN
-         CALL write_err_message ( .TRUE., "ERROR: Can't find "//sun_str )
-         CALL error_exit (error)
-      END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) GC_n_sun_positions
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) (GC_sun_positions(i), i=1, GC_n_sun_positions)
-
-      ! -----------
-      ! View angles
-      ! -----------
-      REWIND (funit)
-      CALL skip_to_filemark ( funit, view_str , tmpstr, error )
-      IF ( error ) THEN
-         CALL write_err_message ( .TRUE., "ERROR: Can't find "//view_str )
-         CALL error_exit (error)
-      END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) GC_n_view_angles
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) (GC_view_angles(i), i=1, GC_n_view_angles)
-
-      ! --------------
-      ! Azimuth angles
-      ! --------------
-      REWIND (funit)
-      CALL skip_to_filemark ( funit, azimuth_str , tmpstr, error )
-      IF ( error ) THEN
-         CALL write_err_message ( .TRUE., "ERROR: Can't find "//azimuth_str )
-         CALL error_exit (error)
-      END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) GC_n_azimuths
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) (GC_azimuths(i), i=1, GC_n_azimuths)
-
-      ! -----------
-      ! User levels
-      ! -----------
-      REWIND (funit)
-      CALL skip_to_filemark ( funit, userlevels_str , tmpstr, error )
-      IF ( error ) THEN
-         CALL write_err_message ( .TRUE., "ERROR: Can't find "//userlevels_str )
-         CALL error_exit (error)
-      END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) GC_n_user_levels
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) (GC_user_levels(i), i=1, GC_n_user_levels)
-
       ! --------------
       ! User altitudes
       ! --------------
@@ -491,7 +401,8 @@ MODULE GC_read_input_module
          CALL error_exit (error)
       END IF
       READ (UNIT=funit, FMT=*, IOSTAT=ios) GC_do_user_altitudes
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) (GC_user_altitudes(i), i=1, GC_n_user_levels)
+      READ (UNIT=funit, FMT=*, IOSTAT=ios) GC_n_user_altitudes
+      READ (UNIT=funit, FMT=*, IOSTAT=ios) (GC_user_altitudes(i), i=1, GC_n_user_altitudes)
 
       ! ---------
       ! Upwelling
@@ -503,20 +414,6 @@ MODULE GC_read_input_module
          CALL error_exit (error)
       END IF
       READ (UNIT=funit, FMT=*, IOSTAT=ios) GC_do_upwelling
-
-      ! ---------
-      ! Footprint
-      ! ---------
-      REWIND (funit)
-      CALL skip_to_filemark ( funit, footprintinfo_str , tmpstr, error )
-      IF ( error ) THEN
-         CALL write_err_message ( .TRUE., "ERROR: Can't find "//footprint_str )
-         CALL error_exit (error)
-      END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) year, month, day, utc
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) longitude, latitude
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) satlon, satlat, satalt
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) do_sat_viewcalc
 
       CLOSE(funit)
 
@@ -628,12 +525,6 @@ MODULE GC_read_input_module
     
     error = .FALSE.
       
-    IF (.NOT. do_vector_calculation) THEN
-       do_StokesQU_output = .FALSE.
-       do_QU_Jacobians    = .FALSE.
-    ENDIF
-    IF (.NOT. do_StokesQU_output) do_QU_Jacobians  = .FALSE.
-
     DO i = 1, LEN(results_dir)
        IF (results_dir(i:i) == ' ') THEN
           results_dir = results_dir(1:i-1); EXIT
@@ -677,11 +568,6 @@ MODULE GC_read_input_module
 
     !  No aerosols for a vector calculation
     IF ( do_aerosols .OR. (do_clouds .AND. .NOT. do_lambertian_cld)) THEN
-       IF ( aercld_nmoments_input .LT. 2 * nstreams_choice ) THEN
-          CALL write_err_message ( .FALSE., "Not enough aerosol/cloud moments"// &
-               ", must be at least 2*nstreams")
-          error = .TRUE.
-       END IF
 
        IF (aercld_nmoments_input .Gt. maxmoms) THEN
           CALL write_err_message ( .FALSE., "Need to increase maxmoms to >= "// &

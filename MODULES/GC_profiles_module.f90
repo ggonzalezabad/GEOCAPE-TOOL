@@ -74,7 +74,7 @@ CONTAINS
        ! ************ Use lambertian surface albedo over land ***************
        ! Only use BRDF for ocean surface when use_lambertian is .false.
        ! --------------------------------------------------------------------
-       IF (.NOT. use_lambertian .AND. .NOT. is_ocean) use_lambertian = .TRUE. 
+!!$       IF (.NOT. use_lambertian .AND. .NOT. is_ocean) use_lambertian = .TRUE. 
        
        cfrac        = footprint_data(14)
        cld_tops(1)  = footprint_data(15)

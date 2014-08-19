@@ -59,7 +59,8 @@ MODULE GC_Vlidort_module
                                  GC_Udirect_flux, VBRDF_Sup_Out, VBRDF_LinSup_Out,             &
                                  VLIDORT_Sup, VLIDORT_LinSup, VBRDF_Sup_In, Total_brdf, GCM,   &
                                  NSTOKESSQ, do_brdf_surface, OUTPUT_WSABSA, WSA_CALCULATED,    &
-                                 BSA_CALCULATED
+                                 BSA_CALCULATED, use_footprint_info, do_sat_viewcalc,          &
+                                 GC_n_user_altitudes
   USE GC_error_module
 
   IMPLICIT NONE
@@ -89,17 +90,32 @@ CONTAINS
     ! ========================
     
     VLIDORT_FixIn%Bool%TS_DO_QUAD_OUTPUT  = .FALSE. ! No option in Vlidort Control file
+
+    ! =====================================
+    ! To clean up the GC control input file
+    ! and avoid duplications between it and
+    ! Vlidort control file
+    ! =====================================
+       do_vector_calculation = VLIDORT_FixIn%Bool%TS_DO_FULLRAD_MODE
+    
+    ! ----------------------------------------
+    ! Check for aerosols and scattering clouds
+    ! ----------------------------------------
+    IF ( do_aerosols .OR. (do_clouds .AND. .NOT. do_lambertian_cld)) THEN
+       IF ( aercld_nmoments_input .LT. 2 * VLIDORT_FixIn%Cont%TS_NSTREAMS) THEN
+          CALL write_err_message ( .FALSE., "Not enough aerosol/cloud moments"// &
+               ", must be at least 2*nstreams")
+          error = .TRUE.
+       END IF
+    END IF
     
     ! Basic control integers
-    !  -- Number of Stokes parameters depends on the user
     !  -- Number of layers determined from GC profiles
-    !  -- Number of discrete ordinates = 4 or 6, from configuration file 
     !  -- Number of fine-layer subdivisions in single-scattering = 2
     !  -- Number of expansion coefficients = 2     for Rayleigh-only
     !  -- Number of expansion coefficients = Input for Rayleigh+Aerosol
     !     NSTOKES  = Will be set in Section 2
     !     NLAYERS  = Will be set in Section 2
-    VLIDORT_FixIn%Cont%TS_NSTREAMS = nstreams_choice ! Over writes Vlidort config file
     
     ! Basic  numbers
     !    -- Fourier convergence accuracy (not required)
@@ -110,11 +126,6 @@ CONTAINS
     VLIDORT_FixIn%Optical%TS_THERMAL_BB_INPUT(:) = 0.0d0
     VLIDORT_FixIn%Optical%TS_SURFACE_BB_INPUT    = 0.0d0
     
-    ! Linearization inputs
-    !    -- No total column Jacobians, no BRDF Jacobians
-    !    -- profile and Surface Jacobians, flags set by GC input control
-    VLIDORT_LinModIn%MCont%TS_DO_COLUMN_LINEARIZATION = .FALSE.
-    VLIDORT_LinFixIn%Cont%TS_N_TOTALCOLUMN_WFS        = 0
     
     ! ========================================================
     ! SECTION 2 (Other VLIDORT inputs depending on GC control)
@@ -130,9 +141,12 @@ CONTAINS
        didx = 2
     ENDIF
     
-    ! Output level
+    ! --------------------------------------------------------------------------
+    ! Output level: Usually it comes from VLIDORT input file. In GC control file
+    ! it is possible to use altitude in km to set the output levels.
+    ! --------------------------------------------------------------------------
     IF (GC_do_user_altitudes) THEN
-       DO i = 1, GC_n_user_levels
+       DO i = 1, GC_n_user_altitudes
           IF (GC_user_altitudes(i) >= heights(0)) THEN
              GC_user_levels(i) = 0.0
           ELSE IF (GC_user_altitudes(i) <= heights(GC_nlayers)) THEN
@@ -148,19 +162,20 @@ CONTAINS
              ENDDO
           ENDIF
        ENDDO
+       VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS = GC_n_user_altitudes
+       GC_n_user_levels = GC_n_user_altitudes
+       DO n = 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS
+          VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(n) = GC_user_levels(n)
+       END DO
     ELSE
+       GC_n_user_levels = VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS
+       GC_user_levels(1:GC_n_user_levels) = VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(1:GC_n_user_levels)
        DO i = 1, GC_n_user_levels
           j = INT(GC_user_levels(i))
           GC_user_altitudes(i) = heights(j) - (GC_user_levels(i) - j) &
                * (heights(j+1) - heights(j))
        ENDDO
     ENDIF
-    
-    ! User levels
-    VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS = GC_n_user_levels !Xliu copy is different and set to 1
-    DO n = 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS
-       VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(n) = GC_user_levels(n)
-    END DO
 
     ! Set the Number of Stokes parameters (1 or 3) and layers
     VLIDORT_FixIn%Cont%TS_NSTOKES = 1
@@ -178,36 +193,100 @@ CONTAINS
     VLIDORT_FixIn%Chapman%TS_height_grid(0:VLIDORT_FixIn%Cont%TS_NLAYERS) = &
          heights(0:VLIDORT_FixIn%Cont%TS_NLAYERS)
     VLIDORT_ModIn%MUserVal%TS_GEOMETRY_SPECHEIGHT = heights(VLIDORT_FixIn%Cont%TS_NLAYERS)
-    
+
     ! Now will be done in the clou/clear loop  
     ! Reduce # of layers for Lambertian cloud surface (now done in clear/cloud loop)
     ! if (do_clouds .and. do_lambertian_cld) NLAYERS = cld_uppers(1) - 1
     
-    ! Set the Geometry. Just a straight copy of the GC_ inputs
-    VLIDORT_ModIn%MSunrays%TS_N_SZANGLES = GC_n_sun_positions
-    DO n = 1, VLIDORT_ModIn%MSunrays%TS_N_SZANGLES
-       VLIDORT_ModIn%MSunrays%TS_SZANGLES(n) = GC_sun_positions(n)
-    END DO
-    
-    VLIDORT_ModIn%MUserVal%TS_N_USER_VZANGLES = GC_n_view_angles
-    DO n = 1, VLIDORT_ModIn%MUserVal%TS_N_USER_VZANGLES
-       VLIDORT_ModIn%MUserVal%TS_USER_VZANGLES_INPUT(n) = GC_view_angles(n)
-    END DO
-    
-    VLIDORT_ModIn%MUserVal%TS_N_USER_RELAZMS = GC_n_azimuths
-    DO n = 1, VLIDORT_ModIn%MUserVal%TS_N_USER_RELAZMS
-       VLIDORT_ModIn%MUserVal%TS_USER_RELAZMS(n) = GC_azimuths(n)
-    END DO
-    
+    ! Set the Geometry. Just a straight copy of VLIDORT input into GC_ inputs if we are
+    ! not using footprint information. If doing so, the angles have been set before in
+    ! GC_profiles_module.f90
+    IF (use_footprint_info .OR. do_sat_viewcalc) THEN
+       VLIDORT_ModIn%MSunrays%TS_N_SZANGLES  = GC_n_sun_positions
+       VLIDORT_ModIn%MSunrays%TS_SZANGLES(1) = GC_sun_positions(1)
+       
+       VLIDORT_ModIn%MUserVal%TS_N_USER_VZANGLES        = GC_n_view_angles
+       VLIDORT_ModIn%MUserVal%TS_USER_VZANGLES_INPUT(1) = GC_view_angles(1) 
+       
+       VLIDORT_ModIn%MUserVal%TS_N_USER_RELAZMS  = GC_n_azimuths
+       VLIDORT_ModIn%MUserVal%TS_USER_RELAZMS(1) = GC_azimuths(1)
+    ELSE
+       GC_n_sun_positions = VLIDORT_ModIn%MSunrays%TS_N_SZANGLES
+       DO n = 1, VLIDORT_ModIn%MSunrays%TS_N_SZANGLES
+          GC_sun_positions(n) = VLIDORT_ModIn%MSunrays%TS_SZANGLES(n)
+       END DO       
+       GC_n_view_angles = VLIDORT_ModIn%MUserVal%TS_N_USER_VZANGLES
+       DO n = 1, VLIDORT_ModIn%MUserVal%TS_N_USER_VZANGLES
+          GC_view_angles(n) = VLIDORT_ModIn%MUserVal%TS_USER_VZANGLES_INPUT(n)
+       END DO
+       GC_n_azimuths = VLIDORT_ModIn%MUserVal%TS_N_USER_RELAZMS
+       DO n = 1, VLIDORT_ModIn%MUserVal%TS_N_USER_RELAZMS
+          GC_azimuths(n) = VLIDORT_ModIn%MUserVal%TS_USER_RELAZMS(n)
+       END DO
+    ENDIF
+
+    ! -----------------------------------------------------------------------
     ! Set the linearization control for profile Jacobians (cloudy conditions)
     ! Might be different for clear-sky part
+    ! -----------------------------------------------------------------------
+    ! Linearization inputs
+    !    -- No total column Jacobians, no BRDF Jacobians
+    !    -- profile and Surface Jacobians, flags set by GC input control
+    VLIDORT_LinModIn%MCont%TS_DO_COLUMN_LINEARIZATION = .FALSE.
+    VLIDORT_LinFixIn%Cont%TS_N_TOTALCOLUMN_WFS        = 0
+
+    ! Set up do_JACOBIANS variable based in Vlidort input file
+    IF ( (VLIDORT_LinFixIn%Cont%TS_do_simulation_only        .EQV. .FALSE.) .AND. &
+         (VLIDORT_LinModIn%MCont%TS_do_profile_linearization .EQV. .TRUE. ) ) THEN
+       do_JACOBIANS = .TRUE.
+       VLIDORT_LinModIn%MCont%TS_do_atmos_linearization = .TRUE.
+       VLIDORT_LinModIn%MCont%TS_do_linearization       = .TRUE.
+    ELSE
+       do_JACOBIANS = .FALSE.
+       VLIDORT_LinModIn%MCont%TS_do_atmos_linearization = .FALSE.
+       VLIDORT_LinModIn%MCont%TS_do_linearization       = .FALSE.
+    ENDIF
+
+    ! Only able to do Stokes output if do_vector_calculation
+    IF ( (do_vector_calculation .EQV. .FALSE.) .AND. &
+         (do_StokesQU_Output    .EQV. .TRUE. ) ) THEN
+       WRITE(*,*) 'Vector calculation set to false and Stokes output to true'
+       WRITE(*,*) 'Check input setup in GC_input_file'
+       STOP
+    ENDIF
+
+    ! If do vector calculation and Stokes output set do_QU_Jacobians to .TRUE.
+    IF ( (do_vector_calculation .EQV. .TRUE.) .AND. &
+         (do_StokesQU_Output    .EQV. .TRUE. ) ) THEN
+       do_QU_Jacobians = .TRUE.
+    ELSE
+       do_QU_Jacobians = .FALSE.
+    ENDIF
+
+    ! If not Jacobians and then it is not possible to do AMF
+    IF ( (do_JACOBIANS       .EQV. .FALSE.) .AND. &
+          do_AMF_calculation .EQV. .TRUE. ) THEN
+       WRITE(*,*) 'You can not do AMFs without doing Jacobians first'
+       WRITE(*,*) 'Check Vlidort input and GC_Input'
+       STOP
+    ENDIF
+
+    IF ( ( do_T_Jacobians   .OR. do_sfcprs_Jacobians .OR.  &
+           do_aod_Jacobians .OR. do_assa_Jacobians   .OR.  &
+           do_cod_Jacobians .OR. do_cssa_Jacobians)  .AND. &
+           (.NOT. do_Jacobians) ) THEN
+       WRITE(*,*) do_Jacobians
+       WRITE(*,*) 'You have requested some jacobians while the main linearization'
+       WRITE(*,*) 'flags in VLIDORT control file are not set for that:'
+       WRITE(*,*) 'Do simulation only? F' 
+       WRITE(*,*) 'Do atmospheric profile weighting functions? T'
+       STOP
+    ENDIF
+
     gaswfidx = 0; twfidx = 0; aodwfidx = 0; assawfidx = 0
     sfcprswfidx = 0; codwfidx = 0; cssawfidx = 0
     IF ( do_JACOBIANS ) THEN
-       VLIDORT_LinFixIn%Cont%TS_do_simulation_only        = .FALSE.
-       VLIDORT_LinModIn%MCont%TS_do_profile_linearization = .TRUE.
-       VLIDORT_LinModIn%MCont%TS_do_atmos_linearization   = .TRUE.
-       VLIDORT_LinModIn%MCont%TS_do_linearization         = .TRUE.
+
        VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS        = 1
        VLIDORT_LinFixIn%Cont%TS_profilewf_names(1)       = '-Trace Gas Volume Mixing Ratio-'
        gaswfidx = 1
@@ -309,88 +388,33 @@ CONTAINS
             'BRDF surface but not both. Check input files.'
        STOP
     ENDIF
-       
-!!$    VBRDF_Sup_In%BS_DO_BRDF_SURFACE = .NOT. use_lambertian
-    
-!!$    IF (VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE) THEN
-!!$       VBRDF_Sup_In%BS_N_BRDF_KERNELS            = 1
-!!$       VBRDF_Sup_In%BS_LAMBERTIAN_KERNEL_FLAG(1) = .TRUE.
-!!$       VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS   = .FALSE.
-!!$       ! Other BRDF surface options turned off
-!!$       VBRDF_Sup_In%BS_NSTREAMS_BRDF    = 0
-!!$       VBRDF_Sup_In%BS_DO_SHADOW_EFFECT = .FALSE.
-!!$       VBRDF_Sup_In%BS_BRDF_FACTORS     = 0.0d0
-!!$       VBRDF_Sup_In%BS_BRDF_PARAMETERS  = 0.0d0
-!!$    ENDIF
-!!$    ELSE
-!!$       VBRDF_Sup_In%BS_N_BRDF_KERNELS            = 1
-!!$       VBRDF_Sup_In%BS_LAMBERTIAN_KERNEL_FLAG(1) = .FALSE.
-!!$       VBRDF_Sup_In%BS_NSTREAMS_BRDF             = 50
-!!$       VBRDF_Sup_In%BS_DO_SHADOW_EFFECT     = .FALSE.
-!!$       VBRDF_Sup_In%BS_BRDF_NAMES(1)        = 'GCMcomplex'
-!!$       VBRDF_Sup_In%BS_WHICH_BRDF(1)         = GISSCOXMUNK_CRI_IDX
-!!$       VBRDF_Sup_In%BS_WHICH_BRDF(1)        = 11
-!!$       VBRDF_Sup_In%BS_BRDF_FACTORS(1)      = 1.0d0
-!!$       VBRDF_Sup_In%BS_N_BRDF_PARAMETERS(1) = 3
-!!$       VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,1) = wind_speed
-!!$       VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,1) = 0.5d0*(0.003d0+0.00512d0* &
-!!$            VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,1))
-!!$    ENDIF
     
     ! Set the linearization control for surface (albedo) linearization
     IF (VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE) THEN
        IF ( do_JACOBIANS ) THEN
           VLIDORT_LinModIn%MCont%TS_DO_SURFACE_LINEARIZATION = .TRUE.
-!!$          VBRDF_LinSup_In%BS_do_kernel_factor_wfs(1)         = .TRUE.
-!!$          !        surfacewf_names(1)       = '--Lambertian albedo---' Not in version 2.6 gga
-!!$          VBRDF_LinSup_In%BS_N_SURFACE_WFS       = 1
           VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS = 1
        ELSE
           VLIDORT_LinModIn%MCont%TS_DO_SURFACE_LINEARIZATION = .FALSE.
-!!$          VBRDF_LinSup_In%BS_do_kernel_factor_WFS            = .FALSE.
        END IF
     ELSE
        IF ( DO_JACOBIANS ) THEN
           VLIDORT_LinModIn%MCont%TS_DO_SURFACE_LINEARIZATION = .TRUE.
-!!$          VBRDF_LinSup_In%BS_DO_KERNEL_factor_WFS(1)         = .FALSE.
-!!$          VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS(1,1)       = .TRUE.
-!!$          VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS(1,2)       = .FALSE.
-!!$          VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS(1,3)       = .FALSE.
-!!$          VBRDF_LinSup_In%BS_DO_KPARAMS_DERIVS(1)            = .TRUE.      ! strictly not necessary; supplement takes care of this derived quantity
-!!$          !        surfacewf_names(1)       = '--Wind Speed---' Not in version 2.6 gga
-!!$          VBRDF_LinSup_In%BS_n_KERNEL_FACTOR_WFS = 0
-!!$          VBRDF_LinSup_In%BS_n_KERNEL_PARAMS_WFS = 1
-!!$          VBRDF_LinSup_In%BS_N_SURFACE_WFS       = 1
           VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS = 1
        ELSE
           VLIDORT_LinModIn%MCont%TS_DO_SURFACE_LINEARIZATION = .FALSE.
-!!$          VBRDF_LinSup_In%BS_DO_KERNEL_FACTOR_WFS            = .FALSE.
-!!$          VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS            = .FALSE.
-!!$          VBRDF_LinSup_In%BS_DO_KPARAMS_DERIVS               = .FALSE.
-!!$          VBRDF_LinSup_In%BS_N_KERNEL_FACTOR_WFS             = 0
-!!$          VBRDF_LinSup_In%BS_N_KERNEL_PARAMS_WFS             = 0
-!!$          VBRDF_LinSup_In%BS_N_SURFACE_WFS                   = 0
           VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS             = 0
        END IF
     END IF
-    
+
     ! Simulation only settings
     IF ( .NOT. do_JACOBIANS ) THEN
-       VLIDORT_LinFixIn%Cont%TS_DO_SIMULATION_ONLY        = .TRUE.
-       VLIDORT_LinModIn%MCont%TS_DO_SURFACE_LINEARIZATION = .FALSE.
-!!$       VBRDF_LinSup_In%BS_DO_KERNEL_FACTOR_WFS            = .FALSE.
-!!$       VBRDF_LinSup_In%BS_DO_KERNEL_PARAMS_WFS            = .FALSE.
-!!$       VBRDF_LinSup_In%BS_DO_KPARAMS_DERIVS               = .FALSE.
-       VLIDORT_LinModIn%MCont%TS_DO_PROFILE_LINEARIZATION = .FALSE.
-!!$       VBRDF_LinSup_In%BS_N_KERNEL_FACTOR_WFS             = 0
-!!$       VBRDF_LinSup_In%BS_N_KERNEL_PARAMS_WFS             = 0
-!!$       VBRDF_LinSup_In%BS_N_SURFACE_WFS                   = 0
        VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS             = 0
        VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS        = 0
        VLIDORT_LinFixIn%Cont%TS_LAYER_VARY_FLAG           = .FALSE.
        VLIDORT_LinFixIn%Cont%TS_LAYER_VARY_NUMBER         = 0
     END IF
-
+    
   END SUBROUTINE Vlidort_GC_config
 
   SUBROUTINE save_results(error)

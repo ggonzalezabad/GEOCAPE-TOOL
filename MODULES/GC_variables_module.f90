@@ -115,6 +115,7 @@ MODULE GC_variables_module
    REAL(KIND=8) :: GC_azimuths(GC_maxgeometries)
    INTEGER      :: GC_n_user_levels
    REAL(KIND=8) :: GC_user_levels(GC_maxuserlevels)
+   INTEGER      :: GC_n_user_altitudes
    REAL(KIND=8) :: GC_user_altitudes(GC_maxuserlevels)
    LOGICAL      :: GC_do_user_altitudes
 

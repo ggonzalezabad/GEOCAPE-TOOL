@@ -60,7 +60,8 @@ program geocape_tools_v2p6
 !  ------------------
 !  Modules to be used
 !  ------------------
-  USE VLIDORT_INPUTS
+!!$  USE VLIDORT_INPUTS
+  USE VLIDORT_L_INPUTS
   USE VLIDORT_AUX
   USE VBRDF_LINSUP_MASTERS_M
   USE VLIDORT_SUP_ACCESSORIES
@@ -231,27 +232,6 @@ program geocape_tools_v2p6
    END IF
    taertau0 = SUM(taer_profile(1:GC_nlayers)) 
 
-   ! -------------------
-   ! Not implemented yet
-   ! -------------------
-   do_aerph_Jacobians  = .FALSE.
-   do_aerhw_Jacobians  = .FALSE.
-
-   IF (.NOT. do_Jacobians) THEN
-      do_QU_Jacobians     = .FALSE.
-      do_T_Jacobians      = .FALSE.
-      do_sfcprs_Jacobians = .FALSE.
-      do_aod_Jacobians    = .FALSE.
-      do_assa_Jacobians   = .FALSE.
-      do_aerph_Jacobians  = .FALSE.
-      do_aerhw_Jacobians  = .FALSE.
-      do_cod_Jacobians    = .FALSE.
-      do_cssa_Jacobians   = .FALSE.
-      do_ctp_Jacobians    = .FALSE.
-      do_cfrac_Jacobians  = .FALSE.
-      do_AMF_calculation  = .FALSE.
-   END IF
-
    ! ================
    ! GEOMETRY SECTION
    ! ================
@@ -268,13 +248,15 @@ program geocape_tools_v2p6
                                        second, tmzn, latitude, longitude, &
                                        satlat, satlon, satalt)
       
+      GC_n_sun_positions  = 1
+      GC_n_view_angles    = 1
+      GC_n_azimuths       = 1
       GC_sun_positions(1) = geometry_data(4)
       GC_view_angles(1)   = geometry_data(2)
       GC_azimuths(1)      = geometry_data(1)-(geometry_data(3) + 180.0)
 
       IF (GC_azimuths(1) .LT.   0.d0) GC_azimuths(1) = GC_azimuths(1)+360.d0
       IF (GC_azimuths(1) .GE. 360.d0) GC_azimuths(1) = GC_azimuths(1)-360.d0
-      
    ENDIF
 
    ! ===========
@@ -338,6 +320,21 @@ program geocape_tools_v2p6
                                 VBRDF_Sup_InputStatus )       ! Outputs
 
    do_brdf_surface = VBRDF_Sup_In%BS_DO_BRDF_SURFACE
+
+   ! ----------------------------------------------------
+   ! If using footprint or satellite view the BRDF angles
+   ! need to be overwritten.
+   ! ----------------------------------------------------
+   IF (use_footprint_info .OR. do_sat_viewcalc) THEN
+      VBRDF_Sup_In%BS_NBEAMS         = GC_n_sun_positions
+      VBRDF_Sup_In%BS_N_USER_STREAMS = GC_n_view_angles
+      VBRDF_Sup_In%BS_N_USER_RELAZMS = GC_n_azimuths
+      
+      VBRDF_Sup_In%BS_BEAM_SZAS(1)         = GC_sun_positions(1)
+      VBRDF_Sup_In%BS_USER_ANGLES_INPUT(1) = GC_view_angles(1)
+      VBRDF_Sup_In%BS_USER_RELAZMS(1)      = GC_azimuths(1)
+   END IF
+
 
    ! -----------------------------------------------
    ! Exception handling. Use Type structure directly
@@ -407,10 +404,12 @@ program geocape_tools_v2p6
    ! Read Vlidort control file and initialize control arrays
    ! defined in GC_variables module
    ! -------------------------------------------------------
-   CALL VLIDORT_INPUT_MASTER ( vlidort_control_file, & ! Input
-                               VLIDORT_FixIn,        & ! Outputs
-                               VLIDORT_ModIn,        & ! Outputs
-                               VLIDORT_InputStatus)    ! Outputs
+   CALL VLIDORT_L_INPUT_MASTER ( vlidort_control_file, & ! Input
+                                 VLIDORT_FixIn,        & ! Outputs
+                                 VLIDORT_ModIn,        & ! Outputs
+                                 VLIDORT_LinFixIn,     & ! Outputs
+                                 VLIDORT_LinModIn,     & ! Outputs
+                                 VLIDORT_InputStatus)    ! Outputs
    
    ! ------------------
    ! Exception handling
@@ -439,6 +438,27 @@ program geocape_tools_v2p6
    ! Vlidort options.
    ! -----------------------------------
    CALL Vlidort_GC_config (yn_error)
+
+   ! -------------------
+   ! Not implemented yet
+   ! -------------------
+   do_aerph_Jacobians  = .FALSE.
+   do_aerhw_Jacobians  = .FALSE.
+
+   IF (.NOT. do_Jacobians) THEN
+      do_QU_Jacobians     = .FALSE.
+      do_T_Jacobians      = .FALSE.
+      do_sfcprs_Jacobians = .FALSE.
+      do_aod_Jacobians    = .FALSE.
+      do_assa_Jacobians   = .FALSE.
+      do_aerph_Jacobians  = .FALSE.
+      do_aerhw_Jacobians  = .FALSE.
+      do_cod_Jacobians    = .FALSE.
+      do_cssa_Jacobians   = .FALSE.
+      do_ctp_Jacobians    = .FALSE.
+      do_cfrac_Jacobians  = .FALSE.
+      do_AMF_calculation  = .FALSE.
+   END IF
 
    ! ------------------------------------------------------
    ! This is the checking routine for compatibility between

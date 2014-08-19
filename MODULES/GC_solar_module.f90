@@ -34,26 +34,6 @@ MODULE GC_solar_module
       !   -- Not used for thermal only options
       ! ------------------------------------------------------------------------
 
-      !   IF (do_normalized_radiance) THEN
-      !      solar_spec_data(1:nlambdas)  = 1.0d0
-      !      solar_cspec_data(1:nclambdas) = 1.0d0
-      !   ELSE
-      
-
-      ! ------------------------
-      ! Decide which file to use
-      ! The file always should
-      ! have units of W/cm2/cm-1
-      ! ------------------------
-      IF (use_wavelength .AND. lambdas(1) > 201.d0 .AND. &
-         lambdas(nlambdas) < 1000.d0) THEN
-         solar_spec_filename = TRIM(ADJUSTL(database_dir)) // &
-                               '/chance_solarspec_jqsrt2011_bis.dat'
-      ELSE
-         solar_spec_filename = TRIM(ADJUSTL(database_dir)) // &
-                               '/newkur.dat'
-      END IF
-
       ! ---------
       ! Read file
       ! ---------

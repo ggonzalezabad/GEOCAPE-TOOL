@@ -18,12 +18,22 @@ Database directory
 Profile data filename
 /data/tempo1/Shared/VLIDORT/GEOCAPE-TOOL/geocape_data/AFGL_atmospheres/geocape_afglus.dat
 
-# ------------------------------------------
-# Use footprint info in atmospheric profile:
-#   lon, lat, yy, mm, dd, utc, sza, vza, aza
-#   , Ts, Ps, fc, ws,ctp
-# ------------------------------------------
+# ------------------------------------------------------------------------------------
+# Use footprint info in atmospheric profile: lon, lat, yy, mm, dd, utc, sza, vza, aza,
+#                                            Ts, Ps, fc, ws,ctp
+# LOGICAL T or F ++Attention this switch turns on/off the use of the foot print info 
+#                  in the atompsheric profile file++
+# or use the footprint specified below with footprint information:
+#   1. year, month, day, utc
+#   2. longitude, latitude
+#   3. satellite longitude, laitude (deg) and altitude (km)
+#   4. Redo viewing geometry based on footprint/satellite positions LOGICAL on/off!!!
+# ------------------------------------------------------------------------------------
 Use footprint info
+F
+2007  07 15 21.0
+-60.0 38.0
+-100.0 0.0 35786.0
 F
 
 # ----------------------
@@ -35,28 +45,13 @@ Debug geocape
 T
 debug_geocape_tool.log
 
-# ----------------------------------
-# Do vector calculation, logical T/F
-# ----------------------------------
-Vector calculation
-F
-
-# --------------------------------
+# --------------------------------------------------------
 # Do Stokes QU output, logical T/F
-# --------------------------------
+# Output QU for radiance and jacobians.
+# Internal check for consistency between Vlidort setup and
+# stokes output.
+# --------------------------------------------------------
 Stokes output
-F
-
-# -------------------------
-# Do Jacobians, logical T/F
-# -------------------------
-Jacobians
-T
-
-# ----------------------------
-# Do QU Jacobians, logical T/F
-# ----------------------------
-QU jacobians
 F
 
 # -------------------------------
@@ -65,14 +60,18 @@ F
 Air mass factors
 T
 
-# -------------------------------------
+# ----------------------------------------
 # Do temperature Jacobians, logical T/F
-# -------------------------------------
+# Internal check to be sure WF calculation
+# is set up in VLIDORT control file
+# ----------------------------------------
 Temperature jacobians
 F
 
 # ------------------------------------------
 # Do Surface Pressure Jacobians, logical T/F
+# Internal check to be sure WF calculation
+# is set up in VLIDORT control file
 # ------------------------------------------
 Surface pressure jacobians
 F
@@ -84,12 +83,20 @@ F
 Normalized WF output
 T
 
-# -----------------------------------
+# ---------------------------------------------------------
 # Do Normalized Radiance, logical T/F
 #   T: I/F; F: I
-# -----------------------------------
+#
+# If set to F you need to provide a solar spectra in units
+# of W/cm2/cm-1. Please check that the spectra provided
+# covers the spectral range of the calculation. No internal
+# check for wavelenghts. Also check example of input files
+# in folder geocape_data/newkur.dat
+# Please introduce full path name!!!
+# ---------------------------------------------------------
 Normalized radiance
 T
+/data/tempo1/Shared/VLIDORT/GEOCAPE-TOOL/geocape_data/newkur.dat
 
 # ----------------------------------------
 # Use solar photons, logical T/F
@@ -172,87 +179,25 @@ clouds_control.inp
 Number of moments
 16
 
-# -----------------
-# Number of streams
-# -----------------
-Streams
-8
-
-# ---------------------------
-# Sun positions:
-#   1. Number
-#      Values (one each line)
-# ---------------------------
-Sun positions
-1
-0.01
-15.0d0
-30.0d0
-45.0d0
-60.0d0
-75.0d0
-89.9d0
-
-# ---------------------------
-# View angles:
-#   1. Number
-#      Values (one each line)
-# ---------------------------
-View angles
-1
-0.01
-15.0d0
-30.0d0
-45.0d0
-60.0d0
-75.0d0
-89.9d0
-
-# ---------------------------
-# Azimuth angles:
-#   1. Number
-#      Values (one each line)
-# ---------------------------
-Azimuth angles
-1
-0.01
-15.0
-# -------------------------------------------------
-# User level to output radiances:
-#   1. Number of user levels (1 for this interface)
-#      Values (0.d0 for TOA) (one each line)
-# -------------------------------------------------
-User levels
-1
-0.d0
-
 # ---------------------------------------------------
 # Do user altitudes:
 #   1. Logical T/F
-#   2. Values (one each line, as many as user levels)
+#   2. Number of user altitude levels
+#   3. Values (one each line, as many as user levels)
+#   It overwrites input form Vlidort control file.
 # ---------------------------------------------------
 User altitudes
-T
+F
+2
 0.0d0
+10.0
+15.0
 
 # ------------------------
 # Do upwelling logical T/F
 # ------------------------
 Upwelling
-F
-
-# ------------------------------------------------------------------
-# Footprint information:
-#   1. year, month, day, utc
-#   2. longitude, latitude
-#   3. satellite longitude, laitude (deg) and altitude (km)
-#   4. Redo viewing geometry based on footprint/satellite positions
-# -----------------------------------------------------------------
-Footprint
-2007  07 15 21.0
--60.0 38.0
--100.0 0.0 35786.0
-F
+T
 
 # --------------------------------------------------------------
 # Cross sections.
