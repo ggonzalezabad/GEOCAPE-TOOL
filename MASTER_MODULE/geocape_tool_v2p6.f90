@@ -504,14 +504,14 @@ program geocape_tools_v2p6
    ! =====================
    ! ---------------------
    DO w = 1, nlambdas
-
+      
       ! ----------------------------------------------
       ! Set optical properties for Vlidort calculation
       ! ----------------------------------------------
       CALL Vlidort_set_optical (yn_error)
-
+      
       IF (yn_error) CALL error_exit(yn_error)
-
+      
       ! ---------------------------------------------------------------------
       ! Cloud loop, clear and cloudy part; Vlidort calculation takes place
       ! inside the loop. Intizialize output: stokes, profile & surface jac
@@ -520,16 +520,45 @@ program geocape_tools_v2p6
       ! optical depth, total scattering, cloudy parts with scattering clouds,
       ! Vlidort Linearized inputs, save profilewf_sum, surfacewf_sum.
       ! ---------------------------------------------------------------------
-      CALL Vlidort_cloud_and_calculation (yn_error)
+      ! Loop over directions (upwelling or downwelling)
+      ! -----------------------------------------------
+      DO idir = 1, ndir
 
-      ! ============
-      ! save results
-      ! ============
-      CALL save_results (yn_error)
-
-          ! -------------------
+         didx = idix(idir)         
+         CALL Vlidort_cloud_and_calculation (yn_error)
+         
+         ! ============
+         ! save results
+         ! ============
+         CALL save_results (yn_error)
+         
+         ! ----------------------------------------------
+         ! Need to convolve radiances with slit functions
+         ! ----------------------------------------------
+         IF (.NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN
+            
+            CALL convolve_slit(yn_error)
+            
+         END IF
+         
+         !  ##################################################################
+         !  ##################################################################
+         !                 W R I T E    R E S U L T S
+         !  ##################################################################
+         !  ##################################################################
+         
+         ! -----------------
+         ! NETCDF file write
+         ! -----------------
+         CALL netcdf_output (yn_error)
+         
+      ! --------------------------   
+      END DO ! End directions loop
+      ! --------------------------
+      
+   ! -------------------
    END DO ! End wavelength loop
-          ! -------------------
+   ! -------------------
 
    ! ----------------
    ! Close debug file
@@ -537,26 +566,6 @@ program geocape_tools_v2p6
    IF ( do_debug_geocape_tool ) THEN
       CLOSE(du)
    ENDIF
-
-   ! ----------------------------------------------
-   ! Need to convolve radiances with slit functions
-   ! ----------------------------------------------
-   IF (.NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN
-
-      CALL convolve_slit(yn_error)
-      
-   END IF
-
-!  ##################################################################
-!  ##################################################################
-!                 W R I T E    R E S U L T S
-!  ##################################################################
-!  ##################################################################
-
-   ! -----------------
-   ! NETCDF file write
-   ! -----------------
-   CALL netcdf_output (yn_error)
 
    ! ##################
    ! ------------------

@@ -102,7 +102,10 @@ MODULE GC_variables_module
 ! Upwelling & downwelling control
 ! -------------------------------
    LOGICAL :: GC_do_upwelling
-   INTEGER :: didx                  ! = 1, upwelling; 2. downwelling
+   INTEGER               :: ndir ! Number of directions (1 or 2)
+   INTEGER               :: idir ! Directions loop index
+   INTEGER, DIMENSION(2) :: idix ! Directions
+   INTEGER :: didx ! = 1, upwelling; 2. downwelling
 
 ! -------------
 ! GC geometries

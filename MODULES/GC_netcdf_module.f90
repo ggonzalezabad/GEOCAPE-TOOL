@@ -30,7 +30,7 @@ MODULE GC_netcdf_module
                                   GC_n_view_angles, GC_n_azimuths, VLIDORT_Out,                        &
                                   GC_flux, GC_Qflux, GC_Uflux, GC_direct_flux, GC_Qdirect_flux,        &
                                   GC_Udirect_flux, Total_brdf, NSTOKESSQ, do_brdf_surface,             &
-                                  OUTPUT_WSABSA, WSA_CALCULATED, BSA_CALCULATED
+                                  OUTPUT_WSABSA, WSA_CALCULATED, BSA_CALCULATED, didx
   USE GC_error_module
 
   IMPLICIT NONE
@@ -60,7 +60,14 @@ CONTAINS
     ! -----------------
     ! NETCDF file write
     ! -----------------
-    netfname = TRIM(ADJUSTL(TRIM(ADJUSTL(results_dir)) // 'radwf_outall.nc'))
+    IF (didx .EQ. 1) THEN
+       netfname = TRIM(ADJUSTL(TRIM(ADJUSTL(results_dir)) // 'GC_upwelling_output.nc'))
+    ELSEIF (didx .EQ. 2) THEN
+       netfname = TRIM(ADJUSTL(TRIM(ADJUSTL(results_dir)) // 'GC_downwelling_output.nc'))
+    ELSE
+       WRITE(*,*) 'No upwelling or downwelling selected... no output'
+       STOP
+    END IF
     call netcdf_wrt ( netfname, latitude, longitude, year, month, day, utc,              &
         GC_n_sun_positions, GC_n_view_angles, GC_n_azimuths,                             &
         VLIDORT_Out%Main%TS_N_GEOMETRIES,                                                &

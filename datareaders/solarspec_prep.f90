@@ -55,7 +55,6 @@ subroutine solarspec_prep_newkur &
    np = np - 1
 
 !  Open and read file
-
    open(1,file=filename(1:np),err=90, status='old')
 
    do i = 1,2

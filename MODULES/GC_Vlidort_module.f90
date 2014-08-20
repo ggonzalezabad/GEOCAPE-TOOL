@@ -2,7 +2,7 @@ MODULE GC_Vlidort_module
 
   USE VLIDORT_PARS,        ONLY: GISSCOXMUNK_CRI_IDX, VLIDORT_SERIOUS
   USE GC_parameters_module,ONLY: max_ch_len
-  USE GC_variables_module, ONLY: VLIDORT_FixIn, GC_do_upwelling, didx, GC_do_user_altitudes,   &
+  USE GC_variables_module, ONLY: VLIDORT_FixIn, ndir, idix, didx, GC_do_user_altitudes,        &
                                  GC_n_user_levels, GC_user_altitudes, GC_user_levels, heights, &
                                  GC_nlayers, VLIDORT_ModIn, nstreams_choice, VLIDORT_LinModIn, &
                                  VLIDORT_LinFixIn, do_vector_calculation, ngksec, nactgkmatc,  &
@@ -130,16 +130,13 @@ CONTAINS
     ! ========================================================
     ! SECTION 2 (Other VLIDORT inputs depending on GC control)
     ! ========================================================
-    ! Upwelling/Downnwelling output
-    IF (GC_do_upwelling) THEN
-       VLIDORT_FixIn%Bool%TS_DO_UPWELLING = .TRUE.  ! Over writes Vlidort config file
-       VLIDORT_FixIn%Bool%TS_DO_DNWELLING = .FALSE. ! Over writes Vlidort config file
-       didx = 1
-    ELSE
-       VLIDORT_FixIn%Bool%TS_DO_UPWELLING = .FALSE. ! Over writes Vlidort config file
-       VLIDORT_FixIn%Bool%TS_DO_DNWELLING = .TRUE.  ! Over writes Vlidort config file
-       didx = 2
-    ENDIF
+    IF (VLIDORT_FixIn%Bool%TS_DO_UPWELLING .AND. VLIDORT_FixIn%Bool%TS_DO_DNWELLING) THEN
+       ndir = 2; idix(1) = 1; idix(2) = 2
+    ELSEIF (VLIDORT_FixIn%Bool%TS_DO_UPWELLING .AND. .NOT. VLIDORT_FixIn%Bool%TS_DO_DNWELLING) THEN
+       ndir = 1; idix(1) = 1
+    ELSEIF (.NOT. VLIDORT_FixIn%Bool%TS_DO_UPWELLING .AND. VLIDORT_FixIn%Bool%TS_DO_DNWELLING) THEN
+       ndir = 1; idix(1) = 2
+    END IF
     
     ! --------------------------------------------------------------------------
     ! Output level: Usually it comes from VLIDORT input file. In GC control file
@@ -1735,7 +1732,7 @@ CONTAINS
        ! ----------------
        ! Now call VLIDORT
        ! -----------------
-       WRITE(*,*)'doing VLIDORT calculation # ', w
+       WRITE(*,*)'doing VLIDORT calculation # ', w, didx
        CALL VLIDORT_LPS_MASTER ( &
             VLIDORT_FixIn,     &
             VLIDORT_ModIn,     &

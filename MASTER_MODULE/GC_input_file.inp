@@ -2,7 +2,7 @@
 # Results folder
 # --------------
 Output folder
-../test/ggon1
+../test/
 
 # -------------------------------------
 # Database directory:
@@ -187,17 +187,11 @@ Number of moments
 #   It overwrites input form Vlidort control file.
 # ---------------------------------------------------
 User altitudes
-F
-2
+T
+1
 0.0d0
 10.0
 15.0
-
-# ------------------------
-# Do upwelling logical T/F
-# ------------------------
-Upwelling
-T
 
 # --------------------------------------------------------------
 # Cross sections.

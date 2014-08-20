@@ -21,11 +21,11 @@ MODULE GC_read_input_module
                                   debug_filename, albspectra_fname, aerfile, cldfile, &
                                   do_aerosols, do_clouds, do_lambertian_cld,          &
                                   use_aerprof, use_cldprof,                           &
-                                  do_StokesQU_output,                                 &
+                                  do_StokesQU_output, idix,                           &
                                   do_AMF_calculation, do_T_Jacobians,                 &
                                   do_sfcprs_Jacobians, do_normalized_WFoutput,        &
                                   do_normalized_radiance,                             &
-                                  aercld_nmoments_input, GC_do_upwelling, didx,       &
+                                  aercld_nmoments_input,                              &
                                   GC_n_user_altitudes,                                &
                                   GC_user_altitudes, GC_do_user_altitudes,            &
                                   lambda_start, lambda_finish, use_wavelength,        &
@@ -404,17 +404,6 @@ MODULE GC_read_input_module
       READ (UNIT=funit, FMT=*, IOSTAT=ios) GC_n_user_altitudes
       READ (UNIT=funit, FMT=*, IOSTAT=ios) (GC_user_altitudes(i), i=1, GC_n_user_altitudes)
 
-      ! ---------
-      ! Upwelling
-      ! ---------
-      REWIND (funit)
-      CALL skip_to_filemark ( funit, upwelling_str , tmpstr, error )
-      IF ( error ) THEN
-         CALL write_err_message ( .TRUE., "ERROR: Can't find "//upwelling_str )
-         CALL error_exit (error)
-      END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) GC_do_upwelling
-
       CLOSE(funit)
 
     END SUBROUTINE read_control_file
@@ -577,10 +566,10 @@ MODULE GC_read_input_module
     END IF
 
     !  No satellite viewing geometry calculation for downwelling calculation
-    IF ( .NOT. GC_do_upwelling .AND. do_sat_viewcalc) THEN
-       CALL write_err_message ( .FALSE., "Cannot calculate viewing geometry for downwelling!!!")
-       error = .TRUE.
-    END IF
+!!$    IF ( idix(1) .NE. 1 .AND. do_sat_viewcalc) THEN
+!!$       CALL write_err_message ( .FALSE., "Cannot calculate viewing geometry for downwelling!!!")
+!!$       error = .TRUE.
+!!$    END IF
     
     !  Exception handling this section
     IF (error) CALL error_exit(error)
