@@ -23,7 +23,7 @@ MODULE GC_parameters_module
 ! Dimensions with 'GC_' prefix, distinguish from VLIDORT variables
 ! ----------------------------------------------------------------
   INTEGER, PARAMETER :: GC_maxlayers      = 51
-  INTEGER, PARAMETER :: GC_maxgeometries  = 100
+  INTEGER, PARAMETER :: GC_maxgeometries  = 2
   INTEGER, PARAMETER :: GC_maxuserlevels  = 2
 
 ! ----------------------------  
@@ -32,8 +32,8 @@ MODULE GC_parameters_module
   INTEGER, PARAMETER :: maxgases      = 10
   INTEGER, PARAMETER :: maxaer        = 6
   INTEGER, PARAMETER :: maxcld        = 3
-  INTEGER, PARAMETER :: maxflambdas   = 5501
-  INTEGER, PARAMETER :: maxlambdas    = 5501
+  INTEGER, PARAMETER :: maxflambdas   = 20001
+  INTEGER, PARAMETER :: maxlambdas    = 20001
   INTEGER, PARAMETER :: maxmessages   = 100
   INTEGER, PARAMETER :: maxmoms       = 32
   INTEGER, PARAMETER :: maxgksec      = 6, maxgkmatc = 8

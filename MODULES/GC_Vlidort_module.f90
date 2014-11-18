@@ -437,28 +437,6 @@ CONTAINS
     ! save results
     ! ============
 
-    ! ---------
-    ! Save BRDF
-    ! ---------
-    IF (do_brdf_surface) THEN
-       GCM = (VBRDF_Sup_In%BS_which_brdf(1) .eq. 10 .or. &
-            VBRDF_Sup_In%BS_which_brdf(2) .eq. 10 .or. &
-            VBRDF_Sup_In%BS_which_brdf(3) .eq. 10)
-       
-       if ( GCM ) then
-          NSTOKESSQ = VBRDF_Sup_In%BS_NSTOKES * VBRDF_Sup_In%BS_NSTOKES
-       else
-          NSTOKESSQ = 1
-       endif
-       Total_brdf = VLIDORT_Sup%BRDF%TS_EXACTDB_BRDFUNC
-       OUTPUT_WSABSA = .FALSE.
-       IF (VBRDF_Sup_In%BS_DO_WSABSA_OUTPUT) THEN
-         WSA_CALCULATED = VBRDF_Sup_Out%BS_WSA_CALCULATED
-         BSA_CALCULATED = VBRDF_Sup_Out%BS_BSA_CALCULATED
-         OUTPUT_WSABSA = .TRUE.
-      END IF
-    ENDIF
-
     ! ------------------------------------
     ! Save Radiances, flux and direct flux
     ! ------------------------------------
@@ -1933,6 +1911,23 @@ CONTAINS
     VLIDORT_LinSup%BRDF%TS_LS_EXACTDB_BRDFUNC = VBRDF_LinSup_Out%BS_LS_EXACTDB_BRDFUNC
     VLIDORT_LinSup%BRDF%TS_LS_USER_EMISSIVITY = VBRDF_LinSup_Out%BS_LS_USER_EMISSIVITY
     VLIDORT_LinSup%BRDF%TS_LS_EMISSIVITY      = VBRDF_LinSup_Out%BS_LS_EMISSIVITY
+
+    GCM = (VBRDF_Sup_In%BS_which_brdf(1) .eq. 10 .or. &
+         VBRDF_Sup_In%BS_which_brdf(2) .eq. 10 .or. &
+         VBRDF_Sup_In%BS_which_brdf(3) .eq. 10)
+    
+    if ( GCM ) then
+       NSTOKESSQ = VBRDF_Sup_In%BS_NSTOKES * VBRDF_Sup_In%BS_NSTOKES
+    else
+       NSTOKESSQ = 1
+    endif
+    Total_brdf = VLIDORT_Sup%BRDF%TS_EXACTDB_BRDFUNC
+    OUTPUT_WSABSA = .FALSE.
+    IF (VBRDF_Sup_In%BS_DO_WSABSA_OUTPUT) THEN
+       WSA_CALCULATED = VBRDF_Sup_Out%BS_WSA_CALCULATED
+       BSA_CALCULATED = VBRDF_Sup_Out%BS_BSA_CALCULATED
+       OUTPUT_WSABSA = .TRUE.
+    END IF
 
   END SUBROUTINE VBRDF_TO_VLIDORT
   
