@@ -2,7 +2,7 @@
 # Results folder
 # --------------
 Output folder
-../test/0p140
+../test/test_netcdf_
 
 # -------------------------------------
 # Database directory:
@@ -16,7 +16,7 @@ Database directory
 # Profile data filename
 # ---------------------
 Profile data filename
-/data/tempo1/Shared/VLIDORT/GEOCAPE-TOOL/geocape_data/AFGL_atmospheres/geocape_afglus.dat
+/data/tempo2/ggonzale/TEMPO_test_data/profiles/gcsim_2007071521_2510-77.5W38.0N_atmosprof.dat
 
 # ------------------------------------------------------------------------------------
 # Use footprint info in atmospheric profile: lon, lat, yy, mm, dd, utc, sza, vza, aza,
@@ -95,7 +95,7 @@ T
 # Please introduce full path name!!!
 # ---------------------------------------------------------
 Normalized radiance
-T
+F
 /data/tempo1/Shared/VLIDORT/GEOCAPE-TOOL/geocape_data/newkur.dat
 
 # ----------------------------------------
@@ -119,8 +119,8 @@ T
 # -----------------------------------------------------------
 Spectral
 T
-340.00d0 340.00d0 0.5d0
-1.0d0 0.1d0
+280 320 0.01d0
+0.01d0 0.01d0
 
 # ----------------------------------------------------------
 # Gases input allowed values: O3, NO2, HCHO, SO2, H2O, GLYX,
@@ -130,8 +130,8 @@ T
 #   2. Which gases
 # ----------------------------------------------------------
 Gases
-3
-O3 NO2 HCHO
+9
+O3 NO2 HCHO SO2 BRO GLYX H2O O2 O4
 #5
 #O3, NO2, HCHO, BRO, SO2
 #, SO2, GLYX, H2O, BRO, OCLO, O4, O2
@@ -146,7 +146,7 @@ O3 NO2 HCHO
 # -----------------------------------------------------------------------
 Albedo
 T T
-0.140d0
+0.03d0
 F
 grass_ASTER.dat
 5.0d0
@@ -177,7 +177,7 @@ clouds_control.inp
 # Number of aerosols and clouds moments
 # -------------------------------------
 Number of moments
-16
+8
 
 # ---------------------------------------------------
 # Do user altitudes:
@@ -190,8 +190,6 @@ User altitudes
 F
 1
 0.0d0
-10.0
-15.0
 
 # --------------------------------------------------------------
 # Cross sections.
@@ -209,29 +207,29 @@ F
 # --------------------------------------------------------------
 Cross sections
 O3
-o3abs_brion_195_830_vacfinal.dat    
+TEMPO_o3abs_brion_270_800_vacfinal.dat
 3   2
 NO2
-no2r_97.nm                          
+TEMPO_no2r_97.dat
 1   1
 HCHO
-h2co_cc.300                         
+TEMPO_h2co_300K.dat
 1   1
 SO2
-SO2_298_BISA.nm                     
+TEMPO_so2_295K.dat
 1   1
 H2O
-h2o_0.9atm_280k_hitran.dat          
+TEMPO_h2o_280K.dat
 1   1
 GLYX
-glyx_296k_volkamer.dat              
+TEMPO_glyx_296K.dat
 1   1       
 BRO
-228kbro10cm.nm                      
+TEMPO_bro_228K.dat                
 1   1
 IO
 io_298k_bremen.dat                  
-1   1
+-1   1
 CO
 HITRAN                             
 -1   3 
@@ -245,7 +243,7 @@ CH4
 HITRAN                             
 -1   3
 O2
-o2_0.5atm_253k_hitran.dat           
+TEMPO_o2_253K.dat
 1   1
 NO
 HITRAN                             
@@ -257,8 +255,8 @@ OCS
 HITRAN                             
 -1   3
 O4
-O4_294K_BISA_800nmfillzero.dat
+TEMPO_o4_294K_BISA.dat
 1   1
 OCLO
 oclo_213k_sciafm.dat
-1   1
+-1   1

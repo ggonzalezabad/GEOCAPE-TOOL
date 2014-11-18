@@ -82,7 +82,7 @@ program geocape_tools_v2p6
                                   Vlidort_cloud_and_calculation,   &
                                   VBRDF_TO_VLIDORT
   USE GC_convolution_module,ONLY: convolve_slit
-  USE GC_netcdf_module,     ONLY: netcdf_output
+  USE GC_netcdf_module,     ONLY: netcdf_output, Create_netcdf_output_file
 
   IMPLICIT NONE
 
@@ -497,6 +497,16 @@ program geocape_tools_v2p6
 !  M A I N    W A V E L E N G T H - L O O P    C A L C U L A T I O N
 !  ##################################################################
 !  ##################################################################
+  
+   ! -----------------------
+   ! Create the output files
+   ! -----------------------
+   DO idir = 1, ndir
+
+      didx = idix(idir)      
+      CALL Create_netcdf_output_file (yn_error)
+
+   END DO
 
    ! ---------------------
    ! =====================

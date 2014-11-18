@@ -300,7 +300,7 @@ subroutine geocape_profile_setter_1                        &
          ngas_check = ngas_check + 1
          do n = 1, GC_nlayers
             if (gasidxs(g) == -1) then
-               gas_partialcolumns(n,g) = aircolumns(n) * O2RATIO  
+               gas_partialcolumns(n,g) = aircolumns(n) * O2RATIO
             else 
                gas_partialcolumns(n,g) = pp * aircolumns(n) * gasconcen(n) 
             endif
@@ -309,7 +309,7 @@ subroutine geocape_profile_setter_1                        &
          ngas_check = ngas_check + 1
          do n = 1, GC_nlayers
             if (gasidxs(g) == -1) then
-               gas_partialcolumns(n,g) = (aircolumns(n) * O2RATIO) ** 2.0 / (heights(n-1)-heights(n)) / 1.0D5  
+               gas_partialcolumns(n,g) = (aircolumns(n) * O2RATIO) ** 2.0 / (heights(n-1)-heights(n)) / 1.0D5
             else 
                gas_partialcolumns(n,g) = (pp * aircolumns(n) * gasconcen(n) ) ** 2.0 &
                     / (heights(n-1)-heights(n)) / 1.0D5 

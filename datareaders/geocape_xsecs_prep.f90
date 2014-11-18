@@ -103,7 +103,7 @@ subroutine geocape_xsec_setter_1                                            &
 
    do g = 1, ngases
 
-      !print *, g, which_gases(g), gas_xsecs_type(g), TRIM(ADJUSTL(xsec_data_filenames(g)))
+     ! print *, g, which_gases(g), gas_xsecs_type(g), TRIM(ADJUSTL(xsec_data_filenames(g)))
 
       if (gas_xsecs_type(g) .eq. 1 .or. gas_xsecs_type(g) .eq. 2) then
 
