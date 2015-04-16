@@ -26,38 +26,47 @@
 ! every nmod^th spectral value
 
 ! Notes: 
-! 1. Qpower needs to be more accurate
-! 2. pressure-induced shift is not considered
+! 1. Qpower needs to be more accurate (now updated)
+! 2. pressure-induced shift is not considered (now shifted)
 ! 3. Intensity for different isotopes is weighted by their fraction in the atmosphere
 ! 4. Is nvoigt enough?
-! 5. Need to speed up Voigt calculations?
+! 5. Need to speed up Voigt calculations? (use humilik procedure to speed up calculation)
 ! 6. Sinc function?
 
 ! Updates
 ! Feb. 2012: add HUMLIK function, which improves the calculation by a factor of 5 compared to voigt
 ! Feb. 25, 2012: add crsdt
 ! Aug. 27, 2012: Update Kelly's new partition function
+! April 13, 2015: 
+!    a. Update to HITRAN 2012 (additional O2 delta bands with intensity correction
+!    b. Convolve from very high resolution to input grid by slit function with solar I0 effect correction
+!    c. Perform line by line calculation only for spectral regions with lines
 
-SUBROUTINE get_hitran_crs(the_molecule, nlambda, lambda, is_wavenum, nz, ps, ts, fwhm, crs, errstat, crsdt)
+
+SUBROUTINE get_hitran_crs(the_molecule, nlambda, lambda, ni0, i0wave, hi0, &
+     is_wavenum, is_fwhm_inlam, nz, ps, ts, fwhm, scale, crs, errstat, crsdt)
 
 IMPLICIT none
 
 ! Input/output parameters
-INTEGER, INTENT(IN)                                :: nlambda, nz
+INTEGER, INTENT(IN)                                :: nlambda, nz, ni0
 CHARACTER (LEN=6), INTENT(IN)                      :: the_molecule
-LOGICAL, INTENT (IN)                               :: is_wavenum    ! *** T: wavenumber, F: nm ***
-REAL(KIND=8), INTENT(IN)                           :: fwhm          ! *** in cm^-1 or nm ***
+LOGICAL, INTENT (IN)                               :: is_wavenum       ! *** T: wavenumber, F: nm ***
+LOGICAL, INTENT (IN)                               :: is_fwhm_inlam    ! is unit for fwhm in nm?
+REAL(KIND=8), INTENT(IN)                           :: fwhm             ! *** in cm^-1 or nm ***
+REAL(KIND=8), INTENT(IN)                           :: scale            
 REAL(KIND=8), DIMENSION(nlambda), INTENT(IN)       :: lambda
+REAL(KIND=8), DIMENSION(ni0), INTENT(IN)           :: i0wave, hi0
 REAL(KIND=8), DIMENSION(nz), INTENT(IN)            :: ps, ts
 INTEGER, INTENT(OUT)                               :: errstat
 REAL(KIND=8), DIMENSION(nlambda, nz), INTENT(OUT)  :: crs
 REAL(KIND=8), DIMENSION(nlambda, nz), INTENT(OUT), OPTIONAL :: crsdt
 
 
-INTEGER, PARAMETER :: maxlines  = 1100 !110000       ! spectral lines
+INTEGER, PARAMETER :: maxlines  = 40000        ! spectral lines
 INTEGER, PARAMETER :: maxmols   = 42           ! number of molecules in hitran
 INTEGER, PARAMETER :: maxiso    = 8            ! maximum # of isotopes
-INTEGER, PARAMETER :: maxpoints = 2100 !210001       ! number of points in spectrum
+INTEGER, PARAMETER :: maxpoints = 800001       ! number of points in spectrum
 CHARACTER (LEN=6), DIMENSION(maxmols), PARAMETER :: molnames = (/ &
      'H2O   ', 'CO2   ', 'O3    ', 'N2O   ', 'CO    ', 'CH4   ', 'O2    ', &
      'NO    ', 'SO2   ', 'NO2   ', 'NH3   ', 'HNO3  ', 'OH    ', 'HF    ', &
@@ -82,10 +91,10 @@ REAL(KIND=8), PARAMETER :: c2 = 1.4387752d0
 INTEGER, DIMENSION(maxlines)             :: mol, iso
 REAL(KIND=8), DIMENSION(maxlines)        :: sigma0, strnth, einstein, alpha, &
      elow, coeff, selfbrdn, pshift
-!REAL(KIND=8), DIMENSION(maxmols)         :: qpower
-REAL(KIND=8), DIMENSION(maxmols, maxiso) :: amu, q296, q
+REAL(KIND=8), DIMENSION(maxmols, maxiso) :: q296, q
 LOGICAL, DIMENSION(maxmols, maxiso)      :: if_q
-REAL(KIND=8), DIMENSION(maxpoints)       :: pos, spec,  voigtx, v, posnm
+REAL(KIND=8), DIMENSION(maxpoints)       :: pos, spec,  voigtx, v, posnm, hi0new, hi0new1
+REAL(KIND=8), DIMENSION(nlambda)         :: wavenum
 CHARACTER(LEN=132)                       :: hitran_filename
 
 INTEGER          :: molnum, npoints, nvoigt, ntemp, niter, iter
@@ -101,8 +110,9 @@ CHARACTER(LEN=6) :: the_moleculeU
 LOGICAL          :: write_diagnostics = .false.
 LOGICAL          :: use_humlik = .true.
 
-REAL (KIND=8), DIMENSION(maxmols, maxiso, 148:342), SAVE :: q_input 
-LOGICAL,                                            SAVE :: first_qload = .TRUE.                                       
+REAL (KIND=8), DIMENSION(maxmols, maxiso, 148:342), SAVE :: q_input  
+REAL(KIND=8), DIMENSION(maxmols, maxiso),           SAVE :: amu
+LOGICAL,                                            SAVE :: first_qload = .TRUE.
 
 INTEGER,          EXTERNAL :: ibin
 CHARACTER (LEN=6),     EXTERNAL :: StrUpCase
@@ -132,31 +142,27 @@ ENDIF
 IF (write_diagnostics) WRITE(*, *) 'wstart = ', wstart, ' wend = ', wend
 
 WRITE(molc, '(I2.2)') molnum
-hitran_filename = '../geocape_data/HITRAN/' // molc // '_hit08.par'
-! Recent HITRAN updates
-IF (molnum == 1) THEN
-   hitran_filename = '../geocape_data/HITRAN/' // molc // '_hit09.par'
-ELSE IF (molnum == 7) THEN
-   hitran_filename = '../geocape_data/HITRAN/' // molc // '_hit10.par'
-ELSE IF (molnum == 9) THEN
-   hitran_filename = '../geocape_data/HITRAN/' // molc // '_hit09.par'
-ELSE IF (molnum == 19) THEN
-   hitran_filename = '../geocape_data/HITRAN/' // molc // '_hit09.par'
-ELSE IF (molnum == 24) THEN
-   hitran_filename = '../geocape_data/HITRAN/' // molc // '_hit10.par'
-ELSE IF (molnum == 26) THEN
-   hitran_filename = '../geocape_data/HITRAN/' // molc // '_hit11.par'
-ELSE IF (molnum == 27) THEN
-   hitran_filename = '../geocape_data/HITRAN/' // molc // '_hit09.par'
+!xliu, 04/06/2015, Update to the latest version of HITRAN 2012
+hitran_filename = '../geocape_data/HITRAN/' // molc // '_hit12.par'
+IF (molnum == 4 .OR. molnum == 8 .OR. molnum == 23 .OR. molnum == 25 .OR. molnum == 30 &
+     .OR. molnum == 32 .OR. molnum == 34 .OR. molnum == 35 .OR. molnum == 38           &
+     .OR. molnum == 39 .OR. molnum == 40 .OR. molnum == 41 .OR. molnum == 42) THEN
+   hitran_filename = '../geocape_data/HITRAN/' // molc // '_hit08.par'
+ENDIF
+IF (molnum == 7) THEN  ! Add new delta bands ~ 580 nm, but need to reduce intensity by ~1.8
+   hitran_filename = '../geocape_data/HITRAN/' // molc // '_hit12-withnewband.par'
+ENDIF
+
+! setup hitrans
+!xliu, 004/06/2015, load amu once and move q_load here from below
+IF (first_qload) THEN
+   CALL hitran_setup (maxmols, maxiso, amu)
+   CALL q_load (maxmols, maxiso, q_input)
+   first_qload = .FALSE.
 ENDIF
 
 IF (write_diagnostics) WRITE(*, *) TRIM(ADJUSTL(hitran_filename))
 OPEN(unit = 22, file = hitran_filename, status = 'old')
-
-! setup hitrans
-!CALL hitran_setup (maxmols, maxiso, qpower, amu)
-CALL hitran_setup (maxmols, maxiso, amu)
-
 
 ! read lines (15 cm^-1 extra on both sides)
 i = 1
@@ -175,6 +181,10 @@ DO
       mol(i) = mol_temp
       iso(i) = iso_temp
       sigma0(i) = sigma0_temp
+      
+      !Correction the intensity for O2 Delta bands
+      IF (molnum == 7 .AND. sigma0_temp > 16666. .AND. sigma0_temp < 17545.) strnth_temp = strnth_temp / 1.8
+
       strnth(i) = strnth_temp
       einstein(i) = einstein_temp
       alpha(i) = alpha_temp
@@ -188,11 +198,18 @@ ENDDO
 CLOSE(unit = 22)
 nlines = i - 1
 IF (write_diagnostics) WRITE (*, *) 'nlines = ', nlines
+IF (fwhm > 0.0d0) THEN ! do line by line calculation only around lines
+   IF (wstart < sigma0(1)) wstart = sigma0(1)
+   IF (wend > sigma0(nlines)) wend = sigma0(nlines)
+   IF (write_diagnostics) WRITE(*, *) 'updated wstart = ', wstart, ' wend = ', wend
+ENDIF
 
 IF (nlines > maxlines) THEN
    WRITE(*, *) 'Nlines > maxlines, need to increase maxlines.!!!'
    errstat = 1; RETURN
 ELSE IF (nlines == 0) THEN
+   WRITE(*, *) hitran_filename
+   WRITE(*, *) wstart, wend
    WRITE(*, *) 'No absorption lines are found in this spectral range!!!'
    crs = 0.0d0
    !errstat = 1; 
@@ -268,20 +285,27 @@ ELSE
    ENDDO
 ENDIF
 
-!IF (is_wavenum) THEN
 posnm(1:npoints) = 1.0D7 / pos(1:npoints)
 CALL REVERSE(posnm(1:npoints), npoints)
-!ENDIF
+
+! solar reference corresponding to posnm 
+CALL bspline (i0wave(1:ni0), hi0(1:ni0), ni0, posnm(1:npoints), hi0new(1:npoints), npoints, errstat)   
+IF ( errstat < 0 ) THEN
+   WRITE(*, *) 'BSPLINE interpolation error!!!'
+   errstat = 1; RETURN
+   RETURN
+ENDIF
+IF (.NOT. is_wavenum .AND. .NOT. is_fwhm_inlam) THEN
+   hi0new1(1:npoints) = hi0new(1:npoints)
+   CALL REVERSE(hi0new1(1:npoints), npoints) ! corresponding pos
+ENDIF
+
 IF (write_diagnostics) THEN
    WRITE(*, *) 'npoints = ', npoints, ' nlambda = ', nlambda
    WRITE(*, *) 'pos(1) = ', pos(1), ' pos(npoints) = ', pos(npoints)
    WRITE(*, *) 'posnm(1) = ', posnm(1), ' posnm(npoints) = ', posnm(npoints)
 ENDIF    
 
-IF (first_qload) THEN
-   first_qload = .FALSE.
-   CALL q_load (maxmols, maxiso, q_input)
-ENDIF
 temp = 296.0
 CALL q_lookup (maxmols, maxiso, q_input, molnum, temp, if_q, q296)
 
@@ -292,11 +316,19 @@ ELSE
 ENDIF
 niter = 1
 
+! Output grid in wave number
+IF (is_wavenum) THEN
+   wavenum(1:nlambda) = lambda(1:nlambda)
+ELSE
+   wavenum(1:nlambda) = 1.0D7/lambda(1:nlambda)
+   CALL REVERSE(wavenum(1:nlambda), nlambda) ! Wave number in incoreasing order
+ENDIF
+
 DO iter = 1, niter
 
    ! Loop over altitude
    DO iz = 1, nz
-      !print *, iter, iz, ps(iz), ts(iz)
+      IF (write_diagnostics) print *, iter, iz, ps(iz), ts(iz)
 
       ! initialize cross sections and calculate the spectrum grid.
       spec(1:npoints) = 0.d0
@@ -318,7 +350,7 @@ DO iter = 1, niter
          voigta = press * alpha(i) * (rt0t)**coeff(i) / vg
          ratio1 = dexp(-elow(i) * rc2t) - dexp(-(sigma_temp + elow(i)) * rc2t)
          ratio2 = dexp(-elow(i) * rc2t0) - dexp(-(sigma_temp + elow(i)) * rc2t0)
-         !ratio = ratio1 / ratio2 * ((rt0t)**qpower (mol(i)))
+
          ratio = ratio1 / ratio2 * q296(mol(i), iso(i)) / q(mol(i), iso(i))
          vnorm = ratio * strnth(i) / vg
          idx = ibin (sigma_temp, pos, npoints)
@@ -352,13 +384,21 @@ DO iter = 1, niter
 
       ! convolve with instrument function
       IF (fwhm > 0.0d0) THEN
-         IF (is_wavenum) THEN
-            CALL gauss_f2c (pos(1:npoints), spec(1:npoints), npoints, 1,  &
-                 fwhm, lambda(1:nlambda), crs(1:nlambda, iz), nlambda)         
+         ! is_wavenum is always .false. , set in geocape_xsecs_prep.f90
+         ! but fwhm (i.e., lambda_resolution could still be in wavenumber)
+         IF (is_wavenum ) THEN
+            CALL gauss_f2ci0 (pos(1:npoints), spec(1:npoints), hi0new(1:npoints), npoints, 1,  &
+                 scale, fwhm, lambda(1:nlambda), crs(1:nlambda, iz), nlambda)         
          ELSE
-            CALL REVERSE(spec(1:npoints), npoints)
-            CALL gauss_f2c (posnm(1:npoints), spec(1:npoints), npoints, 1, &
-                 fwhm, lambda(1:nlambda), crs(1:nlambda, iz), nlambda) 
+            IF ( is_fwhm_inlam ) THEN
+               CALL REVERSE(spec(1:npoints), npoints)
+               CALL gauss_f2ci0 (posnm(1:npoints), spec(1:npoints),  hi0new(1:npoints), npoints, 1, &
+                    scale, fwhm, lambda(1:nlambda), crs(1:nlambda, iz), nlambda) 
+            ELSE ! lambda is in wavelength, but fwhm is in wavenumber
+               CALL gauss_f2ci0 (pos(1:npoints), spec(1:npoints), hi0new1(1:npoints), npoints, 1,  &
+                    scale, fwhm, wavenum(1:nlambda), crs(1:nlambda, iz), nlambda)  
+               CALL REVERSE(crs(1:nlambda, iz), nlambda)
+            ENDIF
          ENDIF
       ELSE
          crs(1:nlambda, iz) = spec(nvoigt + 1:nvoigt + nlambda)
@@ -380,178 +420,6 @@ RETURN
 END SUBROUTINE  get_hitran_crs
 !
 
-!SUBROUTINE hitran_setup (maxmols, maxiso, qpower, amu)
-!
-!IMPLICIT NONE
-!INTEGER, INTENT(IN) :: maxmols, maxiso
-!REAL(KIND=8), DIMENSION(maxmols), INTENT(OUT)         :: qpower
-!REAL(KIND=8), DIMENSION(maxmols, maxiso), INTENT(OUT) :: amu
-!
-!INTEGER :: i
-!
-!qpower = 1.5d0
-!amu = 0.d0
-!
-!! hitran numbers:
-!!   h2o (1)
-!!   co2 (2)
-!!    o3 (3)
-!!   n2o (4)
-!!    co (5)
-!!   ch4 (6)
-!!    o2 (7)
-!!    no (8)
-!!   so2 (9)
-!!   no2 (10)
-!!   nh3 (11)
-!!  hno3 (12)
-!!    oh (13)
-!!    hf (14)
-!!   hcl (15)
-!!   hbr (16)
-!!    hi (17)
-!!   clo (18)
-!!   ocs (19)
-!!  h2co (20)
-!!  hocl (21)
-!!    n2 (22)
-!!   hcn (23)
-!! ch3cl (24)
-!!  h2o2 (25)
-!!  c2h2 (26)
-!!  c2h6 (27)
-!!   ph3 (28)
-!!  cof2 (29)
-!!   sf6 (30)
-!!   h2s (31)
-!! hcooh (32)
-!!   ho2 (33)
-!!     o (34)
-!!clono2 (35)
-!!   no+ (36)
-!!  hobr (37)
-!!  c2h4 (38)
-!! ch3oh (39)
-!! ch3br (40)
-!! ch3cn (41)
-!!   cf4 (42)
-!
-!do i = 1, maxmols
-!  if (i .eq. 34) qpower (i) = 0.d0
-!  if (i .eq. 2 .or. i .eq. 4 .or. i .eq. 5 .or. i .eq. 7 .or. i .eq. 8 &
-!  .or. i .eq. 13 .or. i .eq. 14 .or. i .eq. 15 .or. i .eq. 16 .or. i &
-!  .eq. 17 .or. i .eq. 18 .or. i .eq. 19 .or. i .eq. 22 .or. i .eq. 23 &
-!  .or. i .eq. 26 .or. i .eq. 36) qpower (i) = 1.d0
-!end do
-!amu (1, 1) = 18.010565  
-!amu (1, 2) = 20.014811  
-!amu (1, 3) = 19.014780
-!amu (1, 4) = 19.016740  
-!amu (1, 5) = 21.020985  
-!amu (1, 6) = 20.020956  
-!amu (2, 1) = 43.989830  
-!amu (2, 2) = 44.993185  
-!amu (2, 3) = 45.994076  
-!amu (2, 4) = 44.994045  
-!amu (2, 5) = 46.997431  
-!amu (2, 6) = 45.997400  
-!amu (2, 7) = 47.998322  
-!amu (2, 8) = 46.998291  
-!amu (3, 1) = 47.984745  
-!amu (3, 2) = 49.988991  
-!amu (3, 3) = 49.988991  
-!amu (3, 4) = 48.988960  
-!amu (3, 5) = 48.988960  
-!amu (4, 1) = 44.001062  
-!amu (4, 2) = 44.998096  
-!amu (4, 3) = 44.998096  
-!amu (4, 4) = 46.005308  
-!amu (4, 5) = 45.005278  
-!amu (5, 1) = 27.994915  
-!amu (5, 2) = 28.998270  
-!amu (5, 3) = 29.999161  
-!amu (5, 4) = 28.999130  
-!amu (5, 5) = 31.002516  
-!amu (5, 6) = 30.002485  
-!amu (6, 1) = 16.031300  
-!amu (6, 2) = 17.034655  
-!amu (6, 3) = 17.037475  
-!amu (7, 1) = 31.989830  
-!amu (7, 2) = 33.994076  
-!amu (7, 3) = 32.994045  
-!amu (8, 1) = 29.997989  
-!amu (8, 2) = 30.995023  
-!amu (8, 3) = 32.002234  
-!amu (9, 1) = 63.961901  
-!amu (9, 2) = 65.957695  
-!amu (10, 1) = 45.992904  
-!amu (11, 1) = 17.026549  
-!amu (11, 2) = 18.023583  
-!amu (12, 1) = 62.995644  
-!amu (13, 1) = 17.002740  
-!amu (13, 2) = 19.006986  
-!amu (13, 3) = 18.008915  
-!amu (14, 1) = 20.006229  
-!amu (15, 1) = 35.976678  
-!amu (15, 2) = 37.973729  
-!amu (16, 1) = 79.926160  
-!amu (16, 2) = 81.924115  
-!amu (17, 1) = 127.912297  
-!amu (18, 1) = 50.963768  
-!amu (18, 2) = 52.960819  
-!amu (19, 1) = 59.966986  
-!amu (19, 2) = 61.962780  
-!amu (19, 3) = 60.970341  
-!amu (19, 4) = 60.966371  
-!amu (19, 5) = 61.971231  
-!amu (20, 1) = 30.010565  
-!amu (20, 2) = 31.013920  
-!amu (20, 3) = 32.014811  
-!amu (21, 1) = 51.971593  
-!amu (21, 2) = 53.968644  
-!amu (22, 1) = 28.006147  
-!amu (23, 1) = 27.010899  
-!amu (23, 2) = 28.014254  
-!amu (23, 3) = 28.007933  
-!amu (24, 1) = 49.992328  
-!amu (24, 2) = 51.989379  
-!amu (25, 1) = 34.005480  
-!amu (26, 1) = 26.015650  
-!amu (26, 2) = 27.019005  
-!amu (27, 1) = 30.046950  
-!amu (28, 1) = 33.997238  
-!amu (29, 1) = 65.991722  
-!amu (30, 1) = 145.962492
-!amu (31, 1) = 33.987721
-!amu (31, 2) = 35.983515
-!amu (31, 3) = 34.987105
-!amu (32, 1) = 46.005480
-!amu (33, 1) = 32.997655
-!amu (34, 1) = 15.994915
-!amu (35, 1) = 96.956672
-!amu (35, 2) = 98.953723
-!amu (26, 1) = 29.997989
-!amu (37, 1) = 95.921076
-!amu (37, 2) = 97.919027
-!amu (38, 1) = 28.031300
-!amu (38, 2) = 29.034655
-!amu (39, 1) = 32.026215
-!
-!RETURN
-!END SUBROUTINE hitran_setup
-
-!SUBROUTINE hitran_setup (maxmols, maxiso, qpower, amu)
-!
-!IMPLICIT NONE
-!INTEGER, INTENT(IN) :: maxmols, maxiso
-!REAL(KIND=8), DIMENSION(maxmols), INTENT(OUT)         :: qpower
-!REAL(KIND=8), DIMENSION(maxmols, maxiso), INTENT(OUT) :: amu
-!
-!INTEGER :: i
-!
-!qpower = 1.5d0
-!amu = 0.d0
-!
 
 SUBROUTINE hitran_setup (maxmols, maxiso, amu)
 
@@ -855,91 +723,7 @@ ENDIF
 RETURN
 END SUBROUTINE voigt
 
-!UBROUTINE voigt1 (x, a, v, ndim)
-!
-! the following calculated voigt values at all grid values for each point
-! subroutine voigt (x, a, v, nx)
-! voigt first and second derivatives commented out
-! subroutine voigt (x, a, v, dv, d2v, nx)
-!
-!MPLICIT NONE
-!NTEGER, INTENT(IN)      :: ndim
-!EAL(KIND=8), INTENT(IN) :: a
-!EAL(KIND=8), DIMENSION(ndim), INTENT(IN)  :: x
-!EAL(KIND=8), DIMENSION(ndim), INTENT(OUT) :: v ! , dv, d2v 
-!
-!EAL (KIND=8), PARAMETER  :: sqrtpi =1.77245385090551d0, &
-!    twooverpi = 0.63661977236758d0,  fouroverpi = 1.27323954473516d0
-!
-!NTEGER      :: capn, i, nu, n, in, np1
-!EAL(KIND=8) :: lamda, sfac, absx, s, h, h2, r1, r2, s1, s2, t1, t2, c !, c2v
-!OGICAL      :: b
-!
-! a = 0.
-!F (a < 1.0d-8) THEN
-!  v = dexp(-x**2) / sqrtpi
-!  !dv = -2.0d0 * x * v
-!  !d2v = (4.0d0 * x ** 2 - 2.d0) * v
-!
-!  ! add lorentzian check here, for speed
-!LSE
-! ! coefficient for second derivative
-! ! c2v = 4.0d0 * a * a + 2.d0
-!
-! sfac = 1.0d0 - a / 4.29d0
-! DO i = 1, ndim
-! ! do i = 1, nx
-!    absx = dabs (x (i))
-!    IF ((a < 4.29d0) .AND. (absx < 5.33d0)) THEN
-!       s = sfac * dsqrt (1.d0 - (x (i) / 5.33d0)**2)
-!       h = 1.6d0 * s
-!       h2 = 2.0d0 * h
-!       capn = 6.d0 + 23.0d0 * s
-!       lamda = h2**capn
-!       nu = 9.0d0 + 21.0d0 * s
-!    ELSE
-!       h = 0.0d0
-!       capn = 0
-!       nu = 8
-!    ENDIF
-!    b = (h == 0.0d0) .or. (lamda == 0.0d0)
-!    r1 = 0.0d0
-!    r2 = 0.0d0
-!    s1 = 0.0d0
-!    s2 = 0.0d0
-!    n = nu
-!    DO in = 1, nu + 1
-!       np1 = n + 1
-!       t1 = a + h + dfloat (np1) * r1
-!       t2 = absx - dfloat (np1) * r2
-!       c = .5d0 / (t1 * t1 + t2 * t2)
-!       r1 = c * t1
-!       r2 = c * t2
-!       IF ((h > 0.0d0) .AND. (n <= capn)) THEN
-!          t1 = lamda + s1
-!          s1 = r1 * t1 - r2 * s2
-!          s2 = r2 * t1 + r1 * s2
-!          lamda = lamda / h2
-!       ENDIF
-!       n = n - 1
-!    ENDDO
-!    IF (b) THEN
-!       v (i) = twooverpi * r1
-!       !     dv (i) = fouroverpi * (a * r2 - absx * r1)
-!    ELSE
-!       v (i) = twooverpi * s1
-!       !     dv (i) = fouroverpi * (a * s2 - absx * s1)
-!    ENDIF
-!    !   dv (i) = -dsign (dv (i), x (i))
-!    !   d2v (i) = fouroverpi * a - (c2v + 4.d0 * x (i) * x (i)) * &
-!    !   v (i) - 4.d0 * x (i) * dv (i)
-! ENDDO
-!NDIF
-!
-!ETURN
-!ND SUBROUTINE voigt1
 
-!
 FUNCTION ibin (vtarget, array, nentries) RESULT(idx)
 
 ! binary search in an array of real numbers in increasing order.
@@ -977,64 +761,6 @@ ELSE
 ENDIF
 
 END FUNCTION ibin
-
-!!
-!SUBROUTINE gauss (pos, spec, specmod, npoints, hw1e)
-!
-!! convolves input spectrum with gaussian slit function of specified hw1e
-!! (half-width at 1/e intensity). Assumes input spectrum has constant
-!! spacing (will need to modify or replace with nm version when and if
-!! needed).
-!
-!
-!INTEGER,                            INTENT (IN)  :: npoints
-!REAL (KIND=8),                      INTENT (IN)  :: hw1e
-!REAL (KIND=8), DIMENSION (npoints), INTENT (IN)  :: pos, spec
-!REAL (KIND=8), DIMENSION (npoints), INTENT (OUT) :: specmod
-!
-!INTEGER                            :: nhi, nlo, i, j, nslit
-!REAL (KIND=8)                      :: emult, delwvl, slitsum, slit0
-!REAL (KIND=8), DIMENSION (npoints) :: slit
-!
-!specmod = spec
-!IF ( hw1e == 0.0 ) RETURN
-!
-!emult = - 1.d0 / (hw1e**2)
-!delpos = pos (2) - pos (1)
-!
-!! calculate slit function values out to 0.001 times x0 value, normalize
-!! so that sum = 1.
-!slitsum = 1.0 ;  slit0 = 1.0
-!i = 1  ;  nslit = 0
-!DO WHILE ( nslit <= npoints )
-!   slit (i) = EXP (emult * (delpos * i)**2)
-!   slitsum = slitsum + 2.0 * slit(i)
-!   IF (slit (i) <= 0.001 ) EXIT
-!   i = i + 1
-!ENDDO
-!nslit = i
-!
-!slit0 = slit0 / slitsum
-!slit(1:nslit) = slit(1:nslit) / slitsum
-!
-!! convolve spectrum. don't reflect at endpoints (for now).
-!specmod = slit0 * spec
-!DO i = 1, npoints
-!   DO j = 1, nslit
-!      nlo = i - j
-!      nhi = i + j
-!
-!      ! Refect at endpoints
-!      !IF (nlo < 1) nlo = -nlo + 2
-!      !IF ( nhi > npoints ) nhi = npoints - MOD(nhi, npoints)
-!
-!      IF (nlo >= 1) specmod (i) = specmod (i) + slit (j) * spec (nlo)
-!      IF (nhi <= npoints) specmod (i) = specmod (i) + slit (j) * spec (nhi)
-!   ENDDO
-!ENDDO
-!
-!RETURN
-!END SUBROUTINE gauss
 
 !------------------------------------------------------------------------------
 !S+

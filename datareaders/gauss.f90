@@ -115,6 +115,59 @@ END SUBROUTINE gaussio
 ! cwave: low-resolution wavelength grid (could be the same as high-resolution grid)
 ! cspec: spectra at fwhm
 ! nc:    number of wavelengths for the low-resolution grid
+!SUBROUTINE gauss_f2c (fwave, fspec, nf, nspec, fwhm, cwave, cspec, nc)
+!
+!  IMPLICIT NONE
+!
+!  ! =======================
+!  ! Input/Output variables
+!  ! =======================
+!  INTEGER,                               INTENT (IN) :: nc, nf, nspec
+!  REAL (KIND=8),                         INTENT (IN) :: fwhm
+!  REAL (KIND=8), DIMENSION (nf), INTENT (IN)         :: fwave
+!  REAL (KIND=8), DIMENSION (nf, nspec), INTENT (IN)  :: fspec
+!  REAL (KIND=8), DIMENSION (nc), INTENT (IN)         :: cwave
+!  REAL (KIND=8), DIMENSION (nc, nspec), INTENT (OUT) :: cspec
+!
+!  ! ===============
+!  ! Local variables
+!  ! ===============
+!  INTEGER                       :: i, j, midx, sidx, eidx, nhalf
+!  REAL (KIND=8)                 :: hw1esq, dfw, ssum, hw1e
+!  REAL (KIND=8), DIMENSION (nf) :: slit
+!
+!  if (fwhm == 0.0) then
+!     return
+!  endif
+!
+!  dfw  = fwave(2) - fwave(1)
+!  hw1e = fwhm / 1.66551; hw1esq = hw1e ** 2
+!  nhalf  = hw1e / ABS(dfw) * 2.65
+!
+!  DO i = 1, nc
+!     ! Find the closest pixel
+!     if (dfw > 0) then
+!        midx = MINVAL(MAXLOC(fwave, MASK=(fwave <= cwave(i)))) + 1
+!     else
+!        midx = MINVAL(MINLOC(fwave, MASK=(fwave <= cwave(i)))) + 1
+!     endif
+!
+!     sidx = MAX(midx - nhalf, 1)
+!     eidx = MIN(nf, midx + nhalf)
+!     slit(sidx:eidx) = EXP(-(cwave(i) - fwave(sidx:eidx))**2 / hw1esq )
+!
+!     ssum = SUM(slit(sidx:eidx))
+!     DO j = 1, nspec
+!        cspec(i, j) = SUM(fspec(sidx:eidx, j) * slit(sidx:eidx)) / ssum
+!     ENDDO
+!  ENDDO
+!
+!  RETURN
+!
+!END SUBROUTINE gauss_f2c
+
+! Updates on April 13, 2015
+! Make gauss_f2c more generic to handle special cases: points outside the fine spectral grid
 SUBROUTINE gauss_f2c (fwave, fspec, nf, nspec, fwhm, cwave, cspec, nc)
   
   IMPLICIT NONE
@@ -134,32 +187,37 @@ SUBROUTINE gauss_f2c (fwave, fspec, nf, nspec, fwhm, cwave, cspec, nc)
   ! ===============
   INTEGER                       :: i, j, midx, sidx, eidx, nhalf
   REAL (KIND=8)                 :: hw1esq, dfw, ssum, hw1e
+  REAL (KIND=8), PARAMETER      :: slit_trunc = 2.65 ! Truncate slit values < 1/1000th of maximum
   REAL (KIND=8), DIMENSION (nf) :: slit
 
   if (fwhm == 0.0) then
      return
   endif
 
-  dfw  = fwave(2) - fwave(1) 
+  dfw  = MIN(fwave(2) - fwave(1), fwave(nf) - fwave(nf-1)) 
   hw1e = fwhm / 1.66551; hw1esq = hw1e ** 2
-  nhalf  = hw1e / ABS(dfw) * 2.65
-  
+  nhalf  = hw1e / ABS(dfw) * slit_trunc
+
   DO i = 1, nc
      ! Find the closest pixel
      if (dfw > 0) then
-        midx = MINVAL(MAXLOC(fwave, MASK=(fwave <= cwave(i)))) + 1
+        midx = MINVAL(MAXLOC(fwave, MASK=(fwave <= cwave(i))))
      else
-        midx = MINVAL(MINLOC(fwave, MASK=(fwave <= cwave(i)))) + 1
+        midx = MINVAL(MINLOC(fwave, MASK=(fwave <= cwave(i))))
      endif
+     IF (midx < 0) midx = 1
      
-     sidx = MAX(midx - nhalf, 1)
-     eidx = MIN(nf, midx + nhalf)
-     slit(sidx:eidx) = EXP(-(cwave(i) - fwave(sidx:eidx))**2 / hw1esq )
-     
-     ssum = SUM(slit(sidx:eidx))
-     DO j = 1, nspec
-        cspec(i, j) = SUM(fspec(sidx:eidx, j) * slit(sidx:eidx)) / ssum
-     ENDDO
+     IF ( ABS(cwave(i)-fwave(midx)) < slit_trunc * hw1e ) THEN
+        sidx = MAX(midx - nhalf, 1)
+        eidx = MIN(nf, midx + nhalf)
+        slit(sidx:eidx) = EXP(-(cwave(i) - fwave(sidx:eidx))**2 / hw1esq )     
+        ssum = SUM(slit(sidx:eidx))
+        DO j = 1, nspec
+           cspec(i, j) = SUM(fspec(sidx:eidx, j) * slit(sidx:eidx)) / ssum
+        ENDDO
+     ELSE  ! cwave(i) is too far away from find spectral points
+        cspec(i, 1:nspec) = 0.d0
+     ENDIF
   ENDDO
   
   RETURN
@@ -170,6 +228,8 @@ END SUBROUTINE gauss_f2c
 ! solar reference spectrum following the Beer's Law
 ! i0: high resolution solar reference
 ! scalex: scaling, normally number of molecules
+
+! April 13, 2015: does not allow division by zero (i.e., when ci0 = 0.0)
 SUBROUTINE gauss_f2ci0(fwave, fspec, i0, nf, nspec, scalex, fwhm, cwave, cspec, nc)
 
   IMPLICIT NONE
@@ -207,7 +267,9 @@ SUBROUTINE gauss_f2ci0(fwave, fspec, i0, nf, nspec, scalex, fwhm, cwave, cspec, 
   CALL gauss_f2c (fwave, abspec, nf, nspec, fwhm, cwave, cabspec, nc)
 
   DO i = 1, nspec
-     cspec(:, i) = - LOG(cabspec(:, i)/ ci0) / scalex
+     WHERE (ci0 /= 0.d0)
+        cspec(:, i) = - LOG(cabspec(:, i) / ci0) / scalex
+     ENDWHERE
   ENDDO
 
   RETURN

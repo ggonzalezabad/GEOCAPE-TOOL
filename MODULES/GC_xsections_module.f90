@@ -7,6 +7,7 @@ MODULE GC_xsections_module
                                   GC_nlayers, mid_pressures,           &
                                   mid_temperatures, tmpcwaves,         &
                                   gas_totalcolumns, aircolumns,        &
+                                  gas_partialcolumns,                  &
                                   nspec, ngases, database_dir,         &
                                   which_gases, lambdas, nlambdas,      &
                                   use_wavelength, do_effcrs, clambdas, &
@@ -115,7 +116,7 @@ MODULE GC_xsections_module
       ! ---------------
       REAL(KIND=8)                                         :: scalex
       REAL(KIND=8),    DIMENSION(maxlambdas, GC_maxlayers) :: temp_xsecs
-      INTEGER(KIND=4), DIMENSION(maxflambdas)              :: rvidxs ! For wavenumbers
+      INTEGER(KIND=4), DIMENSION(maxflambdas)              :: rvidxs, rcvidxs ! For wavenumbers
 
       CHARACTER(max_ch_len) :: tmpchar
       INTEGER :: g
@@ -134,22 +135,39 @@ MODULE GC_xsections_module
       !   -- All Xsec output in [cm^2/mol]
       ! -------------------------------------------------------------------------
       tmpwaves(1:nlambdas) = lambdas(1:nlambdas)
+      tmpcwaves(1:nclambdas) = clambdas(1:nclambdas)
 
-      IF (.NOT. use_wavelength) CALL reverse(tmpwaves(1:nlambdas), nlambdas)
+      IF (.NOT. use_wavelength) THEN
+         CALL reverse(tmpwaves(1:nlambdas), nlambdas)
+         CALL reverse(tmpcwaves(1:nclambdas), nclambdas)
+      ENDIF
 
       CALL geocape_xsec_setter_1                                                       &     
            ( maxflambdas, maxgases, GC_maxlayers, xsec_data_path, xsec_data_filenames, & ! Input
-           nlambdas, tmpwaves, ngases, which_gases,                                    & ! Input
-           gas_xsecs_type, GC_nlayers, mid_pressures, mid_temperatures,                & ! Input
+           nlambdas, tmpwaves, nclambdas, tmpcwaves, ngases, which_gases,              & ! Input
+           gas_partialcolumns, gas_xsecs_type, GC_nlayers, mid_pressures,              & ! Input
+           mid_temperatures, do_effcrs, use_wavelength, lambda_resolution,             & ! Input
+           solar_spec_data,                                                            & ! Input
            gas_xsecs, o3c1_xsecs, o3c2_xsecs, Rayleigh_xsecs, Rayleigh_depols,         & ! Output
            tmpchar, error )                                                              ! Errors
 
       IF (.NOT. use_wavelength) THEN
 
          CALL reverse_idxs(nlambdas, rvidxs(1:nlambdas))
+         IF ( ANY(gas_xsecs_type(1:ngases) .eq. 3) .AND. do_effcrs ) &
+              CALL reverse_idxs(nclambdas, rcvidxs(1:nclambdas))
 
-         gas_xsecs(1:nlambdas, 1:GC_nlayers, 1:ngases) = &
-                   gas_xsecs(rvidxs(1:nlambdas), 1:GC_nlayers, 1:ngases) 
+         DO g = 1, ngases 
+            IF (gas_xsecs_type(g) .eq. 3 .AND. trim(adjustl(xsec_data_filenames(g))) &
+                 .eq. 'HITRAN' .AND. do_effcrs) THEN ! Already convolved in get_hitran_crs
+               gas_xsecs(1:nclambdas, 1:GC_nlayers, g) = &
+                    gas_xsecs(rcvidxs(1:nclambdas), 1:GC_nlayers, g) 
+            ELSE
+               gas_xsecs(1:nlambdas, 1:GC_nlayers, g) = &
+                    gas_xsecs(rvidxs(1:nlambdas), 1:GC_nlayers, g) 
+            ENDIF
+         ENDDO
+
          o3c1_xsecs(1:nlambdas)      = o3c1_xsecs(rvidxs(1:nlambdas))
          o3c2_xsecs(1:nlambdas)      = o3c2_xsecs(rvidxs(1:nlambdas))
          Rayleigh_xsecs(1:nlambdas)  = Rayleigh_xsecs(rvidxs(1:nlambdas)) 
@@ -178,22 +196,23 @@ MODULE GC_xsections_module
       
          DO g = 1, ngases
 
-            nspec  = gas_nxsecs(g)
-            scalex = gas_totalcolumns(g) * 2.68668D16 * 2.0D0
-            CALL gauss_f2ci0(tmpwaves(1:nlambdas), gas_xsecs(1:nlambdas, 1:nspec, g), &
-                             solar_spec_data(1:nlambdas), nlambdas, nspec, scalex,    &
-                             lambda_resolution, tmpcwaves(1:nclambdas),               &
-                             temp_xsecs(1:nclambdas, 1:nspec), nclambdas)
+            IF (gas_xsecs_type(g) .ne. 3 .and. trim(adjustl(xsec_data_filenames(g))) .ne. 'HITRAN' ) THEN
+               nspec  = gas_nxsecs(g)
+               scalex = gas_totalcolumns(g) * 2.68668D16 * 2.0D0
+               CALL gauss_f2ci0(tmpwaves(1:nlambdas), gas_xsecs(1:nlambdas, 1:nspec, g), &
+                    solar_spec_data(1:nlambdas), nlambdas, nspec, scalex,    &
+                    lambda_resolution, tmpcwaves(1:nclambdas),               &
+                    temp_xsecs(1:nclambdas, 1:nspec), nclambdas)
+               
+               gas_xsecs(1:nclambdas, 1:nspec, g) = temp_xsecs(1:nclambdas, 1:nspec)
+            ENDIF
 
-            gas_xsecs(1:nclambdas, 1:nspec, g) = temp_xsecs(1:nclambdas, 1:nspec)
-         
             IF (which_gases(g) .eq. 'O3  ' ) THEN
                o3c1_xsecs(1:nclambdas) = gas_xsecs(1:nclambdas, 2, g)
                o3c2_xsecs(1:nclambdas) = gas_xsecs(1:nclambdas, 3, g)
             END IF
-
          ENDDO
-      
+
          nspec = 1
          scalex = SUM(aircolumns(1:GC_nlayers)) * 2.0
          CALL gauss_f2ci0(tmpwaves(1:nlambdas), Rayleigh_xsecs(1:nlambdas),     &

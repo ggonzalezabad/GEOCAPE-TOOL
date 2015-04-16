@@ -1,12 +1,13 @@
 
 subroutine geocape_xsec_setter_1                                            &
     ( maxlambdas, maxgases, maxlayers, xsec_data_path, xsec_data_filenames, & ! Input
-      nlambdas, lambdas, ngases, which_gases,                               & ! Input
+      nlambdas, lambdas, nclambdas, clambdas,                               & ! Input
+      ngases, which_gases, gas_partialcolumns,                              & ! Input
       gas_xsecs_type, nlayers, mid_pressures, temperatures,                 & ! Input
+      do_effcrs, use_wavelength, lambda_resolution, solar_spec_data,        & ! Input
       gas_xsecs, o3c1_xsecs, o3c2_xsecs,                                    & ! Output
       Rayleigh_xsecs, Rayleigh_depols,                                      & ! Output
-!      message, fail, gas_xsecsdt)                                            ! Errors
-      message, fail) 
+      message, fail)                                                          ! Errors
 
   implicit none
 
@@ -24,14 +25,20 @@ subroutine geocape_xsec_setter_1                                            &
 
 !  gases
 
-   integer,                                intent(in) :: ngases, nlayers
-   character(Len=4), dimension (maxgases), intent(in) :: which_gases
-   integer, dimension (maxgases), intent(in)          :: gas_xsecs_type
+   integer,                                        intent(in) :: ngases, nlayers
+   character(Len=4), dimension (maxgases),         intent(in) :: which_gases
+   integer, dimension (maxgases),                  intent(in) :: gas_xsecs_type
+   real(kind=8), DIMENSION (maxlayers, maxgases ), intent(in) :: gas_partialcolumns
 
 !  Window of wavelengths
 
-   integer,                                intent(in) :: nlambdas
-   real(kind=8), dimension(maxlambdas),    intent(in) :: lambdas
+   integer,                             intent(in) :: nlambdas, nclambdas
+   real(kind=8), dimension(maxlambdas), intent(in) :: lambdas, clambdas
+   logical,                             intent(in) :: use_wavelength, do_effcrs
+   real (kind=8),                       intent(in) :: lambda_resolution ! in wave number or nm
+
+! Solar spectrum
+  real(kind=8), dimension(maxlambdas), intent(in) :: solar_spec_data
 
 ! Mean pressures and temperatures
    real(kind=8), dimension(maxlayers), intent(in)     :: mid_pressures, temperatures   
@@ -40,16 +47,14 @@ subroutine geocape_xsec_setter_1                                            &
 !  ------
 
 !  Trace gases
-
    real(kind=8), dimension(maxlambdas, maxlayers, maxgases), intent(out) :: gas_xsecs
-!   real(kind=8), dimension(maxlambdas, maxlayers, maxgases), intent(out), optional :: gas_xsecsdt
-   real(kind=8), dimension(maxlambdas),          intent(out) :: o3c1_xsecs
-   real(kind=8), dimension(maxlambdas),          intent(out) :: o3c2_xsecs
+   real(kind=8), dimension(maxlambdas),                      intent(out) :: o3c1_xsecs
+   real(kind=8), dimension(maxlambdas),                      intent(out) :: o3c2_xsecs
 
 !  Rayleigh
 
-   real(kind=8), dimension(maxlambdas),          intent(out) :: Rayleigh_xsecs
-   real(kind=8), dimension(maxlambdas),          intent(out) :: Rayleigh_depols
+   real(kind=8), dimension(maxlambdas), intent(out) :: Rayleigh_xsecs
+   real(kind=8), dimension(maxlambdas), intent(out) :: Rayleigh_depols
 
 !  Exception handling
 
@@ -62,8 +67,12 @@ subroutine geocape_xsec_setter_1                                            &
    character(LEN=256) :: filename, xsec_file_name
 
    logical       :: reading, is_wavenum
-   integer       :: nbuff, ndata, n, g, np, nf, ngas_check, errstat, io
-   real(kind=8)  :: lamb1, lamb2, wav, val, c1, c2,conversion, xsec, fwhm
+   integer       :: i, nbuff, ndata, n, g, np, nf, ngas_check, errstat, io, &
+        fz, lz, nz1, ntlambdas, ni0
+   real(kind=8)  :: lamb1, lamb2, wav, val, c1, c2,conversion, xsec, fwhm, scale
+   real(kind=8), dimension(maxlambdas) :: tlambdas
+   integer, parameter :: maxio = 500000
+   real(kind=8), dimension(maxio)      :: hwave, hi0
    real(kind=8)  :: CO2_PPMV_MIXRATIO
    real(kind=8)  :: x(maxspline), y(maxspline), y2(maxspline)
    real(kind=8)  :: yc1(maxspline), yc2(maxspline)
@@ -92,14 +101,57 @@ subroutine geocape_xsec_setter_1                                            &
 
    ngas_check = 0
 
-!  Adopt a simple buffering system, windows 0.5 nm extended
-!    This can be varied to suit the particular data set
-!   lamb1 = lambdas(1)        - 0.5d0
-!   lamb2 = lambdas(nlambdas) + 0.5d0
-
 !  ##################################################################
 
-!  Start the Gas loop
+   ! Load a high-resolution solar reference at 0.001 nm, only for performing solar-I0 effect 
+   ! when convolving with cross sections from hitran line-by-line calculations, append it 
+   ! with solar_spec_data if it does not cover adequate spectral range
+   do g = 1, ngases
+      if (gas_xsecs_type(g) .eq. 3 .and. &
+           trim(adjustl(xsec_data_filenames(g))) .eq. 'HITRAN' ) then
+         filename =   '../geocape_data/newkpno_001_new.spc'
+         open(1, file=trim(adjustl(filename)), err=90, iostat = io, status='old') 
+         i = 1
+         do
+            read(1, *) hwave(i), hi0(i)
+            if ((hwave(i) >= lambdas(1) - 2.0) .and. (hwave(i) <= lambdas(nlambdas) + 2.0) ) i = i + 1
+            if (io < 0 .or. hwave(i) .gt. lambdas(nlambdas) + 2.0) exit
+         enddo
+         ni0 = i - 1
+         close(1)
+
+         ! Note solar_spec_data needs to be reversed if wavenumber is used
+         if (.not. use_wavelength) call reverse(solar_spec_data(1:nlambdas), nlambdas)
+         
+         ! Append data from solar_spec_data if necessary
+         if (hwave(1) > lambdas(1)) then
+            n = MINVAL(MAXLOC(lambdas(1:nlambdas), MASK = (lambdas(1:nlambdas) < hwave(1))))
+            hwave(n+1:ni0+n) = hwave(1:ni0)
+            hi0(n+1:ni0+n) = hi0(1:ni0)
+            hwave(1:n) = lambdas(1:n)
+            hi0(1:n) = solar_spec_data(1:n)     
+            ni0 = ni0 + n
+         endif
+         
+         if (hwave(ni0) < lambdas(nlambdas)) then
+            n = MINVAL(MINLOC(lambdas(1:nlambdas), MASK = (lambdas(1:nlambdas) > hwave(ni0))))
+            hwave(ni0+1:ni0+1+nlambdas-n) = lambdas(n:nlambdas)
+            hi0(ni0+1:ni0+1+nlambdas-n) = solar_spec_data(n:nlambdas) 
+            ni0 = ni0 + nlambdas - n + 1        
+         endif
+         if (.not. use_wavelength) call reverse(solar_spec_data(1:nlambdas), nlambdas)
+         
+         if (ni0 > maxio) then
+            fail = .true.
+            message = 'Need to increase maxio!!!'
+            go to 91
+         endif
+
+         exit  ! Exit loop if it is done for any gas g
+      endif
+   enddo
+
+   !  Start the Gas loop
 
    do g = 1, ngases
 
@@ -273,17 +325,38 @@ subroutine geocape_xsec_setter_1                                            &
 
          the_molecule = which_gases(g) // '  '
          is_wavenum = .FALSE.
-         fwhm=0.d0
          pressures(1:nlayers) = mid_pressures(1:nlayers) / 1013.25
-                  
+                
+         !xliu, 04/06/2015, assuming fwhm=0.0 will force the line-by-line calculation at input wavelength grid
+         !which is typically much coarser than the required spectral sampling (~0.0003 nm for visible H2O/O2)
+         !so assuming a very small fwhm so that line-by-line calculation will be convolved from very high 
+         !resolution to input wavelength grid with solar-I0 effect
+         if (do_effcrs) then
+            ntlambdas = nclambdas
+            tlambdas(1:ntlambdas) = clambdas(1:ntlambdas)
+            fwhm = lambda_resolution ! in nm for wavelength grid, and cm^-1 for wavenumber grid
+         else
+            ntlambdas = nlambdas
+            tlambdas(1:ntlambdas) = lambdas(1:ntlambdas)  
+            fwhm = 4.0 * MINVAL(ABS(tlambdas(1:ntlambdas-1) - tlambdas(2:ntlambdas))) ! fwhm=0.d0          
+         endif
+
+         ! do line by line calculation only at layers where there is given molecule 
+         fz = MINVAL(MINLOC(pressures(1:nlayers), MASK = (gas_partialcolumns(1:nlayers, g) > 0.d0)))
+         lz = MINVAL(MAXLOC(pressures(1:nlayers), MASK = (gas_partialcolumns(1:nlayers, g) > 0.d0)))
+         nz1 = lz - fz + 1
+
+         scale = SUM(gas_partialcolumns(fz:lz, g)) / 2.0 ! For solar I0 effect correction
+  
          !if (PRESENT(gas_xsecsdt)) then  ! Currently, optional arguments does not work
          !
          !   call get_hitran_crs(the_molecule, nlambdas, lambdas(1:nlambdas), is_wavenum, nlayers, &
          !        pressures(1:nlayers), temperatures(1:nlayers), fwhm, gas_xsecs(1:nlambdas, 1:nlayers, g), &
          !        errstat, gas_xsecsdt(1:nlambdas, 1:nlayers, g))
          !else
-         call get_hitran_crs(the_molecule, nlambdas, lambdas(1:nlambdas), is_wavenum, nlayers, &
-              pressures(1:nlayers), temperatures(1:nlayers), fwhm, gas_xsecs(1:nlambdas, 1:nlayers, g), errstat)
+         call get_hitran_crs(the_molecule, ntlambdas, tlambdas(1:ntlambdas), ni0, hwave(1:ni0), hi0(1:ni0), &
+              is_wavenum, use_wavelength, nz1, pressures(fz:lz), temperatures(fz:lz), &
+              fwhm, scale, gas_xsecs(1:ntlambdas, fz:lz, g), errstat)
          !endif
 
          if (errstat == 1) then
