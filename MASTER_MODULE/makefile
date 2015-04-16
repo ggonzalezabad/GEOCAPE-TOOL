@@ -118,8 +118,8 @@ GC_OBJECTS       = $(OBJECTS_GEOCAPE_PREP) $(OBJECTS_NETCDF) $(OBJECTS_MODULE)\
 GC_OBJECTSG      = $(OBJECTS_GEOCAPE_PREP) $(OBJECTS_NETCDF) $(OBJECTS_MODULEG)\
                    $(OBJECTS_GEOCAPE_V2P6G)
 
-install  : mk_folders all
-distclean: clean_all rm_folders
+install  : mk_folders mk_links all
+distclean: clean_all rm_folders rm_links
 all:   $(VLIDORT_OBJECTS)  $(GC_OBJECTS) $(GCTOOLV2P6).exe
 v2p6:  $(VLIDORT_OBJECTS)  $(GC_OBJECTS)       $(GCTOOLV2P6).exe
 
@@ -158,9 +158,16 @@ clean_v2p6_vlidort:
 mk_folders:
 	mkdir -p $(OBJ) $(VLIDORT_MOD) $(VLIDORT_OBJ) \
              $(WARN_PATH) $(GC_MOD) $(GC_OBJ) 
+
+mk_links:
+	ln -v -s /data/tempo1/Shared/HITRAN2012 ../geocape_data/HITRAN
+
 rm_folders:
 	rm -rf   $(OBJ) $(VLIDORT_MOD) $(VLIDORT_OBJ) \
              $(WARN_PATH) $(GC_MOD) $(GC_OBJ)
+
+rm_links:
+	unlink ../geocape_data/HITRAN
 
 # #########################
 # Pattern rules out sourced
