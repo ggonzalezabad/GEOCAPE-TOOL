@@ -106,22 +106,16 @@ include ./make.vlidort
 # EXECUTABLES
 #############
 GCTOOLV2P6  = geocape_tool_v2p6
-GCTOOLV2P6G = geocape_tool_v2p6G
 
 VLIDORT_OBJECTS  = $(F90OBJECTS_SOURCES)      $(F90OBJECTS_L_SOURCES)  $(F90OBJECTS_LPS_SOURCES) \
-                   $(F90OBJECTS_LPC_SOURCES)  $(SUP_OBJECTS)         
-VLIDORT_OBJECTSG = $(F90OBJECTS_SOURCESG)     $(F90OBJECTS_L_SOURCESG) $(F90OBJECTS_LPS_SOURCESG)\
-                   $(F90OBJECTS_LPC_SOURCESG) $(SUP_OBJECTSG)          
+                   $(F90OBJECTS_LPC_SOURCES)  $(SUP_OBJECTS)
 
 GC_OBJECTS       = $(OBJECTS_GEOCAPE_PREP) $(OBJECTS_NETCDF) $(OBJECTS_MODULE)\
                    $(OBJECTS_GEOCAPE_V2P6)
-GC_OBJECTSG      = $(OBJECTS_GEOCAPE_PREP) $(OBJECTS_NETCDF) $(OBJECTS_MODULEG)\
-                   $(OBJECTS_GEOCAPE_V2P6G)
 
 install  : mk_folders mk_links all
 distclean: clean_all rm_folders rm_links
 all:   $(VLIDORT_OBJECTS)  $(GC_OBJECTS) $(GCTOOLV2P6).exe
-v2p6:  $(VLIDORT_OBJECTS)  $(GC_OBJECTS)       $(GCTOOLV2P6).exe
 
 # --------------------
 # The main executables
@@ -136,20 +130,14 @@ clean_all:
 	rm -vf $(OBJ)/*.o               \
            $(GC_MOD)/*.mod          \
            $(GC_OBJ)/*.o            \
-           $(GC_MODG)/*.mod         \
-           $(GC_OBJG)/*.o           \
            $(VLIDORT_MOD)/*.mod     \
            $(VLIDORT_OBJ)/*.o       \
-           $(VLIDORT_MODG)/*.mod    \
-	       $(VLIDORT_OBJG)/*.o      \
            $(WARN_PATH)/*__genmod.* \
            $(EXE_PATH)/*.exe
 clean_tool:
 	rm -vf $(OBJ)/*.o               \
            $(GC_MOD)/*.mod          \
            $(GC_OBJ)/*.o            \
-           $(GC_MODG)/*.mod         \
-           $(GC_OBJG)/*.o           \
            $(EXE_PATH)/*.exe
 clean_v2p6_vlidort:
 	rm -vf $(VLIDORT_MOD)/*.mod \
