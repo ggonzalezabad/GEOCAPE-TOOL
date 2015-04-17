@@ -1,5 +1,0 @@
-Added the Green's function facility for Rayleigh layers
-  -- Copied earlier code from 2012
-  -- Only new wrinkle, the Observational Geometry
-
-Did not add Green's function to the LCS stuff
