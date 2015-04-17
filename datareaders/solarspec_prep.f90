@@ -93,8 +93,8 @@ subroutine solarspec_prep_newkur &
    IF (wn_raw_data(1) .GT. wavnums(nwavnums) .OR. &
         wn_raw_data(nr) .LT. wavnums(1) ) THEN
 
-      print*, '!!!Warning: Spectral window not covered by high resolution solar spectra:'
-      print 1000, '    High resolution solar spectra:', wn_raw_data(1),' nm -',  &
+      print*, '!!!Warning: Spectral window not covered by high resolution solar spectrum:'
+      print 1000, '    High resolution solar spectrum:', wn_raw_data(1),' nm -',  &
            wn_raw_data(nr),' nm'
       print 1000, '    Spectral window calculation:', wavnums(nwavnums),' nm -', &
            wavnums(1),' nm'
