@@ -93,11 +93,6 @@ MODULE GC_variables_module
 ! --------------------
    INTEGER :: nstreams_choice
 
-! -------------------------
-! Number of aerosol moments
-! -------------------------
-   INTEGER :: aercld_nmoments_input
-
 ! -------------------------------
 ! Upwelling & downwelling control
 ! -------------------------------

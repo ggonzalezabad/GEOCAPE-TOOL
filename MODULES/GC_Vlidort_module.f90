@@ -13,7 +13,7 @@ MODULE GC_Vlidort_module
                                  do_aod_Jacobians, do_assa_Jacobians, do_cod_Jacobians,        &
                                  do_cssa_Jacobians,do_lambertian_cld, N_TOTALPROFILE_WFS_wcld, &
                                  do_clouds, N_TOTALPROFILE_WFS_ncld, do_aerosols,              &
-                                 aercld_nmoments_input, use_lambertian, wind_speed,            &
+                                 use_lambertian, wind_speed,                                   &
                                  VBRDF_Sup_In, VBRDF_LinSup_In, VLIDORT_Out, GC_Radiances,     &
                                  do_StokesQU_output, GC_Qvalues, GC_Uvalues, ngases,           &
                                  gas_partialcolumns, gasabs, GC_Tracegas_Jacobians,            &
@@ -102,7 +102,7 @@ CONTAINS
     ! Check for aerosols and scattering clouds
     ! ----------------------------------------
     IF ( do_aerosols .OR. (do_clouds .AND. .NOT. do_lambertian_cld)) THEN
-       IF ( aercld_nmoments_input .LT. 2 * VLIDORT_FixIn%Cont%TS_NSTREAMS) THEN
+       IF ( VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT .LT. 2 * VLIDORT_FixIn%Cont%TS_NSTREAMS) THEN
           CALL write_err_message ( .FALSE., "Not enough aerosol/cloud moments"// &
                ", must be at least 2*nstreams")
           error = .TRUE.
@@ -366,7 +366,6 @@ CONTAINS
        VLIDORT_FixIn%Bool%TS_DO_SSCORR_TRUNCATION  = .FALSE.
        VLIDORT_ModIn%MBool%TS_DO_SOLUTION_SAVING   = .FALSE.
        VLIDORT_ModIn%MBool%TS_DO_BVP_TELESCOPING   = .FALSE.
-       VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT = aercld_nmoments_input
     ENDIF
     
     ! --------------------------
@@ -1072,31 +1071,6 @@ CONTAINS
        IF (error) CALL write_err_message (.FALSE., tmperrmessage)
 
     END IF
-
-!!$    IF (.NOT. VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE) THEN
-!!$       
-!!$       ! ------------------------------------------------
-!!$       ! VLIDORT variable | ** !  set the BRDF parameters
-!!$       ! ------------------------------------------------
-!!$       VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,2) = water_rn(w)
-!!$       VBRDF_Sup_In%BS_BRDF_PARAMETERS(1,3) = water_cn(w)
-!!$       
-!!$       !         !  Get BRDF and linearized BRDF functions         
-!!$       !         CALL VLIDORT_BRDF_LS_MASTER                                        &
-!!$       !              ( DO_USER_VZANGLES, DO_SHADOW_EFFECT, DO_COXMUNK_DBMS,        & ! Inputs
-!!$       !              DO_SURFACE_EMISSION, .FALSE., NSTOKES,                        & ! Inputs
-!!$       !              2*NSTREAMS-1, N_BRDF_KERNELS, WHICH_BRDF,                     & ! Inputs
-!!$       !              LAMBERTIAN_KERNEL_FLAG, NSTREAMS_BRDF, BRDF_FACTORS,          & ! Inputs
-!!$       !              N_BRDF_PARAMETERS, BRDF_PARAMETERS, BRDF_NAMES,               & ! Inputs
-!!$       !              DO_KERNEL_PARAMS_WFS, DO_KERNEL_FACTOR_WFS, DO_KPARAMS_DERIVS,& ! Inputs
-!!$       !              N_KERNEL_FACTOR_WFS, N_KERNEL_PARAMS_WFS, N_SURFACE_WFS,      & ! Inputs
-!!$       !              N_SZANGLES, NSTREAMS, N_USER_VZANGLES, N_USER_RELAZMS,        & ! Inputs
-!!$       !              SZANGLES, USER_VZANGLES, USER_RELAZMS,                        & ! Inputs
-!!$       !              BRDF_F_0, BRDF_F, USER_BRDF_F_0, USER_BRDF_F,                 & ! Outputs
-!!$       !              LS_BRDF_F_0, LS_BRDF_F, LS_USER_BRDF_F_0, LS_USER_BRDF_F,     & ! Outputs
-!!$       !              EXACTDB_BRDFUNC, LS_EXACTDB_BRDFUNC,                          & ! Outputs
-!!$       !              EMISSIVITY, USER_EMISSIVITY, LS_EMISSIVITY, LS_USER_EMISSIVITY )   ! Outputs
-!!$    END IF    
     
   END SUBROUTINE Vlidort_set_optical
 
@@ -1153,16 +1127,12 @@ CONTAINS
        ! ---------------------------
        ! Set lambertian cloud albedo
        ! ---------------------------
-!!$       IF ( VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE ) THEN
        IF (ic == 2 .AND. do_lambertian_cld) THEN
           VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO  = lambertian_cldalb
           VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE = .TRUE.
-!!$       ENDIF
        ELSE
           VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO = ground_ler(w)
        END IF
-!!$          VBRDF_Sup_In%BS_BRDF_FACTORS(1) = VLIDORT_FixIn%Optical%TS_LAMBERTIAN_ALBEDO
-!!$    END IF
        
        ! ------------------------------------------------------------------
        ! Reset Rayleigh only flag, set if no aerosols and scattering clouds
@@ -1182,7 +1152,6 @@ CONTAINS
              VLIDORT_FixIn%Bool%TS_DO_SSCORR_TRUNCATION  = .FALSE. ! Change after Xiong settings
              VLIDORT_ModIn%MBool%TS_DO_SOLUTION_SAVING   = .FALSE.
              VLIDORT_ModIn%MBool%TS_DO_BVP_TELESCOPING   = .FALSE.
-             VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT = aercld_nmoments_input
           END IF
        END IF
        

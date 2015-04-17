@@ -113,7 +113,7 @@ F
 # Use effective cross sections, logical T/F
 # -----------------------------------------
 Effective cross sections
-T
+F
 
 # -----------------------------------------------------------
 # Spectral input:
@@ -123,8 +123,8 @@ T
 # -----------------------------------------------------------
 Spectral
 T
-280 320 0.01d0
-0.01d0 0.01d0
+310 320 0.6d0
+1.0d0 0.1d0
 
 # ----------------------------------------------------------
 # Gases input allowed values: O3, NO2, HCHO, SO2, H2O, GLYX,
@@ -134,7 +134,7 @@ T
 #   2. Which gases
 # ----------------------------------------------------------
 Gases
-9
+2
 O3 NO2 HCHO SO2 BRO GLYX H2O O2 O4
 #5
 #O3, NO2, HCHO, BRO, SO2
@@ -176,12 +176,6 @@ Clouds
 F F
 F
 clouds_control.inp
-
-# -------------------------------------
-# Number of aerosols and clouds moments
-# -------------------------------------
-Number of moments
-8
 
 # ---------------------------------------------------
 # Do user altitudes:

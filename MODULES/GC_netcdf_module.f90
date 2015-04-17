@@ -6,7 +6,7 @@ MODULE GC_netcdf_module
                                   which_gases, gas_partialcolumns, aircolumns, cfrac, cld_tops,        &
                                   lambertian_cldalb, taer_profile, tcld_profile, opdeps, ssalbs,       &
                                   aer_opdeps, aer_ssalbs, cld_opdeps, cld_ssalbs, ground_ler,          &
-                                  wind_speed, VLIDORT_FixIn, aercld_nmoments_input, lambda_dw,         &
+                                  wind_speed, VLIDORT_FixIn, lambda_dw,                                &
                                   lambda_dfw, use_wavelength, aer_reflambda, cld_reflambda,            &
                                   do_vector_calculation, do_StokesQU_output, do_Jacobians,             &
                                   do_QU_Jacobians, do_AMF_calculation, do_T_Jacobians,                 &
@@ -401,7 +401,7 @@ CONTAINS
     call ncapt (ncid, ncglobal, 'lam_dw',       ncfloat, 1, real(lambda_dw, kind=4), rcode)
     call ncapt (ncid, ncglobal, 'lam_dfw',      ncfloat, 1, real(lambda_dfw, kind=4), rcode)
     call ncapt (ncid, ncglobal, 'nstreams',     nclong,  1, VLIDORT_FixIn%Cont%TS_NSTREAMS, rcode)
-    call ncapt (ncid, ncglobal, 'aercld_nmoms', nclong,  1, aercld_nmoments_input, rcode)
+    call ncapt (ncid, ncglobal, 'aercld_nmoms', nclong,  1, VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, rcode)
     call ncapt (ncid, ncglobal, 'nsza',         nclong,  1, GC_n_sun_positions, rcode)
     call ncapt (ncid, ncglobal, 'nvza',         nclong,  1, GC_n_view_angles, rcode)
     call ncapt (ncid, ncglobal, 'naza',         nclong,  1, GC_n_azimuths, rcode)

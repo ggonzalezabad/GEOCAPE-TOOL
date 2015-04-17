@@ -25,7 +25,6 @@ MODULE GC_read_input_module
                                   do_AMF_calculation, do_T_Jacobians,                 &
                                   do_sfcprs_Jacobians, do_normalized_WFoutput,        &
                                   do_normalized_radiance,                             &
-                                  aercld_nmoments_input,                              &
                                   GC_n_user_altitudes,                                &
                                   GC_user_altitudes, GC_do_user_altitudes,            &
                                   lambda_start, lambda_finish, use_wavelength,        &
@@ -129,7 +128,6 @@ MODULE GC_read_input_module
       CHARACTER(LEN= 6), PARAMETER :: albedo_str        = 'Albedo'
       CHARACTER(LEN= 8), PARAMETER :: aerosols_str      = 'Aerosols'
       CHARACTER(LEN= 6), PARAMETER :: clouds_str        = 'Clouds'
-      CHARACTER(LEN=17), PARAMETER :: moments_str       = 'Number of moments'
       CHARACTER(LEN=13), PARAMETER :: sun_str           = 'Sun positions'
       CHARACTER(LEN=11), PARAMETER :: view_str          = 'View angles'
       CHARACTER(LEN=14), PARAMETER :: azimuth_str       = 'Azimuth angles'
@@ -380,17 +378,6 @@ MODULE GC_read_input_module
       READ (UNIT=funit, FMT=*, IOSTAT=ios) use_cldprof
       READ (UNIT=funit, FMT='(A)', IOSTAT=ios) cldfile
 
-      ! --------------------------
-      ! Number of aerosols moments
-      ! --------------------------
-      REWIND (funit)
-      CALL skip_to_filemark ( funit, moments_str , tmpstr, error )
-      IF ( error ) THEN
-         CALL write_err_message ( .TRUE., "ERROR: Can't find "//moments_str )
-         CALL error_exit (error)
-      END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) aercld_nmoments_input
-
       ! --------------
       ! User altitudes
       ! --------------
@@ -550,26 +537,6 @@ MODULE GC_read_input_module
        ENDIF
     ENDDO
     debug_filename = TRIM(ADJUSTL(results_dir)) // debug_filename
-
-    ! ----------------------
-    ! Check this input data
-    ! ----------------------
-
-    !  No aerosols for a vector calculation
-    IF ( do_aerosols .OR. (do_clouds .AND. .NOT. do_lambertian_cld)) THEN
-
-       IF (aercld_nmoments_input .Gt. maxmoms) THEN
-          CALL write_err_message ( .FALSE., "Need to increase maxmoms to >= "// &
-               "aercld_nmoments_input ")
-          error = .TRUE.
-       END IF
-    END IF
-
-    !  No satellite viewing geometry calculation for downwelling calculation
-!!$    IF ( idix(1) .NE. 1 .AND. do_sat_viewcalc) THEN
-!!$       CALL write_err_message ( .FALSE., "Cannot calculate viewing geometry for downwelling!!!")
-!!$       error = .TRUE.
-!!$    END IF
     
     !  Exception handling this section
     IF (error) CALL error_exit(error)
