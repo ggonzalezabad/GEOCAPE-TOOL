@@ -30,8 +30,6 @@ EXE_PATH  = .
 MOD_PATH  = $(TOOL_PATH)/MODULES
 GC_OBJ    = $(TOOL_PATH)/GC_OBJECTS
 GC_MOD    = $(TOOL_PATH)/GC_MODULES
-GC_OBJG   = $(TOOL_PATH)/GC_OBJECTSG
-GC_MODG   = $(TOOL_PATH)/GC_MODULESG
 
 # To compile the Vlidort v2p6 modules
 VLIDORT_PATH      = $(TOOL_PATH)/vlidort_2p6_sourcecode_2_13
@@ -40,14 +38,6 @@ VLIDORT_MAIN_PATH = $(VLIDORT_PATH)/vlidort_main
 VLIDORT_VSUP_PATH = $(VLIDORT_PATH)/vsup
 VLIDORT_OBJ       = $(TOOL_PATH)/VLIDORT_v2p6_OBJECTS
 VLIDORT_MOD       = $(TOOL_PATH)/VLIDORT_v2p6_MODULES
-
-# To compile the Vlidort v2p6 Green modules
-VLIDORT_PATHG      = $(TOOL_PATH)/vlidort_2p6_sourcecode_Green_2_13
-VLIDORT_DEF_PATHG  = $(VLIDORT_PATHG)/vlidort_def
-VLIDORT_MAIN_PATHG = $(VLIDORT_PATHG)/vlidort_main_Greens
-VLIDORT_VSUP_PATHG = $(VLIDORT_PATHG)/vsup
-VLIDORT_OBJG       = $(TOOL_PATH)/VLIDORT_v2p6G_OBJECTS
-VLIDORT_MODG       = $(TOOL_PATH)/VLIDORT_v2p6G_MODULES
 
 #TOOL_COMPILE = g77 -c -Wimplicit -Wall -ffortran-bounds-check -O2
 #VLIDORT_COMPILE = g77 -c -Wimplicit -Wall -ffortran-bounds-check -O2
@@ -148,7 +138,7 @@ mk_folders:
              $(WARN_PATH) $(GC_MOD) $(GC_OBJ) 
 
 mk_links:
-	ln -v -s /data/tempo1/Shared/HITRAN2012 ../geocape_data/HITRAN
+	ln -v -s -f /data/tempo1/Shared/HITRAN2012 ../geocape_data/HITRAN
 
 rm_folders:
 	rm -rf   $(OBJ) $(VLIDORT_MOD) $(VLIDORT_OBJ) \
@@ -156,6 +146,9 @@ rm_folders:
 
 rm_links:
 	unlink ../geocape_data/HITRAN
+
+echo:
+	echo $(F90OBJECTS_SOURCES)
 
 # #########################
 # Pattern rules out sourced
