@@ -56,9 +56,9 @@ debug_geocape_tool.log
 # in folder geocape_data/newkur.dat
 # Please introduce full path name!!!
 # 2 files are provided inside ../geocape_data
-; 1. newkur.dat: 50 cm^-1 to 50000 cm^-1
-; 2. chance_solarspec_jqsrt2011_bis.dat: 9990.11-49982.51 cm^-1 or (200.07-1000.99 nm)
-; Suggest using 2 if wavelength range is covered due to higher quality/resolution
+# 1. newkur.dat: 50 cm^-1 to 50000 cm^-1
+# 2. chance_solarspec_jqsrt2011_bis.dat: 9990.11-49982.51 cm^-1 or (200.07-1000.99 nm)
+# Suggest using 2 if wavelength range is covered due to higher quality/resolution
 # ---------------------------------------------------------
 Normalized radiance
 T
