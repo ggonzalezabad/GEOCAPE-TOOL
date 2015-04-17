@@ -45,7 +45,6 @@ subroutine solarspec_prep_newkur &
    fail    = .false.
    message = ' '
    !nr = 49951  !xliu
-
    solar_spec_data(:) = 0.d0
 
    np = 1
@@ -87,6 +86,21 @@ subroutine solarspec_prep_newkur &
       return
    endif  
 !xliu */
+
+! Check that the high resolution solar spectra covers the spectral
+! region of interest. If not print warning message to screen and
+! continue
+   IF (wn_raw_data(1) .GT. wavnums(nwavnums) .OR. &
+        wn_raw_data(nr) .LT. wavnums(1) ) THEN
+
+      print*, '!!!Warning: Spectral window not covered by high resolution solar spectra:'
+      print 1000, '    High resolution solar spectra:', wn_raw_data(1),' nm -',  &
+           wn_raw_data(nr),' nm'
+      print 1000, '    Spectral window calculation:', wavnums(nwavnums),' nm -', &
+           wavnums(1),' nm'
+      
+      1000 FORMAT (A,F9.2,A,F9.2,A)
+   ENDIF
 
 !  Wavelength assignments (linear interpolation)
    do n = 1, nwavnums
