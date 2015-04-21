@@ -521,6 +521,8 @@ program geocape_tools_v2p6
       CALL Vlidort_set_optical (yn_error)
       
       IF (yn_error) CALL error_exit(yn_error)
+
+      CALL Vlidort_cloud_and_calculation (yn_error)
       
       ! ---------------------------------------------------------------------
       ! Cloud loop, clear and cloudy part; Vlidort calculation takes place
@@ -535,7 +537,6 @@ program geocape_tools_v2p6
       DO idir = 1, ndir
 
          didx = idix(idir)         
-         CALL Vlidort_cloud_and_calculation (yn_error)
          
          ! ============
          ! save results

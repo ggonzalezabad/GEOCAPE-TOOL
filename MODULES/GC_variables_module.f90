@@ -25,16 +25,17 @@ MODULE GC_variables_module
 ! -------------------
   REAL(KIND=8), DIMENSION(maxflambdas) :: tmpwaves, tmpcwaves
 
-! --------------------------------------------------------------------------
+! --------------------------------------------------------------------------------
 ! Variables to store partial clear/cloudy calculations directly from VLIDORT
-! --------------------------------------------------------------------------
-  REAL(KIND=8), DIMENSION(max_geometries, maxstokes, 2)                       :: stokes_clrcld
-  REAL(KIND=8), DIMENSION(max_szangles, maxstokes, 2)                         :: stokes_flux
-  REAL(KIND=8), DIMENSION(max_szangles, maxstokes, 2)                         :: stokes_direct_flux
-  REAL(KIND=8), DIMENSION(max_atmoswfs, maxlayers, max_geometries, maxstokes) :: profilewf_sum
-  REAL(KIND=8), DIMENSION(max_surfacewfs, max_geometries, maxstokes, 2)       :: surfacewf_clrcld
+! Dimensions, (view_geometries,stokes_components,direction(up/down_welling),cloud)
+! --------------------------------------------------------------------------------
+  REAL(KIND=8), DIMENSION(max_geometries, maxstokes, 2, 2)                       :: stokes_clrcld
+  REAL(KIND=8), DIMENSION(max_szangles, maxstokes, 2, 2)                         :: stokes_flux
+  REAL(KIND=8), DIMENSION(max_szangles, maxstokes, 2)                            :: stokes_direct_flux
+  REAL(KIND=8), DIMENSION(max_atmoswfs, maxlayers, max_geometries, maxstokes, 2) :: profilewf_sum
+  REAL(KIND=8), DIMENSION(max_surfacewfs, max_geometries, maxstokes, 2, 2)       :: surfacewf_clrcld
 
-  REAL(KIND=8), DIMENSION(0:max_atmoswfs, 0:maxmoms, 1:maxgksec)              :: l_phasmoms_total_input
+  REAL(KIND=8), DIMENSION(0:max_atmoswfs, 0:maxmoms, 1:maxgksec)                 :: l_phasmoms_total_input
 
 
 
@@ -96,7 +97,6 @@ MODULE GC_variables_module
 ! -------------------------------
 ! Upwelling & downwelling control
 ! -------------------------------
-   LOGICAL :: GC_do_upwelling
    INTEGER               :: ndir ! Number of directions (1 or 2)
    INTEGER               :: idir ! Directions loop index
    INTEGER, DIMENSION(2) :: idix ! Directions

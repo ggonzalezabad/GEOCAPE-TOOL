@@ -959,6 +959,33 @@ CONTAINS
        END DO
     END IF
 
+    ! -----------------------------------------------------
+    ! Compute cloud fraction weighting function if selected
+    ! -----------------------------------------------------
+    IF (do_cfrac_jacobians) THEN
+       IF (cfrac .GT. 0.0d0 .AND. cfrac .LT. 1.0d0 ) THEN
+          GC_cfrac_jacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) =          &
+               stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1, didx, 2)   &
+               - stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1, didx, 1)
+       ELSE
+          GC_cfrac_Jacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) = 0.0d0
+       END IF
+    END IF
+    
+    IF (do_cfrac_jacobians .AND. do_QU_Jacobians) THEN
+       IF (cfrac .GT. 0.0d0 .AND. cfrac .LT. 1.0d0 ) THEN
+          GC_cfrac_QJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) =         &
+               stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 2, didx, 2)   &
+               - stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 2, didx, 1)
+          GC_cfrac_UJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) =   &
+               stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 3, didx, 2)   &
+               - stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 3, didx, 1)
+       ELSE
+          GC_cfrac_QJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) = 0.0d0
+          GC_cfrac_UJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) = 0.0d0
+       END IF
+    END IF
+
     ! -----------------------------
     ! Space for future BRDF results
     ! -----------------------------
@@ -1104,11 +1131,12 @@ CONTAINS
     ! ---------------------------------------------------------------------
     ! Initialize output: stokes, profile & surface jacobians at each lambda
     ! ---------------------------------------------------------------------
-    stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, :) = 0.0d0
+    stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, :, :)   = 0.0d0
+    stokes_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, :, :) = 0.0d0
     profilewf_sum(1:n_totalprofile_wfs_wcld, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, &
-         1:VLIDORT_FixIn%Cont%TS_NSTOKES)                                        = 0.0d0
+         1:VLIDORT_FixIn%Cont%TS_NSTOKES, :)                                                   = 0.0d0
     surfacewf_clrcld(1:VBRDF_LinSup_in%BS_N_SURFACE_WFS, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES,   &
-         1:VLIDORT_FixIn%Cont%TS_NSTOKES, :)                                     = 0.0d0
+         1:VLIDORT_FixIn%Cont%TS_NSTOKES, :, :)                                                = 0.0d0
 
                  ! --------------------------
     DO ic = 1, 2 ! Beging cloud fraction loop
@@ -1270,12 +1298,6 @@ CONTAINS
                   greekmat_idxs(1:nactgkmatc)) =                                           &
                   phasmoms_total_input(0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT,      &
                   phasmoms_idxs(1:nactgkmatc))
-
-!xliu, 6/6/2013, based on discussion with Rob and Vjay/ gga 1/24/2014
-!!$             IF ( nactgkmatc > 1 ) VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT           &
-!!$                  (0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 15) =                 &
-!!$                  -VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(                          &
-!!$                  0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 15)
          
              IF ( nactgkmatc > 1 ) THEN
                 VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT           &
@@ -1308,7 +1330,6 @@ CONTAINS
                 DO g = 1, ngases
                    IF ( which_gases(g) == 'O3  ' ) abs_o3(n) = gasabs(n,g)
                 END DO
-                  !ratio = abs_o3(n) / total_tau
                 ratio = total_gasabs(n) / total_tau
                 VLIDORT_LinFixIn%Optical%TS_L_DELTAU_VERT_INPUT(q,n) =   ratio
                 VLIDORT_LinFixIn%Optical%TS_L_OMEGA_TOTAL_INPUT(q,n) = - ratio
@@ -1362,12 +1383,6 @@ CONTAINS
                      greekmat_idxs(1:nactgkmatc)) = l_phasmoms_total_input(q, &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT,           &
                      phasmoms_idxs(1:nactgkmatc))
-
-!xliu, 6/6/2013, based on discussion with Rob and Vjay/ gga 1/24/2014
-!!$                IF ( nactgkmatc > 1 )  VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
-!!$                     0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 15)                   &
-!!$                     = -VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
-!!$                     0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 15)                             
 
                 IF ( nactgkmatc > 1 )  THEN
 
@@ -1446,12 +1461,6 @@ CONTAINS
                      greekmat_idxs(1:nactgkmatc)) =                                           &
                      l_phasmoms_total_input(q, 0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, &
                      phasmoms_idxs(1:nactgkmatc))
-
-!xliu, 6/6/2013, changes based on discussion with Rob and Vijay / gga 1/24/2014
-!!$                IF ( nactgkmatc > 1 )  VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
-!!$                     0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 15)                   &
-!!$                     = -VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
-!!$                     0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 15)
                 
                IF ( nactgkmatc > 1 )  THEN
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
@@ -1498,12 +1507,6 @@ CONTAINS
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, greekmat_idxs(1:nactgkmatc)) = &
                      l_phasmoms_total_input(q, 0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT,         &
                      phasmoms_idxs(1:nactgkmatc))
-
-!xliu, 6/6/2013, changes based on discussion with Rob and Vijay / gga 1/24/2014
-!!$                IF ( nactgkmatc > 1 )  VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
-!!$                     0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 15)                   &
-!!$                     = - VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
-!!$                     0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 15)
 
                 IF ( nactgkmatc > 1 )  THEN
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
@@ -1553,12 +1556,6 @@ CONTAINS
                      l_phasmoms_total_input(q, 0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, &
                      phasmoms_idxs(1:nactgkmatc))
 
-!xliu, 6/6/2013, changes based on discussion with Rob and Vijay / gga 1/24/2014
-!!$                IF ( nactgkmatc > 1 )  VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,  &
-!!$                     0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 15)                    &
-!!$                     = -VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                 &
-!!$                     0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 15)
-
                 IF ( nactgkmatc > 1 ) THEN
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,  &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2)                    &
@@ -1605,12 +1602,6 @@ CONTAINS
                      l_phasmoms_total_input(q,                        &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT,   &
                      phasmoms_idxs(1:nactgkmatc))
-
-!xliu, 6/6/2013, changes based on discussion with Rob and Vijay / gga 1/24/2014
-!!$                IF ( nactgkmatc > 1 )  VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
-!!$                     0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 15)                   &
-!!$                     = - VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
-!!$                     0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 15)
 
                 IF ( nactgkmatc > 1 ) THEN
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
@@ -1679,7 +1670,7 @@ CONTAINS
        ! ----------------
        ! Now call VLIDORT
        ! -----------------
-       WRITE(*,*)'doing VLIDORT calculation # ', w, didx
+       WRITE(*,*)'doing VLIDORT calculation # ', w, ic
        CALL VLIDORT_LPS_MASTER ( &
             VLIDORT_FixIn,     &
             VLIDORT_ModIn,     &
@@ -1715,16 +1706,16 @@ CONTAINS
        ! --------------
        ! Copy radiances
        ! --------------
-       stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, ic) = &
+       stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir, ic) = &
             VLIDORT_Out%Main%TS_STOKES(1, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, &
-            1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx)
+            1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir)
 
        ! ---------
        ! Copy flux
        ! ---------
-       stokes_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, ic) = &
+       stokes_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir, ic) = &
             VLIDORT_Out%Main%TS_FLUX_STOKES(1, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, &
-            1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx)
+            1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir)
        
        ! -----------------------------------
        ! Copy direct flux (only downwelling)
@@ -1735,26 +1726,26 @@ CONTAINS
        
        IF (do_jacobians) THEN
           
-          profilewf_sum(1:VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS,               &
+          profilewf_sum(1:VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS,      &
                1:VLIDORT_FixIn%Cont%TS_NLAYERS,                             &
                1:VLIDORT_Out%Main%TS_N_GEOMETRIES,                          &
-               1:VLIDORT_FixIn%Cont%TS_NSTOKES) =                           &
+               1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir) =                   &
                profilewf_sum(1:VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS, &
                1:VLIDORT_FixIn%Cont%TS_NLAYERS,                             &
                1:VLIDORT_Out%Main%TS_N_GEOMETRIES,                          &
-               1:VLIDORT_FixIn%Cont%TS_NSTOKES) +                           &
+               1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir) +                   &
                VLIDORT_LinOut%Prof%TS_PROFILEWF                             &
                (1:VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS,              &
                1:VLIDORT_FixIn%Cont%TS_NLAYERS, 1,                          &
                1:VLIDORT_Out%Main%TS_N_GEOMETRIES,                          &
-               1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx)*ipafrac
-          surfacewf_clrcld(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS,                 &
+               1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir)*ipafrac
+          surfacewf_clrcld(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS,        &
                1:VLIDORT_Out%Main%TS_N_GEOMETRIES,                          &
-               1:VLIDORT_FixIn%Cont%TS_NSTOKES, ic) =                       &
+               1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir, ic) =               &
                VLIDORT_LinOut%Surf%TS_SURFACEWF                             &
                (1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS, 1,                &
                1:VLIDORT_Out%Main%TS_N_GEOMETRIES,                          &
-               1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx)
+               1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir)
        END IF
        
            ! ----------------------- 
@@ -1767,86 +1758,62 @@ CONTAINS
     ! Independent pixel approximation for radiance, flux and direct flux
     ! ------------------------------------------------------------------
     VLIDORT_Out%Main%TS_STOKES(1, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, &
-         1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx) =                     &
+         1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir) =                   &
          stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES,            &
-         1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1) * (1.0 - cfrac )         &
+         1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir, 1) * (1.0 - cfrac ) &
          + stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES,          &
-         1:VLIDORT_FixIn%Cont%TS_NSTOKES, 2) * cfrac
+         1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir, 2) * cfrac
 
-    VLIDORT_Out%Main%TS_FLUX_STOKES(1, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,   &
-         1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx) =                          &
-         stokes_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,                     &
-         1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1) * (1.0 - cfrac )              &
-         + stokes_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,                   &
-         1:VLIDORT_FixIn%Cont%TS_NSTOKES, 2) * cfrac
+    VLIDORT_Out%Main%TS_FLUX_STOKES(1, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, &
+         1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir) =                            &
+         stokes_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,                   &
+         1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir, 1) * (1.0 - cfrac )          &
+         + stokes_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,                 &
+         1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir, 2) * cfrac
 
-    VLIDORT_Out%Main%TS_FLUX_DIRECT(1, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,   &
-         1:VLIDORT_FixIn%Cont%TS_NSTOKES) =                                &
-         stokes_direct_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,              &
-         1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1) * (1.0 - cfrac )              &
-         + stokes_direct_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,            &
+    VLIDORT_Out%Main%TS_FLUX_DIRECT(1, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, &
+         1:VLIDORT_FixIn%Cont%TS_NSTOKES) =                                    &
+         stokes_direct_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,            &
+         1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1) * (1.0 - cfrac )                  &
+         + stokes_direct_flux(1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,          &
          1:VLIDORT_FixIn%Cont%TS_NSTOKES, 2) * cfrac
     
     IF (do_jacobians) THEN
        VLIDORT_LinOut%Prof%TS_PROFILEWF(1:VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS, &
             1:GC_nlayers, 1, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES,                       &
-            1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx) =                                   &
+            1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir) =                                 &
             profilewf_sum(1:VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS, 1:GC_nlayers, &
             1:VLIDORT_Out%Main%TS_N_GEOMETRIES,                                        &
-            1:VLIDORT_FixIn%Cont%TS_NSTOKES)  
+            1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir)  
        
        IF (cfrac <= 0.0d0) THEN
-          VLIDORT_LinOut%Surf%TS_SURFACEWF(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS, 1,     &
-               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx) = &
-               surfacewf_clrcld(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS,                   &
-               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1)  
+          VLIDORT_LinOut%Surf%TS_SURFACEWF(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS, 1,       &
+               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir) = &
+               surfacewf_clrcld(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS,                     &
+               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir, 1)  
        ELSE IF (cfrac >= 1.0d0) THEN
           VLIDORT_LinOut%Surf%TS_SURFACEWF(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS, 1, &
                1:VLIDORT_Out%Main%TS_N_GEOMETRIES,                                      &
-               1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx) = &
+               1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir) =                               &
                SURFACEWF_CLRCLD(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS,               &
-               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 2) 
+               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir, 2) 
        ELSE IF (do_lambertian_cld .AND. VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE) THEN ! from clear-sky only
-          VLIDORT_LinOut%Surf%TS_SURFACEWF(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS, 1, &
-               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES,     &
-               didx) = surfacewf_clrcld(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS,       &
-               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1) *&
+          VLIDORT_LinOut%Surf%TS_SURFACEWF(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS, 1,          &
+               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES,              &
+               1:ndir) = surfacewf_clrcld(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS,              &
+               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir, 1) * &
                ( 1.0-cfrac)
        ELSE IF (do_lambertian_cld .AND. .NOT. VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE) THEN ! Should not happen
           PRINT *, 'Should not happen!!!'; STOP
        ELSE
-          VLIDORT_LinOut%Surf%TS_SURFACEWF(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS, 1,     &
-               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, didx) = &
-               surfacewf_clrcld(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS,                   &
-               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1) *    &
-               ( 1.0-cfrac) + surfacewf_clrcld(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS,    &
-               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 2) * cfrac
+          VLIDORT_LinOut%Surf%TS_SURFACEWF(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS, 1,          &
+               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir) =    &
+               surfacewf_clrcld(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS,                        &
+               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir, 1) * &
+               ( 1.0-cfrac) + surfacewf_clrcld(1:VLIDORT_LinFixIn%Cont%TS_N_SURFACE_WFS,         &
+               1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir, 2) * cfrac
        END IF
        
-       ! Compute cloud fraction weighting function if selected
-       IF (do_cfrac_jacobians) THEN
-          IF (cfrac .GT. 0.0d0 .AND. cfrac .LT. 1.0d0 ) THEN
-             GC_cfrac_jacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) =   &
-                  stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1, 2)  &
-                  - stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1, 1)
-          ELSE
-             GC_cfrac_Jacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) = 0.0d0
-          END IF
-       END IF
-       
-       IF (do_cfrac_jacobians .AND. do_QU_Jacobians) THEN
-          IF (cfrac .GT. 0.0d0 .AND. cfrac .LT. 1.0d0 ) THEN
-             GC_cfrac_QJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) = &
-                  stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 2, 2) &
-                  - stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 2, 1)
-             GC_cfrac_UJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) = &
-                  stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 3, 2) &
-                  - stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 3, 1)
-          ELSE
-             GC_cfrac_QJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) = 0.0d0
-             GC_cfrac_UJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) = 0.0d0
-          END IF
-       END IF
     END IF
     
   END SUBROUTINE Vlidort_cloud_and_calculation
