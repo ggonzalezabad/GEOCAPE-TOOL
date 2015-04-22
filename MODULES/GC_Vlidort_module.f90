@@ -440,12 +440,12 @@ CONTAINS
     ! Save Radiances, flux and direct flux
     ! ------------------------------------
     DO IB = 1, VLIDORT_ModIn%MSunrays%TS_N_SZANGLES
-       GC_flux(W,IB)        = VLIDORT_Out%Main%TS_FLUX_STOKES(1,IB,1,didx)
-       GC_direct_flux(W,IB) = VLIDORT_Out%Main%TS_FLUX_DIRECT(1,IB,1)
+       GC_flux(W,IB,didx)        = VLIDORT_Out%Main%TS_FLUX_STOKES(1,IB,1,didx)
+       GC_direct_flux(W,IB,didx) = VLIDORT_Out%Main%TS_FLUX_DIRECT(1,IB,1)
        DO UM = 1, VLIDORT_ModIn%MUserVal%TS_N_USER_VZANGLES
           DO UA = 1, VLIDORT_ModIn%MUserVal%TS_N_USER_RELAZMS
              V = VLIDORT_Out%Main%TS_VZA_OFFSETS(IB,UM) + UA
-             GC_Radiances(W,V)   = VLIDORT_Out%Main%TS_STOKES(1,V,1,didx)
+             GC_Radiances(W,V,didx)   = VLIDORT_Out%Main%TS_STOKES(1,V,1,didx)
           END DO
        END DO
     END DO
@@ -455,15 +455,15 @@ CONTAINS
     ! -------------------------------------------------
     IF ( do_vector_calculation .AND. do_StokesQU_output ) THEN
        DO IB = 1, VLIDORT_ModIn%MSunrays%TS_N_SZANGLES
-                GC_Qflux(W,IB)        = VLIDORT_Out%Main%TS_FLUX_STOKES(1,IB,2,didx)
-                GC_Uflux(W,IB)        = VLIDORT_Out%Main%TS_FLUX_STOKES(1,IB,3,didx)
-                GC_Qdirect_flux(W,IB) = VLIDORT_Out%Main%TS_FLUX_DIRECT(1,IB,2)
-                GC_Udirect_flux(W,IB) = VLIDORT_Out%Main%TS_FLUX_DIRECT(1,IB,3)
+                GC_Qflux(W,IB,didx)        = VLIDORT_Out%Main%TS_FLUX_STOKES(1,IB,2,didx)
+                GC_Uflux(W,IB,didx)        = VLIDORT_Out%Main%TS_FLUX_STOKES(1,IB,3,didx)
+                GC_Qdirect_flux(W,IB,didx) = VLIDORT_Out%Main%TS_FLUX_DIRECT(1,IB,2)
+                GC_Udirect_flux(W,IB,didx) = VLIDORT_Out%Main%TS_FLUX_DIRECT(1,IB,3)
           DO UM = 1, VLIDORT_ModIn%MUserVal%TS_N_USER_VZANGLES   
              DO UA = 1, VLIDORT_ModIn%MUserVal%TS_N_USER_RELAZMS
                 V = VLIDORT_Out%Main%TS_VZA_OFFSETS(IB,UM) + UA
-                GC_Qvalues(W,V)      = VLIDORT_Out%Main%TS_STOKES(1,V,2,didx)
-                GC_Uvalues(W,V)      = VLIDORT_Out%Main%TS_STOKES(1,V,3,didx)
+                GC_Qvalues(W,V,didx)      = VLIDORT_Out%Main%TS_STOKES(1,V,2,didx)
+                GC_Uvalues(W,V,didx)      = VLIDORT_Out%Main%TS_STOKES(1,V,3,didx)
              END DO
           END DO
        END DO
@@ -480,7 +480,7 @@ CONTAINS
        DO g = 1, ngases
           DO n = 1, VLIDORT_FixIn%Cont%TS_NLAYERS
              IF ( gas_partialcolumns(n,g) .EQ. 0.0d0 .OR. gasabs(n, g) .EQ. 0.d0 ) THEN
-                GC_Tracegas_Jacobians(w,n,1:VLIDORT_Out%Main%TS_N_GEOMETRIES,g) = 0.0d0
+                GC_Tracegas_Jacobians(w,n,1:VLIDORT_Out%Main%TS_N_GEOMETRIES,g,didx) = 0.0d0
              ELSE
                 IF ( do_normalized_WFoutput ) THEN                        !  Normalized output
                    ratio = gasabs(n, g) / total_gasabs(n)
@@ -488,7 +488,7 @@ CONTAINS
                    ratio = gasabs(n, g) / gas_partialcolumns(n,g) / total_gasabs(n)                
                 END IF
                 DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
-                   GC_Tracegas_Jacobians(w,n,v,g) = &
+                   GC_Tracegas_Jacobians(w,n,v,g,didx) = &
                         VLIDORT_LinOut%Prof%TS_PROFILEWF(q,n,1,v,1,didx) * ratio
                 END DO
              END IF
@@ -499,15 +499,15 @@ CONTAINS
        IF (do_AMF_calculation) THEN
           DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
              DO n = 1, VLIDORT_FixIn%Cont%TS_NLAYERS
-                GC_Scattering_Weights(w, n, v) = &
+                GC_Scattering_Weights(w, n, v,didx) = &
                      -VLIDORT_LinOut%Prof%TS_PROFILEWF(q,n,1,v,1,didx) &
-                     / total_gasabs(n) / GC_Radiances(w,v)
+                     / total_gasabs(n) / GC_Radiances(w,v,didx)
              END DO
              
              ! Compute Air mass factor (don't need to save for every one)
              DO g = 1, ngases
-                GC_AMFs(w, v, g) = &
-                     SUM(GC_Scattering_weights(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                GC_AMFs(w, v, g,didx) = &
+                     SUM(GC_Scattering_weights(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                      * gas_partialcolumns(1:VLIDORT_FixIn%Cont%TS_NLAYERS,g)) /       &
                      SUM(gas_partialcolumns(1:VLIDORT_FixIn%Cont%TS_NLAYERS,g))
              END DO
@@ -527,8 +527,8 @@ CONTAINS
        DO g = 1, ngases
           DO n = 1, VLIDORT_FixIn%Cont%TS_NLAYERS
              IF ( gas_partialcolumns(n,g) .EQ. 0.0d0 .OR. gasabs(n, g) == 0.d0) THEN
-                GC_Tracegas_QJacobians(w,n,1:VLIDORT_Out%Main%TS_N_GEOMETRIES,g) = 0.0d0
-                GC_Tracegas_UJacobians(w,n,1:VLIDORT_Out%Main%TS_N_GEOMETRIES,g) = 0.0d0
+                GC_Tracegas_QJacobians(w,n,1:VLIDORT_Out%Main%TS_N_GEOMETRIES,g,didx) = 0.0d0
+                GC_Tracegas_UJacobians(w,n,1:VLIDORT_Out%Main%TS_N_GEOMETRIES,g,didx) = 0.0d0
              ELSE
                 IF ( do_normalized_WFoutput ) THEN                        !  Normalized output
                    ratio = gasabs(n,g) / total_gasabs(n)
@@ -536,9 +536,9 @@ CONTAINS
                    ratio = gasabs(n,g) / gas_partialcolumns(n, g) / total_gasabs(n)
                 END IF
                 DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
-                   GC_Tracegas_QJacobians(w,n,v,g) = ratio * &
+                   GC_Tracegas_QJacobians(w,n,v,g,didx) = ratio * &
                         VLIDORT_LinOut%Prof%TS_PROFILEWF(q,n,1,v,2,didx)
-                   GC_Tracegas_UJacobians(w,n,v,g) = ratio * &
+                   GC_Tracegas_UJacobians(w,n,v,g,didx) = ratio * &
                         VLIDORT_LinOut%Prof%TS_PROFILEWF(q,n,1,v,3,didx)
                 END DO
              END IF
@@ -554,10 +554,10 @@ CONTAINS
        DO n = 1, VLIDORT_FixIn%Cont%TS_NLAYERS
           DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
              IF ( do_normalized_WFoutput ) THEN    !  Normalized output
-                GC_Temperature_Jacobians(w,n,v) = &
+                GC_Temperature_Jacobians(w,n,v,didx) = &
                      VLIDORT_LinOut%Prof%TS_PROFILEWF(q,n,1,v,1,didx)
              ELSE                                  !  Non-normalized output
-                GC_Temperature_Jacobians(w,n,v) = &
+                GC_Temperature_Jacobians(w,n,v,didx) = &
                      VLIDORT_LinOut%Prof%TS_PROFILEWF(q,n,1,v,1,didx) / mid_temperatures(n)
              END IF
           END DO
@@ -577,17 +577,17 @@ CONTAINS
                    total_wf = total_wf + VLIDORT_LinOut%Prof%TS_PROFILEWF(q,il,1,v,1,didx)
                 END IF
              END DO
-             GC_aod_Jacobians(w, 1, v) = total_wf               ! Normalized output
-             IF ( .NOT. do_normalized_WFoutput ) THEN           ! Non-normalized output
-                GC_aod_Jacobians(w, 1, v) = total_wf / taertau0 ! Using tau at ref. lambda
+             GC_aod_Jacobians(w, 1, v,didx) = total_wf               ! Normalized output
+             IF ( .NOT. do_normalized_WFoutput ) THEN                ! Non-normalized output
+                GC_aod_Jacobians(w, 1, v,didx) = total_wf / taertau0 ! Using tau at ref. lambda
              END IF
           ELSE
-             GC_aod_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
+             GC_aod_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
                   VLIDORT_LinOut%Prof%TS_PROFILEWF(q,1:VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,1,didx)
              IF ( .NOT. do_normalized_WFoutput ) THEN     
                 WHERE( aer_flags(1:VLIDORT_FixIn%Cont%TS_NLAYERS) )
-                   GC_aod_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) =    &
-                        GC_aod_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                   GC_aod_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) =    &
+                        GC_aod_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                         / taer_profile(1:VLIDORT_FixIn%Cont%TS_NLAYERS)
                 END WHERE
              END IF
@@ -606,24 +606,24 @@ CONTAINS
                    total_Uwf = total_Uwf + VLIDORT_LinOut%Prof%TS_PROFILEWF(q,il,1,v,3,didx)
                 END IF
              END DO
-             GC_aod_QJacobians(w, 1, v) = total_Qwf              ! Normalized output
-             GC_aod_UJacobians(w, 1, v) = total_Uwf              !
-             IF ( .NOT. do_normalized_WFoutput ) THEN            ! Non-normalized output
-                GC_aod_QJacobians(w, 1, v) = total_Qwf / taertau0! Using tau at ref. lambda
-                GC_aod_UJacobians(w, 1, v) = total_Uwf / taertau0
+             GC_aod_QJacobians(w, 1, v,didx) = total_Qwf              ! Normalized output
+             GC_aod_UJacobians(w, 1, v,didx) = total_Uwf              !
+             IF ( .NOT. do_normalized_WFoutput ) THEN                 ! Non-normalized output
+                GC_aod_QJacobians(w, 1, v,didx) = total_Qwf / taertau0! Using tau at ref. lambda
+                GC_aod_UJacobians(w, 1, v,didx) = total_Uwf / taertau0
              END IF
           ELSE
-             GC_aod_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
+             GC_aod_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
                   VLIDORT_LinOut%Prof%TS_PROFILEWF(q,1:VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,2,didx)
-             GC_aod_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
+             GC_aod_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
                   VLIDORT_LinOut%Prof%TS_PROFILEWF(q,1:VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,3,didx)
              IF ( .NOT. do_normalized_WFoutput ) THEN     
                 WHERE( aer_flags(1:VLIDORT_FixIn%Cont%TS_NLAYERS) )
-                   GC_aod_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) =    &
-                        GC_aod_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                   GC_aod_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) =    &
+                        GC_aod_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                         / taer_profile(1:VLIDORT_FixIn%Cont%TS_NLAYERS)
-                   GC_aod_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) =    &
-                        GC_aod_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                   GC_aod_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) =    &
+                        GC_aod_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                         / taer_profile(1:VLIDORT_FixIn%Cont%TS_NLAYERS)
                 END WHERE
              END IF
@@ -647,17 +647,17 @@ CONTAINS
                 END IF
              END DO
              total_vaerssa = total_aersca / total_aertau
-             GC_assa_Jacobians(w, 1, v) = total_wf       ! Normalized output
-             IF ( .NOT. do_normalized_WFoutput ) THEN    ! Non-normalized output
-                GC_assa_Jacobians(w, 1, v) = total_wf / total_vaerssa
+             GC_assa_Jacobians(w, 1, v,didx) = total_wf       ! Normalized output
+             IF ( .NOT. do_normalized_WFoutput ) THEN         ! Non-normalized output
+                GC_assa_Jacobians(w, 1, v,didx) = total_wf / total_vaerssa
              END IF
           ELSE
-             GC_assa_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
+             GC_assa_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,1:VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,1,didx)
              IF ( .NOT. do_normalized_WFoutput ) THEN     
                 WHERE( aer_flags(1:VLIDORT_FixIn%Cont%TS_NLAYERS) )
-                   GC_assa_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
-                        GC_assa_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                   GC_assa_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
+                        GC_assa_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                         / aer_ssalbs(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS)
                 END WHERE
              END IF
@@ -679,24 +679,24 @@ CONTAINS
                 END IF
              END DO
              total_vaerssa = total_aersca / total_aertau
-             GC_assa_QJacobians(w, 1, v) = total_Qwf     ! Normalized output
-             GC_assa_UJacobians(w, 1, v) = total_Uwf     ! Normalized output
-             IF ( .NOT. do_normalized_WFoutput ) THEN    ! Non-normalized output
-                GC_assa_QJacobians(w, 1, v) = total_Qwf / total_vaerssa
-                GC_assa_UJacobians(w, 1, v) = total_Uwf / total_vaerssa
+             GC_assa_QJacobians(w, 1, v,didx) = total_Qwf     ! Normalized output
+             GC_assa_UJacobians(w, 1, v,didx) = total_Uwf     ! Normalized output
+             IF ( .NOT. do_normalized_WFoutput ) THEN         ! Non-normalized output
+                GC_assa_QJacobians(w, 1, v,didx) = total_Qwf / total_vaerssa
+                GC_assa_UJacobians(w, 1, v,didx) = total_Uwf / total_vaerssa
              END IF
           ELSE
-             GC_assa_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
+             GC_assa_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,1:VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,2,didx)
-             GC_assa_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
+             GC_assa_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,1:VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,3,didx)
              IF ( .NOT. do_normalized_WFoutput ) THEN     
                 WHERE( aer_flags(1:VLIDORT_FixIn%Cont%TS_NLAYERS) )
-                   GC_assa_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
-                        GC_assa_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                   GC_assa_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
+                        GC_assa_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                         / aer_ssalbs(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS)
-                   GC_assa_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
-                        GC_assa_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                   GC_assa_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
+                        GC_assa_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                         / aer_ssalbs(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS)
                 END WHERE
              END IF
@@ -717,17 +717,17 @@ CONTAINS
                    total_wf = total_wf + VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,il,1,v,1,didx)
                 END IF
              END DO
-             GC_cod_Jacobians(w, 1, v) = total_wf        !  Normalized output
-             IF ( .NOT. do_normalized_WFoutput ) THEN    !  Non-normalized output
-                GC_cod_Jacobians(w, 1, v) = total_wf / tcldtau0
+             GC_cod_Jacobians(w, 1, v,didx) = total_wf        !  Normalized output
+             IF ( .NOT. do_normalized_WFoutput ) THEN         !  Non-normalized output
+                GC_cod_Jacobians(w, 1, v,didx) = total_wf / tcldtau0
              END IF
           ELSE
-             GC_cod_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
+             GC_cod_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,1:VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,1,didx)
              IF ( .NOT. do_normalized_WFoutput ) THEN     
                 WHERE( cld_flags(1:VLIDORT_FixIn%Cont%TS_NLAYERS) )
-                   GC_cod_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
-                        GC_cod_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                   GC_cod_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
+                        GC_cod_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                         / tcld_profile(1:VLIDORT_FixIn%Cont%TS_NLAYERS)
                 END WHERE
              END IF
@@ -746,24 +746,24 @@ CONTAINS
                    total_Uwf = total_Uwf + VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,il,1,v,3,didx)
                 END IF
              END DO
-             GC_cod_QJacobians(w, 1, v) = total_Qwf      !  Normalized output
-             GC_cod_UJacobians(w, 1, v) = total_Uwf    
-             IF ( .NOT. do_normalized_WFoutput ) THEN    !  Non-normalized output
-                GC_cod_QJacobians(w, 1, v) = total_Qwf / tcldtau0 
-                GC_cod_UJacobians(w, 1, v) = total_Uwf / tcldtau0 
+             GC_cod_QJacobians(w, 1, v,didx) = total_Qwf      !  Normalized output
+             GC_cod_UJacobians(w, 1, v,didx) = total_Uwf    
+             IF ( .NOT. do_normalized_WFoutput ) THEN         !  Non-normalized output
+                GC_cod_QJacobians(w, 1, v,didx) = total_Qwf / tcldtau0 
+                GC_cod_UJacobians(w, 1, v,didx) = total_Uwf / tcldtau0 
              END IF
           ELSE
-             GC_cod_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
+             GC_cod_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,1:VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,2,didx)
-             GC_cod_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
+             GC_cod_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,1:VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,3,didx)
              IF ( .NOT. do_normalized_WFoutput ) THEN     
                 WHERE( cld_flags(1:VLIDORT_FixIn%Cont%TS_NLAYERS) )
-                   GC_cod_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) =    &
-                        GC_cod_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                   GC_cod_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) =    &
+                        GC_cod_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                         / tcld_profile(1:VLIDORT_FixIn%Cont%TS_NLAYERS)
-                   GC_cod_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) =    &
-                        GC_cod_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                   GC_cod_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) =    &
+                        GC_cod_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                         / tcld_profile(1:VLIDORT_FixIn%Cont%TS_NLAYERS)
                 END WHERE
              END IF
@@ -787,17 +787,17 @@ CONTAINS
                 END IF
              END DO
              total_vcldssa = total_cldsca / total_cldtau
-             GC_cssa_Jacobians(w, 1, v) = total_wf        ! Normalized output
-             IF ( .NOT. do_normalized_WFoutput ) THEN     ! Non-normalized output
-                GC_cssa_Jacobians(w, 1, v) = total_wf /  total_vcldssa
+             GC_cssa_Jacobians(w, 1, v,didx) = total_wf        ! Normalized output
+             IF ( .NOT. do_normalized_WFoutput ) THEN          ! Non-normalized output
+                GC_cssa_Jacobians(w, 1, v,didx) = total_wf /  total_vcldssa
              END IF
           ELSE
-             GC_cssa_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
+             GC_cssa_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,1:VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,1,didx)
              IF ( .NOT. do_normalized_WFoutput ) THEN     
                 WHERE( cld_flags(1:VLIDORT_FixIn%Cont%TS_NLAYERS) )
-                   GC_cssa_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) =    &
-                        GC_cssa_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                   GC_cssa_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) =    &
+                        GC_cssa_Jacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                         / cld_ssalbs(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS)
                 END WHERE
              END IF
@@ -819,24 +819,24 @@ CONTAINS
                 END IF
              END DO
              total_vcldssa = total_cldsca / total_cldtau
-             GC_cssa_QJacobians(w, 1, v) = total_Qwf     ! Normalized output
-             GC_cssa_UJacobians(w, 1, v) = total_Uwf     ! Normalized output
-             IF ( .NOT. do_normalized_WFoutput ) THEN    ! Non-normalized output
-                GC_cssa_QJacobians(w, 1, v) = total_Qwf / total_vcldssa
-                GC_cssa_UJacobians(w, 1, v) = total_Uwf / total_vcldssa
+             GC_cssa_QJacobians(w, 1, v,didx) = total_Qwf     ! Normalized output
+             GC_cssa_UJacobians(w, 1, v,didx) = total_Uwf     ! Normalized output
+             IF ( .NOT. do_normalized_WFoutput ) THEN         ! Non-normalized output
+                GC_cssa_QJacobians(w, 1, v,didx) = total_Qwf / total_vcldssa
+                GC_cssa_UJacobians(w, 1, v,didx) = total_Uwf / total_vcldssa
              END IF
           ELSE
-             GC_cssa_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
+             GC_cssa_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,1:VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,2,didx)
-             GC_cssa_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) = &
+             GC_cssa_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,1:VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,3,didx)
              IF ( .NOT. do_normalized_WFoutput ) THEN     
                 WHERE( cld_flags(1:VLIDORT_FixIn%Cont%TS_NLAYERS) )
-                   GC_cssa_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) =    &
-                        GC_cssa_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                   GC_cssa_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) =    &
+                        GC_cssa_QJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                         / cld_ssalbs(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS)
-                   GC_cssa_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) =    &
-                        GC_cssa_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v) &
+                   GC_cssa_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) =    &
+                        GC_cssa_UJacobians(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v,didx) &
                         / cld_ssalbs(w, 1:VLIDORT_FixIn%Cont%TS_NLAYERS)
                 END WHERE
              END IF
@@ -852,10 +852,10 @@ CONTAINS
        IF ( do_Jacobians ) THEN
           DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
              IF ( do_normalized_WFoutput ) THEN   !  Normalized output
-                GC_Surfalbedo_Jacobians(w,v) = &
+                GC_Surfalbedo_Jacobians(w,v,didx) = &
                      VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,1,didx) * ground_ler(w) 
              ELSE                                 !  Non-normalized output
-                GC_Surfalbedo_Jacobians(w,v) = &
+                GC_Surfalbedo_Jacobians(w,v,didx) = &
                      VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,1,didx) 
              END IF
           END DO
@@ -867,14 +867,14 @@ CONTAINS
        IF ( do_QU_Jacobians ) THEN
           DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
              IF ( do_normalized_WFoutput ) THEN   !  Normalized output
-                GC_Surfalbedo_QJacobians(w,v) = &
+                GC_Surfalbedo_QJacobians(w,v,didx) = &
                      VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,2,didx) * ground_ler(w) 
-                GC_Surfalbedo_UJacobians(w,v) = &
+                GC_Surfalbedo_UJacobians(w,v,didx) = &
                      VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,3,didx) * ground_ler(w) 
              ELSE                                !  Non-normalized output
-                GC_Surfalbedo_QJacobians(w,v) = &
+                GC_Surfalbedo_QJacobians(w,v,didx) = &
                      VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,2,didx)  
-                GC_Surfalbedo_UJacobians(w,v) = &
+                GC_Surfalbedo_UJacobians(w,v,didx) = &
                      VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,3,didx)  
              END IF
           END DO
@@ -888,10 +888,10 @@ CONTAINS
        IF ( do_Jacobians ) THEN
           DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
              IF ( do_normalized_WFoutput ) THEN  !  Normalized output
-                GC_Windspeed_Jacobians(w,v) = &
+                GC_Windspeed_Jacobians(w,v,didx) = &
                      wind_speed * VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,1,didx)
              ELSE                                !  Non-normalized output
-                GC_Windspeed_Jacobians(w,v) = &
+                GC_Windspeed_Jacobians(w,v,didx) = &
                      VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,1,didx)
              END IF
           END DO
@@ -903,13 +903,13 @@ CONTAINS
        IF ( do_QU_Jacobians ) THEN
           DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
              IF ( do_normalized_WFoutput ) THEN   !  Normalized output
-                GC_Windspeed_QJacobians(w,v) = &
+                GC_Windspeed_QJacobians(w,v,didx) = &
                      wind_speed * VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,2,didx)
-                GC_Windspeed_UJacobians(w,v) = &
+                GC_Windspeed_UJacobians(w,v,didx) = &
                      wind_speed * VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,3,didx)
              ELSE                                 !  Non-normalized output
-                GC_Windspeed_QJacobians(w,v) = VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,2,didx)
-                GC_Windspeed_UJacobians(w,v) = VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,3,didx)
+                GC_Windspeed_QJacobians(w,v,didx) = VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,2,didx)
+                GC_Windspeed_UJacobians(w,v,didx) = VLIDORT_LINOUT%SURF%TS_SURFACEWF(1,1,v,3,didx)
              END IF
           END DO
        END IF
@@ -925,10 +925,10 @@ CONTAINS
           deltp = pressures(VLIDORT_FixIn%Cont%TS_NLAYERS) - &
                   pressures(VLIDORT_FixIn%Cont%TS_NLAYERS-1)
           IF ( do_normalized_WFoutput ) THEN         !  Normalized output
-             GC_sfcprs_Jacobians(w,v) = &
+             GC_sfcprs_Jacobians(w,v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,1,didx) 
           ELSE                                       !  Non-normalized output
-             GC_sfcprs_Jacobians(w,v) = &
+             GC_sfcprs_Jacobians(w,v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,1,didx) &
                   / deltp
           END IF
@@ -944,15 +944,15 @@ CONTAINS
           deltp = pressures(VLIDORT_FixIn%Cont%TS_NLAYERS) - &
                   pressures(VLIDORT_FixIn%Cont%TS_NLAYERS-1)
           IF ( do_normalized_WFoutput ) THEN        !  Normalized output
-             GC_sfcprs_QJacobians(w,v) = &
+             GC_sfcprs_QJacobians(w,v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,2,didx) 
-             GC_sfcprs_UJacobians(w,v) = &
+             GC_sfcprs_UJacobians(w,v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,3,didx) 
           ELSE                                      !  Non-normalized output
-             GC_sfcprs_QJacobians(w,v) = &
+             GC_sfcprs_QJacobians(w,v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,2,didx) &
                   / deltp
-             GC_sfcprs_UJacobians(w,v) = &
+             GC_sfcprs_UJacobians(w,v,didx) = &
                   VLIDORT_LINOUT%PROF%TS_PROFILEWF(q,VLIDORT_FixIn%Cont%TS_NLAYERS,1,v,3,didx) &
                   / deltp
           END IF
@@ -964,25 +964,25 @@ CONTAINS
     ! -----------------------------------------------------
     IF (do_cfrac_jacobians) THEN
        IF (cfrac .GT. 0.0d0 .AND. cfrac .LT. 1.0d0 ) THEN
-          GC_cfrac_jacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) =          &
+          GC_cfrac_jacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES,didx) =     &
                stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1, didx, 2)   &
                - stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1, didx, 1)
        ELSE
-          GC_cfrac_Jacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) = 0.0d0
+          GC_cfrac_Jacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES,didx) = 0.0d0
        END IF
     END IF
     
     IF (do_cfrac_jacobians .AND. do_QU_Jacobians) THEN
        IF (cfrac .GT. 0.0d0 .AND. cfrac .LT. 1.0d0 ) THEN
-          GC_cfrac_QJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) =         &
+          GC_cfrac_QJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES,didx) =    &
                stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 2, didx, 2)   &
                - stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 2, didx, 1)
-          GC_cfrac_UJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) =   &
+          GC_cfrac_UJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES,didx) =    &
                stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 3, didx, 2)   &
                - stokes_clrcld(1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 3, didx, 1)
        ELSE
-          GC_cfrac_QJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) = 0.0d0
-          GC_cfrac_UJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES) = 0.0d0
+          GC_cfrac_QJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES,didx) = 0.0d0
+          GC_cfrac_UJacobians(w, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES,didx) = 0.0d0
        END IF
     END IF
 

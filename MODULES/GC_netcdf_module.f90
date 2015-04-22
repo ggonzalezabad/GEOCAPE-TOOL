@@ -6,7 +6,7 @@ MODULE GC_netcdf_module
                                   which_gases, gas_partialcolumns, aircolumns, cfrac, cld_tops,        &
                                   lambertian_cldalb, taer_profile, tcld_profile, opdeps, ssalbs,       &
                                   aer_opdeps, aer_ssalbs, cld_opdeps, cld_ssalbs, ground_ler,          &
-                                  wind_speed, VLIDORT_FixIn, lambda_dw,                                &
+                                  wind_speed, VLIDORT_FixIn, lambda_dw, clambdas, nclambdas,           &
                                   lambda_dfw, use_wavelength, aer_reflambda, cld_reflambda,            &
                                   do_vector_calculation, do_StokesQU_output, do_Jacobians,             &
                                   do_QU_Jacobians, do_AMF_calculation, do_T_Jacobians,                 &
@@ -76,45 +76,45 @@ CONTAINS
          do_QU_Jacobians, do_AMF_calculation, do_T_Jacobians, do_sfcprs_Jacobians,    &
          do_aod_Jacobians, do_assa_Jacobians, do_cod_Jacobians, do_cssa_Jacobians,    &
          do_cfrac_Jacobians, do_aer_columnwf, do_cld_columnwf, use_lambertian,        &
-         solar_cspec_data(W), GC_radiances(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),    &
-         GC_Qvalues(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                           &
-         GC_Uvalues(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                           &
-         GC_Tracegas_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases),  &
-         GC_Scattering_Weights(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),            &
-         GC_AMFs(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases),                              &
-         GC_Tracegas_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases), &
-         GC_Tracegas_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases), &
-         GC_Temperature_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),         &
-         GC_Surfalbedo_Jacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                        &
-         GC_Surfalbedo_QJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                       &
-         GC_Surfalbedo_UJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                       &
-         GC_Windspeed_Jacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                         &
-         GC_Windspeed_QJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                        &
-         GC_Windspeed_UJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                        &
-         GC_aod_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                 &
-         GC_aod_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                &
-         GC_aod_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                &
-         GC_assa_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                &
-         GC_assa_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),               &
-         GC_assa_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),               &
-         GC_cod_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                 &
-         GC_cod_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                &
-         GC_cod_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                &
-         GC_cssa_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                &
-         GC_cssa_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),               &
-         GC_cssa_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),               &
-         GC_cfrac_Jacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                             &
-         GC_cfrac_QJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                            &
-         GC_cfrac_UJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                            &
-         GC_sfcprs_Jacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                            &
-         GC_sfcprs_QJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                           &
-         GC_sfcprs_UJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES),                           &
-         GC_flux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                                    &
-         GC_Qflux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                                   &
-         GC_Uflux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                                   &
-         GC_direct_flux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                             &
-         GC_Qdirect_flux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                            &
-         GC_Udirect_flux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES),                            &
+         solar_cspec_data(W), GC_radiances(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),    &
+         GC_Qvalues(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
+         GC_Uvalues(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
+         GC_Tracegas_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx),  &
+         GC_Scattering_Weights(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),            &
+         GC_AMFs(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx),                              &
+         GC_Tracegas_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx), &
+         GC_Tracegas_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx), &
+         GC_Temperature_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),         &
+         GC_Surfalbedo_Jacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                        &
+         GC_Surfalbedo_QJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                       &
+         GC_Surfalbedo_UJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                       &
+         GC_Windspeed_Jacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                         &
+         GC_Windspeed_QJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                        &
+         GC_Windspeed_UJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                        &
+         GC_aod_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                 &
+         GC_aod_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
+         GC_aod_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
+         GC_assa_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
+         GC_assa_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
+         GC_assa_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
+         GC_cod_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                 &
+         GC_cod_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
+         GC_cod_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
+         GC_cssa_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
+         GC_cssa_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
+         GC_cssa_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
+         GC_cfrac_Jacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                             &
+         GC_cfrac_QJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                            &
+         GC_cfrac_UJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                            &
+         GC_sfcprs_Jacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                            &
+         GC_sfcprs_QJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
+         GC_sfcprs_UJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
+         GC_flux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                                    &
+         GC_Qflux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                                   &
+         GC_Uflux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                                   &
+         GC_direct_flux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                             &
+         GC_Qdirect_flux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                            &
+         GC_Udirect_flux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                            &
          W, tmperror, error)
 
     IF (error) CALL write_err_message (.TRUE., tmperror)
@@ -191,7 +191,11 @@ CONTAINS
     gasdim  = ncddef (ncid, 'ngas', ngases, rcode)
     lvldim  = ncddef (ncid, 'nlevel', GC_nlayers+1, rcode)
     laydim  = ncddef (ncid, 'nlayer', GC_nlayers, rcode)
-    wavdim  = ncddef (ncid, 'nw', nlambdas, rcode)
+    IF ( .NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN
+       wavdim  = ncddef (ncid, 'nw', nclambdas, rcode)
+    ELSE
+       wavdim  = ncddef (ncid, 'nw', nlambdas, rcode)
+    END IF
     geodim  = ncddef (ncid, 'ngeom',  ngeom, rcode)
     nsqdim  = ncddef (ncid, 'nstokessq', NSTOKESSQ, rcode)
     
@@ -380,7 +384,7 @@ CONTAINS
        bsaid = ncvdef(ncid, 'BSA', ncfloat, 1, onedim, rcode)
        brdfid = ncvdef(ncid, 'BRDF', ncfloat, 4, brdfdim, rcode)
     endif
-    
+
     !=============================================================================
     ! Assign attributes (meta-data) to the various variables:
     !============================================================================= 
@@ -406,7 +410,11 @@ CONTAINS
     call ncapt (ncid, ncglobal, 'nvza',         nclong,  1, GC_n_view_angles, rcode)
     call ncapt (ncid, ncglobal, 'naza',         nclong,  1, GC_n_azimuths, rcode)
     call ncapt (ncid, ncglobal, 'ngeometries',  nclong,  1, ngeom, rcode)
-    call ncapt (ncid, ncglobal, 'nwavelengths', nclong,  1, nlambdas, rcode)
+    IF ( .NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN
+       call ncapt (ncid, ncglobal, 'nwavelengths', nclong,  1, nclambdas, rcode)
+    ELSE
+       call ncapt (ncid, ncglobal, 'nwavelengths', nclong,  1, nlambdas, rcode)
+    END IF
     call ncapt (ncid, ncglobal, 'nlayers',      nclong,  1, GC_nlayers, rcode)
     call ncapt (ncid, ncglobal, 'ngas',         nclong,  1, ngases, rcode)
     
@@ -584,8 +592,13 @@ CONTAINS
          real(VLIDORT_ModIn%MUserVal%TS_USER_RELAZMS(1:GC_n_azimuths), kind=4), rcode)
     call ncvpt (ncid, lvlid, 1, GC_nlayers+1, &
          real(heights(0:GC_nlayers), kind=4), rcode)
-    call ncvpt (ncid, wavid, 1, nlambdas, &
-         real(lambdas(1:nlambdas), kind=4), rcode)
+    IF ( .NOT. do_effcrs .AND. lambda_resolution /= 0.0d0) THEN
+       call ncvpt (ncid, wavid, 1, nclambdas, &
+            real(clambdas(1:nclambdas), kind=4), rcode)
+    ELSE
+       call ncvpt (ncid, wavid, 1, nlambdas, &
+            real(lambdas(1:nlambdas), kind=4), rcode)
+    END IF
     
     do i = 1, ngases
        gas_indices(i) = i
