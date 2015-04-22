@@ -543,33 +543,53 @@ program geocape_tools_v2p6
          ! ============
          CALL save_results (yn_error)
          
-         ! ----------------------------------------------
-         ! Need to convolve radiances with slit functions
-         ! ----------------------------------------------
-         IF (.NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN
-            
-            CALL convolve_slit(yn_error)
-            
-         END IF
+         ! --------------------------   
+      END DO ! End directions loop
+      ! --------------------------
+      
+      ! -------------------
+   END DO ! End wavelength loop
+   ! -------------------
          
+   ! -----------------------------------------------
+   ! Loop over directions (upwelling or downwelling)
+   ! -----------------------------------------------
+   DO idir = 1, ndir
+      
+      didx = idix(idir)
+      ! ----------------------------------------------
+      ! Need to convolve radiances with slit functions
+      ! ----------------------------------------------
+      IF (.NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN
+         
+         CALL convolve_slit(yn_error)
          !  ##################################################################
          !  ##################################################################
          !                 W R I T E    R E S U L T S
          !  ##################################################################
          !  ##################################################################
-         
-         ! -----------------
-         ! NETCDF file write
-         ! -----------------
-         CALL netcdf_output (yn_error)
-         
+         DO W = 1, nclambdas
+            ! -----------------
+            ! NETCDF file write
+            ! -----------------
+            CALL netcdf_output (yn_error)
+         END DO
+      ELSE
+      !  ##################################################################
+      !  ##################################################################
+      !                 W R I T E    R E S U L T S
+      !  ##################################################################
+      !  ##################################################################
+         DO W = 1, nlambdas
+            ! -----------------
+            ! NETCDF file write
+            ! -----------------
+            CALL netcdf_output (yn_error)
+         END DO
+      END IF
       ! --------------------------   
-      END DO ! End directions loop
-      ! --------------------------
-      
-   ! -------------------
-   END DO ! End wavelength loop
-   ! -------------------
+   END DO ! End directions loop
+   ! --------------------------
 
    ! ----------------
    ! Close debug file
