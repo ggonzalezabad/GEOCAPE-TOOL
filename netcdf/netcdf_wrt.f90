@@ -41,6 +41,7 @@ subroutine netcdf_wrt ( fname,        & !Filename
      direct_flux, qdirect_flux,                        & !Direct flux
      udirect_flux,                                     & !Direct flux
      lambda,                                           & !Wavelength
+     outlev,                                           & !Output level
      message, fail)   
   
   implicit none
@@ -49,8 +50,8 @@ subroutine netcdf_wrt ( fname,        & !Filename
   !=================================  
   !     Input/out variables
   !=================================
-  character(len=256), intent(in)                  :: fname                   !Filename
-  integer(kind=4),    intent(in)                  :: nz, ngas, lambda        !Number of layers and number of gases
+  character(len=256), intent(in)                  :: fname                    !Filename
+  integer(kind=4),    intent(in)                  :: nz, ngas, lambda, outlev !Number of layers, number of gases, wavelength (index) and  output level (index)
   integer(kind=4),    intent(in)                  :: nsza, ngeom !Number of solar zenith angles, viewing zenith angles, 
                                                                              !azimuth angles and geometries
   real(kind=8), dimension(1), intent(in)          :: surfalb, irradiance     !Surface albedo and irradiance
@@ -118,13 +119,11 @@ subroutine netcdf_wrt ( fname,        & !Filename
        sfcprsuwfid, aoduwfid, assauwfid, coduwfid, cssauwfid, aodsid, assasid, &
        codsid, cssasid, scatwtid, odsid, ssasid, amfid, gaswfid, gasqwfid, &
        gasuwfid, tempwfid, fluxid, dfluxid, qfluxid, ufluxid, qdfluxid, udfluxid
-  integer, dimension(2)    :: gascol_dims, wavalt_dims, wavgas_dims, wavgeo_dims, wavsza_dims
-  integer, dimension(3)    :: wavaltgeo_dims, wavgeogas_dims
-  integer, dimension(4)    :: wavaltgeogas_dims, brdfdim
   integer, dimension(1)    :: ndimstart1, ndimcount1
   integer, dimension(2)    :: ndimstart2, ndimcount2
   integer, dimension(3)    :: ndimstart3, ndimcount3
-  integer, dimension(4)    :: ndimstart4, ndimcount4
+  integer, dimension(4)    :: ndimstart4, ndimcount4 
+  integer, dimension(5)    :: ndimstart5, ndimcount5 
 
   fail = .false.; message = ' '
 
@@ -133,23 +132,6 @@ subroutine netcdf_wrt ( fname,        & !Filename
      message =  ' error in netcdf_out: nccre failed'
      fail = .true.; return
   endif
-
-  !=============================================================================
-  ! Create a vector containing the often referred to spacetime coordinates:
-  !=============================================================================
-  gascol_dims(1) = laydim; gascol_dims(2) = gasdim
-  wavalt_dims(1) = wavdim; wavalt_dims(2) = laydim
-  wavgas_dims(1) = wavdim; wavgas_dims(2) = gasdim
-  wavgeo_dims(1) = wavdim; wavgeo_dims(2) = geodim
-  wavsza_dims(1) = wavdim; wavsza_dims(2) = szadim
-
-  wavaltgeo_dims(1) = wavdim; wavaltgeo_dims(2) = laydim; wavaltgeo_dims(3) = geodim
-  wavgeogas_dims(1) = wavdim; wavgeogas_dims(2) = geodim; wavgeogas_dims(3) = gasdim
-
-  wavaltgeogas_dims(1) = wavdim; wavaltgeogas_dims(2) = laydim
-  wavaltgeogas_dims(3) = geodim; wavaltgeogas_dims(4) = gasdim
-
-  brdfdim(1) = nsqdim; brdfdim(2) = vzadim; brdfdim(3)=azadim; brdfdim(4) = szadim
 
   !=============================================================================
   ! Create the dependent variables:
@@ -166,7 +148,7 @@ subroutine netcdf_wrt ( fname,        & !Filename
   codsid  = ncvid(ncid, 'cods', rcode)
   cssasid = ncvid(ncid, 'cssas', rcode)
 
-  ! variables with 2D, wavdim, geodim
+  ! variables with 3D, wavdim, geodim, olvdim
   radid   = ncvid(ncid, 'radiance', rcode)
   fluxid  = ncvid(ncid, 'flux', rcode)
   dfluxid = ncvid(ncid, 'direct_flux', rcode)
@@ -215,7 +197,7 @@ subroutine netcdf_wrt ( fname,        & !Filename
 
   endif
 
-  ! variables with 3D, wavdim, laydim, geodim
+  ! variables with 4D, wavdim, laydim, geodim, olvdim
   if (do_AMF_calc) then
      scatwtid = ncvid(ncid, 'scatweights', rcode)
   endif
@@ -252,12 +234,12 @@ subroutine netcdf_wrt ( fname,        & !Filename
      endif
   endif
 
-  ! variables with 3D, wavdim, geodim, gasdim
+  ! variables with 4D, wavdim, geodim, gasdim, olvdim
   if (do_AMF_calc) then
      amfid = ncvid(ncid, 'amf', rcode)
   endif
 
-  ! variables with 4D, wavdim, laydim, geodim, gasdim
+  ! variables with 5D, wavdim, laydim, geodim, gasdim, ovdim
   if (do_Jacobian) then
      gaswfid = ncvid(ncid,  'gas_jac', rcode)
      if (do_QU_Jacobian) then
@@ -272,61 +254,61 @@ subroutine netcdf_wrt ( fname,        & !Filename
   call ncvpt (ncid, irradid, ndimstart1, ndimcount1, real(irradiance(1), kind=4), rcode)
   call ncvpt (ncid, sfcid,   ndimstart1, ndimcount1, real(surfalb(1), kind=4),    rcode)
 
-  ! write 2D variables with wavdim,geodim
-  ndimstart2 = (/ lambda, 1 /)
-  ndimcount2 = (/  1, ngeom /)  
-  call ncvpt (ncid, radid,   ndimstart2, ndimcount2, real(radiance(1:ngeom), kind=4), rcode)
-  ndimstart2 = (/ lambda, 1 /)
-  ndimcount2 = (/   1, nsza /)  
-  call ncvpt (ncid, fluxid,  ndimstart2, ndimcount2, real(flux(1:nsza), kind=4), rcode)
-  call ncvpt (ncid, dfluxid, ndimstart2, ndimcount2, real(direct_flux(1:nsza), kind=4), rcode)
+  ! write 3D variables with wavdim,geodim,olvdim
+  ndimstart3 = (/ lambda, 1 , outlev/)
+  ndimcount3 = (/  1, ngeom , 1/)  
+  call ncvpt (ncid, radid,   ndimstart3, ndimcount3, real(radiance(1:ngeom), kind=4), rcode)
+  ndimstart3 = (/ lambda, 1 , outlev/)
+  ndimcount3 = (/   1, nsza , 1/)  
+  call ncvpt (ncid, fluxid,  ndimstart3, ndimcount3, real(flux(1:nsza), kind=4), rcode)
+  call ncvpt (ncid, dfluxid, ndimstart3, ndimcount3, real(direct_flux(1:nsza), kind=4), rcode)
   if (do_vector_calc .and. do_QU_output) then
-     ndimstart2 = (/ lambda, 1 /)
-     ndimcount2 = (/ 1 , ngeom /)
-     call ncvpt (ncid, qid, ndimstart2, ndimcount2, real(q(1:ngeom), kind=4), rcode)
-     call ncvpt (ncid, uid, ndimstart2, ndimcount2, real(u(1:ngeom), kind=4), rcode)
-     ndimstart2 = (/ lambda, 1 /)
-     ndimcount2 = (/   1, nsza /)  
-     call ncvpt (ncid, qfluxid,  ndimstart2, ndimcount2, real(qflux(1:nsza), kind=4), rcode)
-     call ncvpt (ncid, ufluxid,  ndimstart2, ndimcount2, real(uflux(1:nsza), kind=4), rcode)
-     call ncvpt (ncid, qdfluxid, ndimstart2, ndimcount2, real(qdirect_flux(1:nsza), kind=4), rcode)
-     call ncvpt (ncid, udfluxid, ndimstart2, ndimcount2, real(udirect_flux(1:nsza), kind=4), rcode)
+     ndimstart3 = (/ lambda, 1 , outlev/)
+     ndimcount3 = (/ 1 , ngeom , 1/)
+     call ncvpt (ncid, qid, ndimstart3, ndimcount3, real(q(1:ngeom), kind=4), rcode)
+     call ncvpt (ncid, uid, ndimstart3, ndimcount3, real(u(1:ngeom), kind=4), rcode)
+     ndimstart3 = (/ lambda, 1 , outlev/)
+     ndimcount3 = (/   1, nsza , 1/)  
+     call ncvpt (ncid, qfluxid,  ndimstart3, ndimcount3, real(qflux(1:nsza), kind=4), rcode)
+     call ncvpt (ncid, ufluxid,  ndimstart3, ndimcount3, real(uflux(1:nsza), kind=4), rcode)
+     call ncvpt (ncid, qdfluxid, ndimstart3, ndimcount3, real(qdirect_flux(1:nsza), kind=4), rcode)
+     call ncvpt (ncid, udfluxid, ndimstart3, ndimcount3, real(udirect_flux(1:nsza), kind=4), rcode)
   endif
 
-  ndimstart2 = (/ lambda, 1 /)
-  ndimcount2 = (/  1, ngeom /)  
+  ndimstart3 = (/ lambda, 1 , outlev/)
+  ndimcount3 = (/  1, ngeom , 1/)  
   if (do_Jacobian) then
      if (use_lambertian) then
-        call ncvpt (ncid, sfcwfid, ndimstart2, ndimcount2, real(SurfalbJacobian(1:ngeom), kind=4), rcode)
+        call ncvpt (ncid, sfcwfid, ndimstart3, ndimcount3, real(SurfalbJacobian(1:ngeom), kind=4), rcode)
      else 
-        call ncvpt (ncid, wswfid, ndimstart2, ndimcount2, real(WSJacobian(1:ngeom), kind=4), rcode)
+        call ncvpt (ncid, wswfid, ndimstart3, ndimcount3, real(WSJacobian(1:ngeom), kind=4), rcode)
      endif
      if (do_cfrac_Jacobian) &
-          call ncvpt (ncid, cfracwfid,  ndimstart2, ndimcount2, real(cfracJacobian(1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, cfracwfid,  ndimstart3, ndimcount3, real(cfracJacobian(1:ngeom), kind=4), rcode)
      if (do_sfcprs_Jacobian) &
-          call ncvpt (ncid, sfcprswfid, ndimstart2, ndimcount2, real(sfcprsJacobian(1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, sfcprswfid, ndimstart3, ndimcount3, real(sfcprsJacobian(1:ngeom), kind=4), rcode)
   endif
 
   if (do_QU_Jacobian) then
      if (use_lambertian) then
-        call ncvpt (ncid, sfcqwfid, ndimstart2, ndimcount2, real(SurfalbQJacobian(1:ngeom), kind=4), rcode)
+        call ncvpt (ncid, sfcqwfid, ndimstart3, ndimcount3, real(SurfalbQJacobian(1:ngeom), kind=4), rcode)
      else 
-        call ncvpt (ncid, wsqwfid,  ndimstart2, ndimcount2, real(WSQJacobian(1:ngeom), kind=4), rcode)
+        call ncvpt (ncid, wsqwfid,  ndimstart3, ndimcount3, real(WSQJacobian(1:ngeom), kind=4), rcode)
      endif
      if (do_cfrac_Jacobian) &
-          call ncvpt (ncid, cfracqwfid, ndimstart2, ndimcount2, real(cfracQJacobian(1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, cfracqwfid, ndimstart3, ndimcount3, real(cfracQJacobian(1:ngeom), kind=4), rcode)
      if (do_sfcprs_Jacobian) &
-          call ncvpt (ncid, sfcprsqwfid, ndimstart2, ndimcount2, real(sfcprsQJacobian(1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, sfcprsqwfid, ndimstart3, ndimcount3, real(sfcprsQJacobian(1:ngeom), kind=4), rcode)
 
      if (use_lambertian) then
-        call ncvpt (ncid, sfcuwfid, ndimstart2, ndimcount2, real(SurfalbUJacobian(1:ngeom), kind=4), rcode)
+        call ncvpt (ncid, sfcuwfid, ndimstart3, ndimcount3, real(SurfalbUJacobian(1:ngeom), kind=4), rcode)
      else 
-        call ncvpt (ncid, wsuwfid, ndimstart2, ndimcount2, real(WSUJacobian(1:ngeom), kind=4), rcode)
+        call ncvpt (ncid, wsuwfid, ndimstart3, ndimcount3, real(WSUJacobian(1:ngeom), kind=4), rcode)
      endif
      if (do_cfrac_Jacobian) &
-          call ncvpt (ncid, cfracuwfid, ndimstart2, ndimcount2, real(cfracUJacobian(1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, cfracuwfid, ndimstart3, ndimcount3, real(cfracUJacobian(1:ngeom), kind=4), rcode)
      if (do_sfcprs_Jacobian) &
-          call ncvpt (ncid, sfcprsuwfid, ndimstart2, ndimcount2, real(sfcprsUJacobian(1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, sfcprsuwfid, ndimstart3, ndimcount3, real(sfcprsUJacobian(1:ngeom), kind=4), rcode)
   endif
 
   ! 2D, variables, wavdim, laydim
@@ -339,61 +321,61 @@ subroutine netcdf_wrt ( fname,        & !Filename
   call ncvpt (ncid, codsid,  ndimstart2, ndimcount2, real(cods(1,1:nz), kind=4), rcode)
   call ncvpt (ncid, cssasid, ndimstart2, ndimcount2, real(cssas(1,1:nz), kind=4), rcode)
 
-  ! 3D variables, wavdim, altdim, geodim
-  ndimstart3 = (/ lambda, 1, 1 /)
-  ndimcount3 = (/ 1, nz, ngeom /) 
+  ! 4D variables, wavdim, altdim, geodim, olvdim
+  ndimstart4 = (/ lambda, 1, 1 , outlev/)
+  ndimcount4 = (/ 1, nz, ngeom , 1/) 
   if (do_AMF_calc) then
-     call ncvpt (ncid, scatwtid, ndimstart3, ndimcount3, real(ScatWeights(1:nz,1:ngeom), kind=4), rcode)
+     call ncvpt (ncid, scatwtid, ndimstart4, ndimcount4, real(ScatWeights(1:nz,1:ngeom), kind=4), rcode)
   endif
 
   if (do_Jacobian) then
      if (do_T_Jacobian) &
-          call ncvpt (ncid, tempwfid, ndimstart3, ndimcount3, real(TJacobian(1:nz,1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, tempwfid, ndimstart4, ndimcount4, real(TJacobian(1:nz,1:ngeom), kind=4), rcode)
      if (.not. do_aer_columnwf .and. do_aod_Jacobian) &
-          call ncvpt (ncid, aodwfid, ndimstart3, ndimcount3, real(aodJacobian(1:nz,1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, aodwfid, ndimstart4, ndimcount4, real(aodJacobian(1:nz,1:ngeom), kind=4), rcode)
      if (.not. do_aer_columnwf .and. do_assa_Jacobian) &
-          call ncvpt (ncid, assawfid, ndimstart3, ndimcount3, real(assaJacobian(1:nz,1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, assawfid, ndimstart4, ndimcount4, real(assaJacobian(1:nz,1:ngeom), kind=4), rcode)
      if (.not. do_cld_columnwf .and. do_cod_Jacobian) &
-          call ncvpt (ncid, codwfid, ndimstart3, ndimcount3, real(codJacobian(1:nz,1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, codwfid, ndimstart4, ndimcount4, real(codJacobian(1:nz,1:ngeom), kind=4), rcode)
      if (.not. do_cld_columnwf .and. do_cssa_Jacobian) &
-          call ncvpt (ncid, cssawfid, ndimstart3, ndimcount3, real(cssaJacobian(1:nz,1:ngeom), kind=4), rcode)   
+          call ncvpt (ncid, cssawfid, ndimstart4, ndimcount4, real(cssaJacobian(1:nz,1:ngeom), kind=4), rcode)   
   endif
 
   if (do_QU_Jacobian) then
      if (.not. do_aer_columnwf .and. do_aod_Jacobian) &
-          call ncvpt (ncid, aodqwfid, ndimstart3, ndimcount3, real(aodQJacobian(1:nz,1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, aodqwfid, ndimstart4, ndimcount4, real(aodQJacobian(1:nz,1:ngeom), kind=4), rcode)
      if (.not. do_aer_columnwf .and. do_assa_Jacobian) &
-          call ncvpt (ncid, assaqwfid, ndimstart3, ndimcount3, real(assaQJacobian(1:nz,1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, assaqwfid, ndimstart4, ndimcount4, real(assaQJacobian(1:nz,1:ngeom), kind=4), rcode)
      if (.not. do_cld_columnwf .and. do_cod_Jacobian) &
-          call ncvpt (ncid, codqwfid, ndimstart3, ndimcount3, real(codQJacobian(1:nz,1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, codqwfid, ndimstart4, ndimcount4, real(codQJacobian(1:nz,1:ngeom), kind=4), rcode)
      if (.not. do_cld_columnwf .and. do_cssa_Jacobian) &
-          call ncvpt (ncid, cssaqwfid, ndimstart3, ndimcount3, real(cssaQJacobian(1:nz,1:ngeom), kind=4), rcode) 
+          call ncvpt (ncid, cssaqwfid, ndimstart4, ndimcount4, real(cssaQJacobian(1:nz,1:ngeom), kind=4), rcode) 
 
      if (.not. do_aer_columnwf .and. do_aod_Jacobian) &
-          call ncvpt (ncid, aoduwfid, ndimstart3, ndimcount3, real(aodUJacobian(1:nz,1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, aoduwfid, ndimstart4, ndimcount4, real(aodUJacobian(1:nz,1:ngeom), kind=4), rcode)
      if (.not. do_aer_columnwf .and. do_assa_Jacobian) &
-          call ncvpt (ncid, assauwfid, ndimstart3, ndimcount3, real(assaUJacobian(1:nz,1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, assauwfid, ndimstart4, ndimcount4, real(assaUJacobian(1:nz,1:ngeom), kind=4), rcode)
      if (.not. do_cld_columnwf .and. do_cod_Jacobian) &
-          call ncvpt (ncid, coduwfid, ndimstart3, ndimcount3, real(codUJacobian(1:nz,1:ngeom), kind=4), rcode)
+          call ncvpt (ncid, coduwfid, ndimstart4, ndimcount4, real(codUJacobian(1:nz,1:ngeom), kind=4), rcode)
      if (.not. do_cld_columnwf .and. do_cssa_Jacobian) &
-          call ncvpt (ncid, cssauwfid, ndimstart3, ndimcount3, real(cssaUJacobian(1:nz,1:ngeom), kind=4), rcode)    
+          call ncvpt (ncid, cssauwfid, ndimstart4, ndimcount4, real(cssaUJacobian(1:nz,1:ngeom), kind=4), rcode)    
   endif
 
-  ! 3D variables, wavdim, geodim, gasdim
+  ! 4D variables, wavdim, geodim, gasdim, olvdim
   if (do_AMF_calc) then
-     ndimstart3 = (/ lambda, 1, 1/)
-     ndimcount3 = (/ 1, ngeom, ngas /) 
-     call ncvpt (ncid, amfid, ndimstart3, ndimcount3, real(AMF(1:ngeom,1:ngas), kind=4), rcode)
+     ndimstart4 = (/ lambda, 1, 1, outlev/)
+     ndimcount4 = (/ 1, ngeom, ngas, 1 /) 
+     call ncvpt (ncid, amfid, ndimstart4, ndimcount4, real(AMF(1:ngeom,1:ngas), kind=4), rcode)
   endif
 
-  ! 4D variables, wavdim, laydim, geodim, gasdim
-  ndimstart4 = (/ lambda, 1, 1, 1 /)
-  ndimcount4 = (/ 1, nz, ngeom, ngas /) 
+  ! 5D variables, wavdim, laydim, geodim, gasdim, olvdim
+  ndimstart5 = (/ lambda, 1, 1, 1, outlev /)
+  ndimcount5 = (/ 1, nz, ngeom, ngas, 1 /) 
   if (do_Jacobian) then
-     call ncvpt (ncid, gaswfid, ndimstart4, ndimcount4, real(Gas_Jacobian(1:nz,1:ngeom,1:ngas), kind=4), rcode)  
+     call ncvpt (ncid, gaswfid, ndimstart5, ndimcount5, real(Gas_Jacobian(1:nz,1:ngeom,1:ngas), kind=4), rcode)  
      if (do_QU_Jacobian) then
-        call ncvpt (ncid, gasqwfid, ndimstart4, ndimcount4, real(Gas_QJacobian(1:nz,1:ngeom,1:ngas), kind=4), rcode)  
-        call ncvpt (ncid, gasuwfid, ndimstart4, ndimcount4, real(Gas_UJacobian(1:nz,1:ngeom,1:ngas), kind=4), rcode)  
+        call ncvpt (ncid, gasqwfid, ndimstart5, ndimcount5, real(Gas_QJacobian(1:nz,1:ngeom,1:ngas), kind=4), rcode)  
+        call ncvpt (ncid, gasuwfid, ndimstart5, ndimcount5, real(Gas_UJacobian(1:nz,1:ngeom,1:ngas), kind=4), rcode)  
      endif
   endif
 

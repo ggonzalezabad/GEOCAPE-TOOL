@@ -31,7 +31,7 @@ MODULE GC_convolution_module
                                  GC_Temperature_Jacobians, nlambdas, lambdas,  &
                                  clambdas, wavnums, GC_flux, GC_Uflux,         &
                                  GC_Qflux, GC_direct_flux, GC_Qdirect_flux,    &
-                                 GC_Udirect_flux, VLIDORT_ModIn, didx
+                                 GC_Udirect_flux, VLIDORT_ModIn, didx, ilev
                                  
   USE GC_error_module
 
@@ -67,46 +67,46 @@ CONTAINS
     END IF
     
     nspec = VLIDORT_Out%Main%TS_N_GEOMETRIES
-    CALL gauss_f2c (tmpwaves(1:nflambdas), GC_radiances(1:nflambdas, 1:nspec, didx), nflambdas, &
+    CALL gauss_f2c (tmpwaves(1:nflambdas), GC_radiances(1:nflambdas, ilev, 1:nspec, didx), nflambdas, &
          nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
-    GC_radiances(1:nclambdas, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
+    GC_radiances(1:nclambdas, ilev, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
 
     nspec = VLIDORT_ModIn%MSunrays%TS_N_SZANGLES
-    CALL gauss_f2c (tmpwaves(1:nflambdas), GC_flux(1:nflambdas, 1:nspec, didx), nflambdas, &
+    CALL gauss_f2c (tmpwaves(1:nflambdas), GC_flux(1:nflambdas, ilev, 1:nspec, didx), nflambdas, &
          nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
-    GC_flux(1:nclambdas, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
+    GC_flux(1:nclambdas, ilev, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
 
-    CALL gauss_f2c (tmpwaves(1:nflambdas), GC_direct_flux(1:nflambdas, 1:nspec, didx), nflambdas, &
+    CALL gauss_f2c (tmpwaves(1:nflambdas), GC_direct_flux(1:nflambdas, ilev, 1:nspec, didx), nflambdas, &
          nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
-    GC_direct_flux(1:nclambdas, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
+    GC_direct_flux(1:nclambdas, ilev, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
 
     IF ( do_vector_calculation .AND. do_StokesQU_output ) THEN
 
        nspec = VLIDORT_Out%Main%TS_N_GEOMETRIES
-       CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Qvalues(1:nflambdas, 1:nspec, didx), nflambdas, &
+       CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Qvalues(1:nflambdas, ilev, 1:nspec, didx), nflambdas, &
             nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
-       GC_Qvalues(1:nclambdas, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
+       GC_Qvalues(1:nclambdas, ilev, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
        
-       CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Uvalues(1:nflambdas, 1:nspec, didx), nflambdas, &
+       CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Uvalues(1:nflambdas, ilev, 1:nspec, didx), nflambdas, &
             nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
-       GC_Uvalues(1:nclambdas, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
+       GC_Uvalues(1:nclambdas, ilev, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
 
        nspec = VLIDORT_ModIn%MSunrays%TS_N_SZANGLES
-       CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Qflux(1:nflambdas, 1:nspec, didx), nflambdas, &
+       CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Qflux(1:nflambdas, ilev, 1:nspec, didx), nflambdas, &
             nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
-       GC_Qflux(1:nclambdas, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
+       GC_Qflux(1:nclambdas, ilev, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
 
-       CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Uflux(1:nflambdas, 1:nspec, didx), nflambdas, &
+       CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Uflux(1:nflambdas, ilev, 1:nspec, didx), nflambdas, &
             nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
-       GC_Uflux(1:nclambdas, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
+       GC_Uflux(1:nclambdas, ilev, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
        
-       CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Qdirect_flux(1:nflambdas, 1:nspec, didx), nflambdas, &
+       CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Qdirect_flux(1:nflambdas, ilev, 1:nspec, didx), nflambdas, &
             nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
-       GC_Qdirect_flux(1:nclambdas, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
+       GC_Qdirect_flux(1:nclambdas, ilev, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
 
-       CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Udirect_flux(1:nflambdas, 1:nspec, didx), nflambdas, &
+       CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Udirect_flux(1:nflambdas, ilev, 1:nspec, didx), nflambdas, &
             nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_rad(1:nclambdas, 1:nspec), nclambdas)
-       GC_Udirect_flux(1:nclambdas, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
+       GC_Udirect_flux(1:nclambdas, ilev, 1:nspec, didx) = temp_rad(1:nclambdas, 1:nspec)
 
     END IF
     
@@ -119,58 +119,58 @@ CONTAINS
        DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
           DO g = 1, ngases
              CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Tracegas_Jacobians(1:nflambdas,                    &
-                  1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, g, didx), nflambdas, VLIDORT_FixIn%Cont%TS_NLAYERS, &
+                  1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, g, didx), nflambdas, VLIDORT_FixIn%Cont%TS_NLAYERS, &
                   lambda_resolution, tmpcwaves(1:nclambdas),                                              &
                   temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-             GC_Tracegas_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, g, didx) = &
+             GC_Tracegas_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, g, didx) = &
                   temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS)
           END DO
           
           IF (do_AMF_calculation) THEN
              CALL gauss_f2c (flambdas(1:nflambdas), GC_Scattering_Weights(1:nflambdas,                    &
-                  1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas, VLIDORT_FixIn%Cont%TS_NLAYERS,    &
+                  1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas, VLIDORT_FixIn%Cont%TS_NLAYERS,    &
                   lambda_resolution, clambdas(1:nclambdas),                                               &
                   temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-             GC_Scattering_Weights(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+             GC_Scattering_Weights(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                   temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS)
              
              nspec = 1
              DO g = 1, ngases
-                CALL gauss_f2c (flambdas(1:nflambdas), GC_AMFs(1:nflambdas, v, g, didx), nflambdas, &
+                CALL gauss_f2c (flambdas(1:nflambdas), GC_AMFs(1:nflambdas, ilev, v, g, didx), nflambdas, &
                      nspec, lambda_resolution, clambdas(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_AMFs(1:nclambdas, v, g, didx) = temp_wf(1:nclambdas, 1)
+                GC_AMFs(1:nclambdas, ilev, v, g, didx) = temp_wf(1:nclambdas, 1)
              END DO
           END IF
           
           IF (do_aer_columnwf) THEN
              nspec=1
              IF (do_aod_jacobians) THEN
-                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_aod_Jacobians(1:nflambdas, 1, v, didx), nflambdas, &
+                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_aod_Jacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_aod_Jacobians(1:nclambdas, 1, v, didx) = temp_wf(1:nclambdas, 1) 
+                GC_aod_Jacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
              END IF
              IF (do_assa_jacobians) THEN
-                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_assa_Jacobians(1:nflambdas, 1, v, didx), nflambdas, &
+                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_assa_Jacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_assa_Jacobians(1:nclambdas, 1, v, didx) = temp_wf(1:nclambdas, 1) 
+                GC_assa_Jacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
              END IF
           ELSE
              IF (do_aod_jacobians) THEN
                 CALL gauss_f2c (tmpwaves(1:nflambdas), GC_aod_Jacobians(1:nflambdas,      &
-                     1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas,                &
+                     1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas,                &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution,                    &
                      tmpcwaves(1:nclambdas),                                              &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-                GC_aod_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+                GC_aod_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
              END IF
              IF (do_assa_jacobians) THEN
                 CALL gauss_f2c (tmpwaves(1:nflambdas), GC_assa_Jacobians(1:nflambdas,      &
-                     1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas,                 &
+                     1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas,                 &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution,                     &
                      tmpcwaves(1:nclambdas), temp_wf(1:nclambdas,                          &
                      1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-                GC_assa_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+                GC_assa_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
              END IF
           ENDIF
@@ -178,58 +178,58 @@ CONTAINS
           IF (do_cld_columnwf) THEN
              nspec=1
              IF (do_cod_jacobians) THEN
-                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cod_Jacobians(1:nflambdas, 1, v, didx), nflambdas, &
+                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cod_Jacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_cod_Jacobians(1:nclambdas, 1, v, didx) = temp_wf(1:nclambdas, 1) 
+                GC_cod_Jacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
              END IF
              IF (do_cssa_jacobians) THEN
-                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cssa_Jacobians(1:nflambdas, 1, v, didx), nflambdas, &
+                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cssa_Jacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_cssa_Jacobians(1:nclambdas, 1, v, didx) = temp_wf(1:nclambdas, 1) 
+                GC_cssa_Jacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
              END IF
           ELSE
              IF (do_cod_jacobians) THEN
                 CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cod_Jacobians(1:nflambdas,      &
-                     1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas,                &
+                     1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas,                &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution,                    &
                      tmpcwaves(1:nclambdas),                                              &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-                GC_cod_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+                GC_cod_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
              END IF
              IF (do_cssa_jacobians) THEN
                 CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cssa_Jacobians(1:nflambdas,      &
-                     1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas,                 &
+                     1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas,                 &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution,                     &
                      tmpcwaves(1:nclambdas), temp_wf(1:nclambdas,                          &
                      1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-                GC_cssa_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+                GC_cssa_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
              END IF
           END IF
           
           IF (do_cfrac_Jacobians) THEN
              nspec = 1
-             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cfrac_Jacobians(1:nflambdas, v, didx), nflambdas, &
+             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cfrac_Jacobians(1:nflambdas, ilev, v, didx), nflambdas, &
                   nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-             GC_cfrac_Jacobians(1:nclambdas, v, didx) = temp_wf(1:nclambdas, 1) 
+             GC_cfrac_Jacobians(1:nclambdas, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
           END IF
           
           IF (VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE) THEN
              nspec = 1
-             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Surfalbedo_Jacobians(1:nflambdas, v, didx), nflambdas, &
+             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Surfalbedo_Jacobians(1:nflambdas, ilev, v, didx), nflambdas, &
                   nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-             GC_Surfalbedo_Jacobians(1:nclambdas, v, didx) = temp_wf(1:nclambdas, 1)
+             GC_Surfalbedo_Jacobians(1:nclambdas, ilev, v, didx) = temp_wf(1:nclambdas, 1)
           ELSE
              nspec = 1
-             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Windspeed_Jacobians(1:nflambdas, v, didx), nflambdas, &
+             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Windspeed_Jacobians(1:nflambdas, ilev, v, didx), nflambdas, &
                   nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-             GC_Windspeed_Jacobians(1:nclambdas, v, didx) = temp_wf(1:nclambdas, 1)               
+             GC_Windspeed_Jacobians(1:nclambdas, ilev, v, didx) = temp_wf(1:nclambdas, 1)               
           END IF
           nspec = 1
-          CALL gauss_f2c (tmpwaves(1:nflambdas), GC_sfcprs_Jacobians(1:nflambdas, v, didx), nflambdas, &
+          CALL gauss_f2c (tmpwaves(1:nflambdas), GC_sfcprs_Jacobians(1:nflambdas, ilev, v, didx), nflambdas, &
                nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-          GC_sfcprs_Jacobians(1:nclambdas, v, didx) = temp_wf(1:nclambdas, 1) 
+          GC_sfcprs_Jacobians(1:nclambdas, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
           
        END DO
     END IF
@@ -238,67 +238,67 @@ CONTAINS
        DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
           DO g = 1, ngases
              CALL gauss_f2c (tmpwaves(1:nflambdas),                                                            &
-                  GC_Tracegas_QJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, g, didx), nflambdas, &
+                  GC_Tracegas_QJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, g, didx), nflambdas, &
                   VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),                    &
                   temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-             GC_Tracegas_QJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, g, didx) = &
+             GC_Tracegas_QJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, g, didx) = &
                   temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS)
              
              CALL gauss_f2c (tmpwaves(1:nflambdas),                                                            &
-                  GC_Tracegas_UJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, g, didx), nflambdas, &
+                  GC_Tracegas_UJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, g, didx), nflambdas, &
                   VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),                    &
                   temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-             GC_Tracegas_UJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, g, didx) = &
+             GC_Tracegas_UJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, g, didx) = &
                   temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS)
           END DO
           
           IF (do_aer_columnwf) THEN
              nspec=1
              IF (do_aod_Jacobians) THEN 
-                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_aod_QJacobians(1:nflambdas, 1, v, didx), nflambdas, &
+                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_aod_QJacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_aod_QJacobians(1:nclambdas, 1, v, didx) = temp_wf(1:nclambdas, 1) 
-                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_aod_UJacobians(1:nflambdas, 1, v, didx), nflambdas, &
+                GC_aod_QJacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
+                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_aod_UJacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_aod_UJacobians(1:nclambdas, 1, v, didx) = temp_wf(1:nclambdas, 1) 
+                GC_aod_UJacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
              END IF
              IF (do_assa_Jacobians) THEN 
-                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_assa_QJacobians(1:nflambdas, 1, v, didx), nflambdas, &
+                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_assa_QJacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_assa_QJacobians(1:nclambdas, 1, v, didx) = temp_wf(1:nclambdas, 1) 
+                GC_assa_QJacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
                 
-                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_assa_UJacobians(1:nflambdas, 1, v, didx), nflambdas, &
+                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_assa_UJacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_assa_UJacobians(1:nclambdas, 1, v, didx) = temp_wf(1:nclambdas, 1) 
+                GC_assa_UJacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
              END IF
           ELSE
              IF (do_aod_Jacobians) THEN 
                 CALL gauss_f2c (tmpwaves(1:nflambdas),                                                    &
-                     GC_aod_QJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas, &
+                     GC_aod_QJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas, &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),            &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-                GC_aod_QJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+                GC_aod_QJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
                 CALL gauss_f2c (tmpwaves(1:nflambdas),                                                    &
-                     GC_aod_UJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas, &
+                     GC_aod_UJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas, &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),            &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-                GC_aod_UJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+                GC_aod_UJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
              END IF
              IF (do_assa_Jacobians) THEN 
                 CALL gauss_f2c (tmpwaves(1:nflambdas),                                                     &
-                     GC_assa_QJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas, &
+                     GC_assa_QJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas, &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),             &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-                GC_assa_QJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+                GC_assa_QJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
                 
                 CALL gauss_f2c (tmpwaves(1:nflambdas),                                                     &
-                     GC_assa_UJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas, &
+                     GC_assa_UJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas, &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),             &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-                GC_assa_UJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+                GC_assa_UJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
              END IF
           END IF
@@ -306,102 +306,102 @@ CONTAINS
           IF (do_cld_columnwf) THEN
              nspec=1
              IF (do_cod_Jacobians) THEN 
-                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cod_QJacobians(1:nflambdas, 1, v, didx), nflambdas, &
+                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cod_QJacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_cod_QJacobians(1:nclambdas, 1, v, didx) = temp_wf(1:nclambdas, 1) 
-                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cod_UJacobians(1:nflambdas, 1, v, didx), nflambdas, &
+                GC_cod_QJacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
+                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cod_UJacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_cod_UJacobians(1:nclambdas, 1, v, didx) = temp_wf(1:nclambdas, 1) 
+                GC_cod_UJacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
              END IF
              IF (do_cssa_Jacobians) THEN 
-                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cssa_QJacobians(1:nflambdas, 1, v, didx), nflambdas, &
+                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cssa_QJacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_cssa_QJacobians(1:nclambdas, 1, v, didx) = temp_wf(1:nclambdas, 1) 
-                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cssa_UJacobians(1:nflambdas, 1, v, didx), nflambdas, &
+                GC_cssa_QJacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
+                CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cssa_UJacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-                GC_cssa_UJacobians(1:nclambdas, 1, v, didx) = temp_wf(1:nclambdas, 1) 
+                GC_cssa_UJacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
              END IF
           ELSE
              IF (do_cod_Jacobians) THEN 
                 CALL gauss_f2c (tmpwaves(1:nflambdas),                                                    &
-                     GC_cod_QJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas, &
+                     GC_cod_QJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas, &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),            &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-                GC_cod_QJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+                GC_cod_QJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
                 CALL gauss_f2c (tmpwaves(1:nflambdas),                                                    &
-                     GC_cod_UJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas, &
+                     GC_cod_UJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas, &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),            &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-                GC_cod_UJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+                GC_cod_UJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
              END IF
              IF (do_cssa_Jacobians) THEN 
                 CALL gauss_f2c (tmpwaves(1:nflambdas),                                                     &
-                     GC_cssa_QJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas, &
+                     GC_cssa_QJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas, &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),             &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-                GC_cssa_QJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+                GC_cssa_QJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
                 CALL gauss_f2c (tmpwaves(1:nflambdas),                                                     &
-                     GC_cssa_UJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas, &
+                     GC_cssa_UJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas, &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),             &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-                GC_cssa_UJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+                GC_cssa_UJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
              END IF
           END IF
           
           IF (do_cfrac_Jacobians) THEN
              nspec = 1
-             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cfrac_QJacobians(1:nflambdas, v, didx), nflambdas, &
+             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cfrac_QJacobians(1:nflambdas, ilev, v, didx), nflambdas, &
                   nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-             GC_cfrac_QJacobians(1:nclambdas, v, didx) = temp_wf(1:nclambdas, 1) 
-             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cfrac_UJacobians(1:nflambdas, v, didx), nflambdas, &
+             GC_cfrac_QJacobians(1:nclambdas, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
+             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_cfrac_UJacobians(1:nflambdas, ilev, v, didx), nflambdas, &
                   nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-             GC_cfrac_UJacobians(1:nclambdas, v, didx) = temp_wf(1:nclambdas, 1) 
+             GC_cfrac_UJacobians(1:nclambdas, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
           END IF
           
           IF (VLIDORT_FixIn%Bool%TS_DO_LAMBERTIAN_SURFACE) THEN
              nspec = 1
-             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Surfalbedo_QJacobians(1:nflambdas, v, didx), nflambdas, &
+             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Surfalbedo_QJacobians(1:nflambdas, ilev, v, didx), nflambdas, &
                   nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-             GC_Surfalbedo_QJacobians(1:nclambdas, v, didx) = temp_wf(1:nclambdas, 1)
+             GC_Surfalbedo_QJacobians(1:nclambdas, ilev, v, didx) = temp_wf(1:nclambdas, 1)
              
              nspec = 1
-             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Surfalbedo_UJacobians(1:nflambdas, v, didx), nflambdas, &
+             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Surfalbedo_UJacobians(1:nflambdas, ilev, v, didx), nflambdas, &
                   nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-             GC_Surfalbedo_UJacobians(1:nclambdas, v, didx) = temp_wf(1:nclambdas, 1)
+             GC_Surfalbedo_UJacobians(1:nclambdas, ilev, v, didx) = temp_wf(1:nclambdas, 1)
           ELSE
              nspec = 1
-             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Windspeed_QJacobians(1:nflambdas, v, didx), nflambdas, &
+             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Windspeed_QJacobians(1:nflambdas, ilev, v, didx), nflambdas, &
                   nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-             GC_Windspeed_QJacobians(1:nclambdas, v, didx) = temp_wf(1:nclambdas, 1)
+             GC_Windspeed_QJacobians(1:nclambdas, ilev, v, didx) = temp_wf(1:nclambdas, 1)
              
              nspec = 1
-             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Windspeed_UJacobians(1:nflambdas, v, didx), nflambdas, &
+             CALL gauss_f2c (tmpwaves(1:nflambdas), GC_Windspeed_UJacobians(1:nflambdas, ilev, v, didx), nflambdas, &
                   nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-             GC_Windspeed_UJacobians(1:nclambdas, v, didx) = temp_wf(1:nclambdas, 1)               
+             GC_Windspeed_UJacobians(1:nclambdas, ilev, v, didx) = temp_wf(1:nclambdas, 1)               
           END IF
           
           nspec = 1
-          CALL gauss_f2c (tmpwaves(1:nflambdas), GC_sfcprs_QJacobians(1:nflambdas, v, didx), nflambdas, &
+          CALL gauss_f2c (tmpwaves(1:nflambdas), GC_sfcprs_QJacobians(1:nflambdas, ilev, v, didx), nflambdas, &
                nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-          GC_sfcprs_QJacobians(1:nclambdas, v, didx) = temp_wf(1:nclambdas, 1) 
-          CALL gauss_f2c (tmpwaves(1:nflambdas), GC_sfcprs_UJacobians(1:nflambdas, v, didx), nflambdas, &
+          GC_sfcprs_QJacobians(1:nclambdas, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
+          CALL gauss_f2c (tmpwaves(1:nflambdas), GC_sfcprs_UJacobians(1:nflambdas, ilev, v, didx), nflambdas, &
                nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
-          GC_sfcprs_UJacobians(1:nclambdas, v, didx) = temp_wf(1:nclambdas, 1) 
+          GC_sfcprs_UJacobians(1:nclambdas, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
           
        END DO
     END IF
     
     IF ( do_T_Jacobians ) THEN
        DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
-          CALL gauss_f2c (tmpwaves(1:nflambdas),                                                           &
-               GC_Temperature_Jacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx), nflambdas, &
-               VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),                   &
+          CALL gauss_f2c (tmpwaves(1:nflambdas),                                                                 &
+               GC_Temperature_Jacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas, &
+               VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),                         &
                temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS), nclambdas)
-          GC_Temperature_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, v, didx) = &
+          GC_Temperature_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS)
        END DO
     END IF

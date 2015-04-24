@@ -30,7 +30,8 @@ MODULE GC_netcdf_module
                                   GC_n_view_angles, GC_n_azimuths, VLIDORT_Out,                        &
                                   GC_flux, GC_Qflux, GC_Uflux, GC_direct_flux, GC_Qdirect_flux,        &
                                   GC_Udirect_flux, Total_brdf, NSTOKESSQ, do_brdf_surface,             &
-                                  OUTPUT_WSABSA, WSA_CALCULATED, BSA_CALCULATED, didx, W
+                                  OUTPUT_WSABSA, WSA_CALCULATED, BSA_CALCULATED, didx, W,              &
+                                  GC_user_altitudes, GC_n_user_levels, ilev, GC_user_levels
   USE GC_error_module
 
   IMPLICIT NONE
@@ -76,46 +77,46 @@ CONTAINS
          do_QU_Jacobians, do_AMF_calculation, do_T_Jacobians, do_sfcprs_Jacobians,    &
          do_aod_Jacobians, do_assa_Jacobians, do_cod_Jacobians, do_cssa_Jacobians,    &
          do_cfrac_Jacobians, do_aer_columnwf, do_cld_columnwf, use_lambertian,        &
-         solar_cspec_data(W), GC_radiances(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),    &
-         GC_Qvalues(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
-         GC_Uvalues(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
-         GC_Tracegas_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx),  &
-         GC_Scattering_Weights(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),            &
-         GC_AMFs(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx),                              &
-         GC_Tracegas_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx), &
-         GC_Tracegas_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx), &
-         GC_Temperature_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),         &
-         GC_Surfalbedo_Jacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                        &
-         GC_Surfalbedo_QJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                       &
-         GC_Surfalbedo_UJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                       &
-         GC_Windspeed_Jacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                         &
-         GC_Windspeed_QJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                        &
-         GC_Windspeed_UJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                        &
-         GC_aod_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                 &
-         GC_aod_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
-         GC_aod_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
-         GC_assa_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
-         GC_assa_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
-         GC_assa_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
-         GC_cod_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                 &
-         GC_cod_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
-         GC_cod_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
-         GC_cssa_Jacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
-         GC_cssa_QJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
-         GC_cssa_UJacobians(W, 1:GC_nlayers, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
-         GC_cfrac_Jacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                             &
-         GC_cfrac_QJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                            &
-         GC_cfrac_UJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                            &
-         GC_sfcprs_Jacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                            &
-         GC_sfcprs_QJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
-         GC_sfcprs_UJacobians(W, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
-         GC_flux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                                    &
-         GC_Qflux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                                   &
-         GC_Uflux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                                   &
-         GC_direct_flux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                             &
-         GC_Qdirect_flux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                            &
-         GC_Udirect_flux(W, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                            &
-         W, tmperror, error)
+         solar_cspec_data(W), GC_radiances(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),    &
+         GC_Qvalues(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
+         GC_Uvalues(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
+         GC_Tracegas_Jacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx),  &
+         GC_Scattering_Weights(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),            &
+         GC_AMFs(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx),                              &
+         GC_Tracegas_QJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx), &
+         GC_Tracegas_UJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx), &
+         GC_Temperature_Jacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),         &
+         GC_Surfalbedo_Jacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                        &
+         GC_Surfalbedo_QJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                       &
+         GC_Surfalbedo_UJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                       &
+         GC_Windspeed_Jacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                         &
+         GC_Windspeed_QJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                        &
+         GC_Windspeed_UJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                        &
+         GC_aod_Jacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                 &
+         GC_aod_QJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
+         GC_aod_UJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
+         GC_assa_Jacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
+         GC_assa_QJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
+         GC_assa_UJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
+         GC_cod_Jacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                 &
+         GC_cod_QJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
+         GC_cod_UJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
+         GC_cssa_Jacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
+         GC_cssa_QJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
+         GC_cssa_UJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
+         GC_cfrac_Jacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                             &
+         GC_cfrac_QJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                            &
+         GC_cfrac_UJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                            &
+         GC_sfcprs_Jacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                            &
+         GC_sfcprs_QJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
+         GC_sfcprs_UJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
+         GC_flux(W, ilev, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                                    &
+         GC_Qflux(W, ilev, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                                   &
+         GC_Uflux(W, ilev, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                                   &
+         GC_direct_flux(W, ilev, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                             &
+         GC_Qdirect_flux(W, ilev, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                            &
+         GC_Udirect_flux(W, ilev, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                            &
+         W, ilev, tmperror, error)
 
     IF (error) CALL write_err_message (.TRUE., tmperror)
 
@@ -137,7 +138,7 @@ CONTAINS
     CHARACTER(LEN=max_ch_len) :: netfname
 
     integer :: ncid, rcode, nlen, i
-    integer :: szadim, vzadim, azadim, gasdim, lvldim, laydim, wavdim, geodim, nsqdim, onedim
+    integer :: szadim, vzadim, azadim, gasdim, lvldim, laydim, wavdim, geodim, nsqdim, onedim, olvdim
     integer :: szaid, vzaid, azaid, gasid, lvlid, wavid, psid, tsid, airid, &
          aer0id, cld0id, radid, qid, uid, irradid, sfcid, sfcwfid, wswfid, cfracwfid, &
          sfcprswfid, aodwfid, assawfid, codwfid, cssawfid, sfcqwfid, wsqwfid, cfracqwfid, &
@@ -145,10 +146,11 @@ CONTAINS
          sfcprsuwfid, aoduwfid, assauwfid, coduwfid, cssauwfid, gascolid, aodsid, assasid, &
          codsid, cssasid, scatwtid, odsid, ssasid, amfid, gaswfid, gasqwfid, &
          gasuwfid, tempwfid, fluxid, dfluxid, qfluxid, ufluxid, qdfluxid, udfluxid, brdfid, &
-         wsaid, bsaid
-    integer, dimension(2)      :: gascol_dims, wavalt_dims, wavgas_dims, wavgeo_dims, wavsza_dims
-    integer, dimension(3)      :: wavaltgeo_dims, wavgeogas_dims
-    integer, dimension(4)      :: wavaltgeogas_dims, brdfdim
+         wsaid, bsaid, outlevid
+    integer, dimension(2)      :: gascol_dims, wavalt_dims
+    integer, dimension(3)      :: wavgeolev_dims, wavszalev_dims
+    integer, dimension(4)      :: wavaltgeolev_dims, wavgeogaslev_dims, brdfdim
+    integer, dimension(5)      :: wavaltgeogaslev_dims
     integer, dimension(ngases) :: gas_indices
     integer, dimension(1)      :: ndimstart1, ndimcount1
     integer, dimension(2)      :: ndimstart2, ndimcount2
@@ -173,7 +175,6 @@ CONTAINS
        WRITE(*,*) 'No upwelling or downwelling selected... no output'
        STOP
     END IF
-
     error = .false.; tmperror = ' '
     
     ncid = nccre(trim(netfname), ncclob, rcode)
@@ -190,6 +191,7 @@ CONTAINS
     azadim  = ncddef (ncid, 'naza', GC_n_azimuths, rcode)
     gasdim  = ncddef (ncid, 'ngas', ngases, rcode)
     lvldim  = ncddef (ncid, 'nlevel', GC_nlayers+1, rcode)
+    olvdim  = ncddef (ncid, 'noutputlevel', GC_n_user_levels, rcode)
     laydim  = ncddef (ncid, 'nlayer', GC_nlayers, rcode)
     IF ( .NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN
        wavdim  = ncddef (ncid, 'nw', nclambdas, rcode)
@@ -202,27 +204,27 @@ CONTAINS
     !=============================================================================
     ! Create the coordinate (aka independent) variables:
     !============================================================================= 
-    szaid  = ncvdef (ncid, 'Solarzenithangle',     ncfloat, 1, szadim, rcode)
-    vzaid  = ncvdef (ncid, 'Viewingzenithangle',   ncfloat, 1, vzadim, rcode)
-    azaid  = ncvdef (ncid, 'Relativeazimuthangle', ncfloat, 1, azadim, rcode)
-    gasid  = ncvdef (ncid, 'gas',                  nclong,  1, gasdim, rcode)
-    lvlid  = ncvdef (ncid, 'zs',                   ncfloat, 1, lvldim, rcode)
-    wavid  = ncvdef (ncid, 'Wavelength',           ncfloat, 1, wavdim, rcode)
+    szaid    = ncvdef (ncid, 'Solarzenithangle',     ncfloat, 1, szadim, rcode)
+    vzaid    = ncvdef (ncid, 'Viewingzenithangle',   ncfloat, 1, vzadim, rcode)
+    azaid    = ncvdef (ncid, 'Relativeazimuthangle', ncfloat, 1, azadim, rcode)
+    gasid    = ncvdef (ncid, 'gas',                  nclong,  1, gasdim, rcode)
+    lvlid    = ncvdef (ncid, 'zs',                   ncfloat, 1, lvldim, rcode)
+    wavid    = ncvdef (ncid, 'Wavelength',           ncfloat, 1, wavdim, rcode)
+    outlevid = ncvdef (ncid, 'outputlevels',         ncfloat, 1, olvdim, rcode)
     
     !=============================================================================
     ! Create a vector containing the often referred to spacetime coordinates:
     !=============================================================================
     gascol_dims(1) = laydim; gascol_dims(2) = gasdim
     wavalt_dims(1) = wavdim; wavalt_dims(2) = laydim
-    wavgas_dims(1) = wavdim; wavgas_dims(2) = gasdim
-    wavgeo_dims(1) = wavdim; wavgeo_dims(2) = geodim
-    wavsza_dims(1) = wavdim; wavsza_dims(2) = szadim
+    wavgeolev_dims(1) = wavdim; wavgeolev_dims(2) = geodim; wavgeolev_dims(3) = olvdim
+    wavszalev_dims(1) = wavdim; wavszalev_dims(2) = szadim; wavszalev_dims(3) = olvdim
     
-    wavaltgeo_dims(1) = wavdim; wavaltgeo_dims(2) = laydim; wavaltgeo_dims(3) = geodim
-    wavgeogas_dims(1) = wavdim; wavgeogas_dims(2) = geodim; wavgeogas_dims(3) = gasdim
+    wavaltgeolev_dims(1) = wavdim; wavaltgeolev_dims(2) = laydim; wavaltgeolev_dims(3) = geodim; wavaltgeolev_dims(4) = olvdim
+    wavgeogaslev_dims(1) = wavdim; wavgeogaslev_dims(2) = geodim; wavgeogaslev_dims(3) = gasdim; wavgeogaslev_dims(4) = olvdim
     
-    wavaltgeogas_dims(1) = wavdim; wavaltgeogas_dims(2) = laydim
-    wavaltgeogas_dims(3) = geodim; wavaltgeogas_dims(4) = gasdim
+    wavaltgeogaslev_dims(1) = wavdim; wavaltgeogaslev_dims(2) = laydim
+    wavaltgeogaslev_dims(3) = geodim; wavaltgeogaslev_dims(4) = gasdim; wavaltgeogaslev_dims(5) = olvdim
     
     brdfdim(1) = nsqdim; brdfdim(2) = vzadim; brdfdim(3)=azadim; brdfdim(4) = szadim
 
@@ -253,127 +255,127 @@ CONTAINS
     codsid  = ncvdef(ncid, 'cods',  ncfloat, 2, wavalt_dims, rcode)
     cssasid = ncvdef(ncid, 'cssas', ncfloat, 2, wavalt_dims, rcode)
     
-    ! variables with 2D, wavdim, geodim
-    radid   = ncvdef(ncid, 'radiance',    ncfloat, 2, wavgeo_dims, rcode)
-    fluxid  = ncvdef(ncid, 'flux',        ncfloat, 2, wavsza_dims, rcode)
-    dfluxid = ncvdef(ncid, 'direct_flux', ncfloat, 2, wavsza_dims, rcode)
+    ! variables with 3D, wavdim, geodim, olvdim
+    radid   = ncvdef(ncid, 'radiance',    ncfloat, 3, wavgeolev_dims, rcode)
+    fluxid  = ncvdef(ncid, 'flux',        ncfloat, 3, wavszalev_dims, rcode)
+    dfluxid = ncvdef(ncid, 'direct_flux', ncfloat, 3, wavszalev_dims, rcode)
     if (do_vector_calculation .and. do_StokesQU_output) then
-       qid      = ncvdef(ncid, 'q',            ncfloat, 2, wavgeo_dims, rcode)
-       uid      = ncvdef(ncid, 'u',            ncfloat, 2, wavgeo_dims, rcode)
-       qfluxid  = ncvdef(ncid, 'qflux',        ncfloat, 2, wavsza_dims, rcode)
-       ufluxid  = ncvdef(ncid, 'uflux',        ncfloat, 2, wavsza_dims, rcode)
-       qdfluxid = ncvdef(ncid, 'qdirect_flux', ncfloat, 2, wavsza_dims, rcode)
-       udfluxid = ncvdef(ncid, 'udirect_flux', ncfloat, 2, wavsza_dims, rcode)
+       qid      = ncvdef(ncid, 'q',            ncfloat, 3, wavgeolev_dims, rcode)
+       uid      = ncvdef(ncid, 'u',            ncfloat, 3, wavgeolev_dims, rcode)
+       qfluxid  = ncvdef(ncid, 'qflux',        ncfloat, 3, wavszalev_dims, rcode)
+       ufluxid  = ncvdef(ncid, 'uflux',        ncfloat, 3, wavszalev_dims, rcode)
+       qdfluxid = ncvdef(ncid, 'qdirect_flux', ncfloat, 3, wavszalev_dims, rcode)
+       udfluxid = ncvdef(ncid, 'udirect_flux', ncfloat, 3, wavszalev_dims, rcode)
     endif
     
     if (do_Jacobians) then
        
        if (use_lambertian) then
-          sfcwfid = ncvdef(ncid, 'surfalb_jac',   ncfloat, 2, wavgeo_dims, rcode)
+          sfcwfid = ncvdef(ncid, 'surfalb_jac',   ncfloat, 3, wavgeolev_dims, rcode)
        else 
-          wswfid  = ncvdef(ncid, 'windspeed_jac', ncfloat, 2, wavgeo_dims, rcode)
+          wswfid  = ncvdef(ncid, 'windspeed_jac', ncfloat, 3, wavgeolev_dims, rcode)
        endif
        
        if (do_cfrac_Jacobians) &
-            cfracwfid  = ncvdef(ncid, 'cfrac_jac',     ncfloat, 2, wavgeo_dims, rcode)
+            cfracwfid  = ncvdef(ncid, 'cfrac_jac',     ncfloat, 3, wavgeolev_dims, rcode)
        if (do_sfcprs_Jacobians) &
-            sfcprswfid = ncvdef(ncid, 'sfcprs_jac',    ncfloat, 2, wavgeo_dims, rcode)
+            sfcprswfid = ncvdef(ncid, 'sfcprs_jac',    ncfloat, 3, wavgeolev_dims, rcode)
        if (do_aer_columnwf .and. do_aod_Jacobians) &  !No column jacobians yet
-            aodwfid    = ncvdef(ncid, 'aodcolwf_jac',  ncfloat, 2, wavgeo_dims, rcode)
+            aodwfid    = ncvdef(ncid, 'aodcolwf_jac',  ncfloat, 3, wavgeolev_dims, rcode)
        if (do_aer_columnwf .and. do_assa_Jacobians) & !No column jacobians yet
-            assawfid   = ncvdef(ncid, 'assacolwf_jac', ncfloat, 2, wavgeo_dims, rcode)
+            assawfid   = ncvdef(ncid, 'assacolwf_jac', ncfloat, 3, wavgeolev_dims, rcode)
        if (do_cld_columnwf .and. do_cod_Jacobians) &  !No column jacobians yet
-            codwfid    = ncvdef(ncid, 'codcolwf_jac',  ncfloat, 2, wavgeo_dims, rcode)
+            codwfid    = ncvdef(ncid, 'codcolwf_jac',  ncfloat, 3, wavgeolev_dims, rcode)
        if (do_cld_columnwf .and. do_cssa_Jacobians) & !No column jacobians yet
-            cssawfid   = ncvdef(ncid, 'cssacolwf_jac', ncfloat, 2, wavgeo_dims, rcode)
+            cssawfid   = ncvdef(ncid, 'cssacolwf_jac', ncfloat, 3, wavgeolev_dims, rcode)
        
     endif
     
     if (do_QU_Jacobians) then
        
        if (use_lambertian) then
-          sfcqwfid = ncvdef(ncid, 'surfalb_qjac',  ncfloat, 2, wavgeo_dims, rcode)
-          sfcuwfid = ncvdef(ncid, 'surfalb_ujac',  ncfloat, 2, wavgeo_dims, rcode)
+          sfcqwfid = ncvdef(ncid, 'surfalb_qjac',  ncfloat, 3, wavgeolev_dims, rcode)
+          sfcuwfid = ncvdef(ncid, 'surfalb_ujac',  ncfloat, 3, wavgeolev_dims, rcode)
        else 
-          wsqwfid = ncvdef(ncid, 'windspeed_qjac', ncfloat, 2, wavgeo_dims, rcode)
-          wsuwfid = ncvdef(ncid, 'windspeed_ujac', ncfloat, 2, wavgeo_dims, rcode)
+          wsqwfid = ncvdef(ncid, 'windspeed_qjac', ncfloat, 3, wavgeolev_dims, rcode)
+          wsuwfid = ncvdef(ncid, 'windspeed_ujac', ncfloat, 3, wavgeolev_dims, rcode)
        endif
        
        if (do_cfrac_Jacobians) then
-          cfracqwfid = ncvdef(ncid, 'cfrac_qjac',  ncfloat, 2, wavgeo_dims, rcode)
-          cfracuwfid = ncvdef(ncid, 'cfrac_ujac',  ncfloat, 2, wavgeo_dims, rcode)
+          cfracqwfid = ncvdef(ncid, 'cfrac_qjac',  ncfloat, 3, wavgeolev_dims, rcode)
+          cfracuwfid = ncvdef(ncid, 'cfrac_ujac',  ncfloat, 3, wavgeolev_dims, rcode)
        endif
        if (do_sfcprs_Jacobians) then
-          sfcprsqwfid = ncvdef(ncid, 'sfcprs_qjac',  ncfloat, 2, wavgeo_dims, rcode)
-          sfcprsuwfid = ncvdef(ncid, 'sfcprs_ujac',  ncfloat, 2, wavgeo_dims, rcode)
+          sfcprsqwfid = ncvdef(ncid, 'sfcprs_qjac',  ncfloat, 3, wavgeolev_dims, rcode)
+          sfcprsuwfid = ncvdef(ncid, 'sfcprs_ujac',  ncfloat, 3, wavgeolev_dims, rcode)
        endif
        if (do_aer_columnwf .and. do_aod_Jacobians) then  !No column jacobians yet
-          aodqwfid = ncvdef(ncid, 'aodcol_qjac',  ncfloat, 2, wavgeo_dims, rcode)
-          aoduwfid = ncvdef(ncid, 'aodcol_ujac',  ncfloat, 2, wavgeo_dims, rcode)
+          aodqwfid = ncvdef(ncid, 'aodcol_qjac',  ncfloat, 3, wavgeolev_dims, rcode)
+          aoduwfid = ncvdef(ncid, 'aodcol_ujac',  ncfloat, 3, wavgeolev_dims, rcode)
        endif
        if (do_aer_columnwf .and. do_assa_Jacobians) then !No column jacobians yet
-          assaqwfid = ncvdef(ncid, 'assacol_qjac', ncfloat, 2, wavgeo_dims, rcode)
-          assauwfid = ncvdef(ncid, 'assacol_ujac', ncfloat, 2, wavgeo_dims, rcode)
+          assaqwfid = ncvdef(ncid, 'assacol_qjac', ncfloat, 3, wavgeolev_dims, rcode)
+          assauwfid = ncvdef(ncid, 'assacol_ujac', ncfloat, 3, wavgeolev_dims, rcode)
        endif
        if (do_cld_columnwf .and. do_cod_Jacobians) then  !No column jacobians yet
-          codqwfid = ncvdef(ncid, 'codcol_qjac',  ncfloat, 2, wavgeo_dims, rcode)
-          coduwfid = ncvdef(ncid, 'codcol_ujac',  ncfloat, 2, wavgeo_dims, rcode)
+          codqwfid = ncvdef(ncid, 'codcol_qjac',  ncfloat, 3, wavgeolev_dims, rcode)
+          coduwfid = ncvdef(ncid, 'codcol_ujac',  ncfloat, 3, wavgeolev_dims, rcode)
        endif
        if (do_cld_columnwf .and. do_cssa_Jacobians) then !No column jacobians yet
-          cssaqwfid = ncvdef(ncid, 'cssacol_qjac', ncfloat, 2, wavgeo_dims, rcode)
-          cssauwfid = ncvdef(ncid, 'cssacol_ujac', ncfloat, 2, wavgeo_dims, rcode)
+          cssaqwfid = ncvdef(ncid, 'cssacol_qjac', ncfloat, 3, wavgeolev_dims, rcode)
+          cssauwfid = ncvdef(ncid, 'cssacol_ujac', ncfloat, 3, wavgeolev_dims, rcode)
        endif
        
     endif
     
-    ! variables with 3D, wavdim, laydim, geodim
+    ! variables with 4D, wavdim, laydim, geodim, olvdim
     if (do_AMF_calculation) then
-       scatwtid = ncvdef(ncid, 'scatweights', ncfloat, 3, wavaltgeo_dims, rcode)
+       scatwtid = ncvdef(ncid, 'scatweights', ncfloat, 4, wavaltgeolev_dims, rcode)
     endif
     
     if (do_Jacobians) then
        if (do_T_Jacobians) &
-            tempwfid = ncvdef(ncid, 't_jac',    ncfloat, 3, wavaltgeo_dims, rcode)
+            tempwfid = ncvdef(ncid, 't_jac',    ncfloat, 4, wavaltgeolev_dims, rcode)
        if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
-            aodwfid  = ncvdef(ncid, 'aod_jac',  ncfloat, 3, wavaltgeo_dims, rcode)  
+            aodwfid  = ncvdef(ncid, 'aod_jac',  ncfloat, 4, wavaltgeolev_dims, rcode)  
        if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
-            assawfid = ncvdef(ncid, 'assa_jac', ncfloat, 3, wavaltgeo_dims, rcode)   
+            assawfid = ncvdef(ncid, 'assa_jac', ncfloat, 4, wavaltgeolev_dims, rcode)   
        if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
-            codwfid  = ncvdef(ncid, 'cod_jac',  ncfloat, 3, wavaltgeo_dims, rcode)  
+            codwfid  = ncvdef(ncid, 'cod_jac',  ncfloat, 4, wavaltgeolev_dims, rcode)  
        if (.not. do_cld_columnwf .and. do_cssa_Jacobians) &
-            cssawfid = ncvdef(ncid, 'cssa_jac', ncfloat, 3, wavaltgeo_dims, rcode)  
+            cssawfid = ncvdef(ncid, 'cssa_jac', ncfloat, 4, wavaltgeolev_dims, rcode)  
     endif
     
     if (do_QU_Jacobians) then
        if (.not. do_aer_columnwf .and. do_aod_Jacobians) then 
-          aodqwfid = ncvdef(ncid, 'aod_qjac', ncfloat, 3, wavaltgeo_dims, rcode)  
-          aoduwfid = ncvdef(ncid, 'aod_ujac', ncfloat, 3, wavaltgeo_dims, rcode)  
+          aodqwfid = ncvdef(ncid, 'aod_qjac', ncfloat, 4, wavaltgeolev_dims, rcode)  
+          aoduwfid = ncvdef(ncid, 'aod_ujac', ncfloat, 4, wavaltgeolev_dims, rcode)  
        endif
        if (.not. do_aer_columnwf .and. do_assa_Jacobians) then
-          assaqwfid = ncvdef(ncid, 'assa_qjac', ncfloat, 3, wavaltgeo_dims, rcode)   
-          assauwfid = ncvdef(ncid, 'assa_ujac', ncfloat, 3, wavaltgeo_dims, rcode)   
+          assaqwfid = ncvdef(ncid, 'assa_qjac', ncfloat, 4, wavaltgeolev_dims, rcode)   
+          assauwfid = ncvdef(ncid, 'assa_ujac', ncfloat, 4, wavaltgeolev_dims, rcode)   
        endif
        if (.not. do_cld_columnwf .and. do_cod_Jacobians) then
-          codqwfid = ncvdef(ncid, 'cod_qjac', ncfloat, 3, wavaltgeo_dims, rcode)  
-          coduwfid = ncvdef(ncid, 'cod_ujac', ncfloat, 3, wavaltgeo_dims, rcode)  
+          codqwfid = ncvdef(ncid, 'cod_qjac', ncfloat, 4, wavaltgeolev_dims, rcode)  
+          coduwfid = ncvdef(ncid, 'cod_ujac', ncfloat, 4, wavaltgeolev_dims, rcode)  
        endif
        if (.not. do_cld_columnwf .and. do_cssa_Jacobians) then
-          cssaqwfid = ncvdef(ncid, 'cssa_qjac', ncfloat, 3, wavaltgeo_dims, rcode)  
-          cssauwfid = ncvdef(ncid, 'cssa_ujac', ncfloat, 3, wavaltgeo_dims, rcode) 
+          cssaqwfid = ncvdef(ncid, 'cssa_qjac', ncfloat, 4, wavaltgeolev_dims, rcode)  
+          cssauwfid = ncvdef(ncid, 'cssa_ujac', ncfloat, 4, wavaltgeolev_dims, rcode) 
        endif
     endif
     
-    ! variables with 3D, wavdim, geodim, gasdim
+    ! variables with 4D, wavdim, geodim, gasdim, olvdim
     if (do_AMF_calculation) then
-       amfid = ncvdef(ncid, 'amf', ncfloat, 3, wavgeogas_dims, rcode)
+       amfid = ncvdef(ncid, 'amf', ncfloat, 4, wavgeogaslev_dims, rcode)
     endif
     
-    ! variables with 4D, wavdim, laydim, geodim, gasdim
+    ! variables with 4D, wavdim, laydim, geodim, gasdim, olvdim
     if (do_Jacobians) then
-       gaswfid = ncvdef(ncid,  'gas_jac', ncfloat, 4, wavaltgeogas_dims, rcode)
+       gaswfid = ncvdef(ncid,  'gas_jac', ncfloat, 5, wavaltgeogaslev_dims, rcode)
        if (do_QU_Jacobians) then
-          gasqwfid = ncvdef(ncid,  'gas_qjac', ncfloat, 4, wavaltgeogas_dims, rcode)
-          gasuwfid = ncvdef(ncid,  'gas_ujac', ncfloat, 4, wavaltgeogas_dims, rcode)
+          gasqwfid = ncvdef(ncid,  'gas_qjac', ncfloat, 5, wavaltgeogaslev_dims, rcode)
+          gasuwfid = ncvdef(ncid,  'gas_ujac', ncfloat, 5, wavaltgeogaslev_dims, rcode)
        endif
     endif
     
@@ -410,6 +412,8 @@ CONTAINS
     call ncapt (ncid, ncglobal, 'nvza',         nclong,  1, GC_n_view_angles, rcode)
     call ncapt (ncid, ncglobal, 'naza',         nclong,  1, GC_n_azimuths, rcode)
     call ncapt (ncid, ncglobal, 'ngeometries',  nclong,  1, ngeom, rcode)
+    call ncapt (ncid, ncglobal, 'noutputlevels',nclong,  1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS, rcode)
+
     IF ( .NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN
        call ncapt (ncid, ncglobal, 'nwavelengths', nclong,  1, nclambdas, rcode)
     ELSE
@@ -552,6 +556,7 @@ CONTAINS
     call ncaptc (ncid, vzaid,    'units', ncchar, 7, 'degrees', rcode)
     call ncaptc (ncid, azaid,    'units', ncchar, 7, 'degrees', rcode)
     call ncaptc (ncid, lvlid,    'units', ncchar, 2, 'km', rcode)
+    call ncaptc (ncid, outlevid, 'units', ncchar, 8, 'unitless', rcode)
     if (use_wavelength) then
        call ncaptc(ncid,wavid,'units', ncchar,2, 'nm',rcode)
     else 
@@ -604,6 +609,8 @@ CONTAINS
        gas_indices(i) = i
     enddo
     call ncvpt (ncid, gasid, 1, ngases, gas_indices, rcode)
+    call ncvpt (ncid, outlevid, 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS, &
+         real(VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(1:VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS), kind=4), rcode)
 
     !=============================================================================
     ! Define the START and COUNT arrays for each of the array variables.

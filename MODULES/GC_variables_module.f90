@@ -29,11 +29,11 @@ MODULE GC_variables_module
 ! Variables to store partial clear/cloudy calculations directly from VLIDORT
 ! Dimensions, (view_geometries,stokes_components,direction(up/down_welling),cloud)
 ! --------------------------------------------------------------------------------
-  REAL(KIND=8), DIMENSION(max_geometries, maxstokes, 2, 2)                       :: stokes_clrcld
-  REAL(KIND=8), DIMENSION(max_szangles, maxstokes, 2, 2)                         :: stokes_flux
-  REAL(KIND=8), DIMENSION(max_szangles, maxstokes, 2)                            :: stokes_direct_flux
-  REAL(KIND=8), DIMENSION(max_atmoswfs, maxlayers, max_geometries, maxstokes, 2) :: profilewf_sum
-  REAL(KIND=8), DIMENSION(max_surfacewfs, max_geometries, maxstokes, 2, 2)       :: surfacewf_clrcld
+  REAL(KIND=8), DIMENSION(GC_maxuserlevels,max_geometries, maxstokes, 2, 2)                       :: stokes_clrcld
+  REAL(KIND=8), DIMENSION(GC_maxuserlevels,max_szangles, maxstokes, 2, 2)                         :: stokes_flux
+  REAL(KIND=8), DIMENSION(GC_maxuserlevels,max_szangles, maxstokes, 2)                            :: stokes_direct_flux
+  REAL(KIND=8), DIMENSION(max_atmoswfs, maxlayers, GC_maxuserlevels,max_geometries, maxstokes, 2) :: profilewf_sum
+  REAL(KIND=8), DIMENSION(max_surfacewfs, GC_maxuserlevels,max_geometries, maxstokes, 2, 2)       :: surfacewf_clrcld
 
   REAL(KIND=8), DIMENSION(0:max_atmoswfs, 0:maxmoms, 1:maxgksec)                 :: l_phasmoms_total_input
 
@@ -116,6 +116,11 @@ MODULE GC_variables_module
    INTEGER      :: GC_n_user_altitudes
    REAL(KIND=8) :: GC_user_altitudes(GC_maxuserlevels)
    LOGICAL      :: GC_do_user_altitudes
+
+! ---------------------
+! Output levels control
+! ---------------------
+   INTEGER :: ilev ! Level index
 
 ! ---------------
 ! Spectral inputs
@@ -476,49 +481,55 @@ MODULE GC_variables_module
 
 !  I-component of Stokes vector + Jacobians
 
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Radiances
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_flux
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_direct_flux
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_Temperature_Jacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries,maxgases, 2) :: GC_Tracegas_Jacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_Scattering_Weights
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries,maxgases, 2)              :: GC_AMFs
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_aod_Jacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_assa_Jacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_cod_Jacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_cssa_Jacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_cfrac_Jacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Surfalbedo_Jacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Windspeed_Jacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_sfcprs_Jacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2) :: GC_Radiances
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2) :: GC_flux
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2) :: GC_direct_flux
+
+
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries,maxgases, 2)              :: GC_AMFs
+
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_Temperature_Jacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries,maxgases, 2) :: GC_Tracegas_Jacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_Scattering_Weights
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_aod_Jacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_assa_Jacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_cod_Jacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_cssa_Jacobians
+
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_cfrac_Jacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_Surfalbedo_Jacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_Windspeed_Jacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_sfcprs_Jacobians
 
 !  Suggested additional code for Q and U. etc ......................
 !    ---Only bothering with Q/U Jacobians for the trace gases.............. GRONK !
 
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Qvalues
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Uvalues
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Qflux
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Qdirect_flux
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Uflux
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Udirect_flux
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries,maxgases, 2) :: GC_Tracegas_QJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries,maxgases, 2) :: GC_Tracegas_UJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_aod_QJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_assa_QJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_cod_QJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_cssa_QJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_cfrac_QJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_aod_UJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_assa_UJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_cod_UJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxgeometries, 2)          :: GC_cssa_UJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_cfrac_UJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Surfalbedo_QJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Surfalbedo_UJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Windspeed_QJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_Windspeed_UJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_sfcprs_QJacobians
-   REAL(kind=8), DIMENSION(maxlambdas,GC_maxgeometries, 2)                       :: GC_sfcprs_UJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_Qvalues
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_Uvalues
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_Qflux
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_Qdirect_flux
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_Uflux
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_Udirect_flux
+
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries,maxgases, 2) :: GC_Tracegas_QJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries,maxgases, 2) :: GC_Tracegas_UJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_aod_QJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_aod_UJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_assa_QJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_assa_UJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_cod_QJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_cod_UJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_cssa_QJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxlayers,GC_maxuserlevels,GC_maxgeometries, 2)          :: GC_cssa_UJacobians
+
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_cfrac_QJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_cfrac_UJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_Surfalbedo_QJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_Surfalbedo_UJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_Windspeed_QJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_Windspeed_UJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_sfcprs_QJacobians
+   REAL(kind=8), DIMENSION(maxlambdas,GC_maxuserlevels,GC_maxgeometries, 2)                       :: GC_sfcprs_UJacobians
    
 ! --------------------------------------
 ! Local variables for optical properties
