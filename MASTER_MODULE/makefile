@@ -32,12 +32,15 @@ GC_OBJ    = $(TOOL_PATH)/GC_OBJECTS
 GC_MOD    = $(TOOL_PATH)/GC_MODULES
 
 # To compile the Vlidort v2p6 modules
-VLIDORT_PATH      = $(TOOL_PATH)/vlidort_2p6_sourcecode_2_13
+VLIDORT_PATH      = $(TOOL_PATH)/vlidort_source
 VLIDORT_DEF_PATH  = $(VLIDORT_PATH)/vlidort_def
-VLIDORT_MAIN_PATH = $(VLIDORT_PATH)/vlidort_main
-VLIDORT_VSUP_PATH = $(VLIDORT_PATH)/vsup
-VLIDORT_OBJ       = $(TOOL_PATH)/VLIDORT_v2p6_OBJECTS
-VLIDORT_MOD       = $(TOOL_PATH)/VLIDORT_v2p6_MODULES
+VLIDORT_MAIN_PATH = $(VLIDORT_PATH)/vlidort_main_FO_1p4
+VLID_DEF_PATH     = $(VLIDORT_PATH)/vlidort_def
+VLID_MAIN_PATH    = $(VLIDORT_PATH)/vlidort_main_FO_1p4
+FO_MAIN_PATH      = $(VLIDORT_PATH)/fo_main_1p4
+VSUP_PATH         = $(VLIDORT_PATH)/vsup
+VLIDORT_OBJ       = $(TOOL_PATH)/VLIDORT_v2p7_OBJECTS
+VLIDORT_MOD       = $(TOOL_PATH)/VLIDORT_v2p7_MODULES
 
 #TOOL_COMPILE = g77 -c -Wimplicit -Wall -ffortran-bounds-check -O2
 #VLIDORT_COMPILE = g77 -c -Wimplicit -Wall -ffortran-bounds-check -O2
@@ -97,15 +100,19 @@ include ./make.vlidort
 #############
 GCTOOLV2P6  = geocape_tool_v2p6
 
-VLIDORT_OBJECTS  = $(F90OBJECTS_SOURCES)      $(F90OBJECTS_L_SOURCES)  $(F90OBJECTS_LPS_SOURCES) \
-                   $(F90OBJECTS_LPC_SOURCES)  $(SUP_OBJECTS)
+VLIDORT_OBJECTS  = $(F90OBJECTS_FO_SOURCES)            $(F90OBJECTS_FO_SOURCES_Thermal) \
+                   $(F90OBJECTS_FO_SOURCES_L_Thermal)  $(F90OBJECTS_FO_SOURCES_Scalar)  \
+                   $(F90OBJECTS_FO_SOURCES_L_Scalar)   $(F90OBJECTS_FO_SOURCES_Vector)  \
+                   $(F90OBJECTS_FO_SOURCES_L_Vector)   $(F90OBJECTS_SOURCES)            \
+                   $(F90OBJECTS_L_SOURCES)             $(F90OBJECTS_LPS_SOURCES)        \
+                   $(F90OBJECTS_LPC_SOURCES)           $(SUP_OBJECTS)
 
 GC_OBJECTS       = $(OBJECTS_GEOCAPE_PREP) $(OBJECTS_NETCDF) $(OBJECTS_MODULE)\
                    $(OBJECTS_GEOCAPE_V2P6)
 
 install  : mk_folders mk_links all
 distclean: clean_all rm_folders rm_links
-all:   $(VLIDORT_OBJECTS)  $(GC_OBJECTS) $(GCTOOLV2P6).exe
+all:       $(VLIDORT_OBJECTS) $(GC_OBJECTS) $(GCTOOLV2P6).exe
 
 # --------------------
 # The main executables

@@ -8,74 +8,89 @@ SUP_SOURCES  =
 BASE_SOURCES +=                         \
    $(VLIDORT_DEF_PATH)/vlidort_pars.f90
 
-SOURCES +=                                        \
-   $(BASE_SOURCES)                                \
-   $(VLIDORT_MAIN_PATH)/lapack_tools.f90          \
-   $(VLIDORT_MAIN_PATH)/lapack_z16_tools.f90      \
-   $(VLIDORT_DEF_PATH)/vlidort_inputs_def.f90     \
-   $(VLIDORT_DEF_PATH)/vlidort_sup_brdf_def.f90   \
-   $(VLIDORT_DEF_PATH)/vlidort_sup_ss_def.f90     \
-   $(VLIDORT_DEF_PATH)/vlidort_sup_sleave_def.f90 \
-   $(VLIDORT_DEF_PATH)/vlidort_sup_def.f90        \
-   $(VLIDORT_DEF_PATH)/vlidort_outputs_def.f90    \
-   $(VLIDORT_DEF_PATH)/vlidort_io_defs.f90        \
-   $(VLIDORT_MAIN_PATH)/vlidort_aux.f90           \
-   $(VLIDORT_MAIN_PATH)/vlidort_getplanck.f90     \
-   $(VLIDORT_MAIN_PATH)/vlidort_geometry.f90      \
-   $(VLIDORT_MAIN_PATH)/vlidort_inputs.f90        \
-   $(VLIDORT_MAIN_PATH)/vlidort_miscsetups.f90    \
-   $(VLIDORT_MAIN_PATH)/vlidort_multipliers.f90   \
-   $(VLIDORT_MAIN_PATH)/vlidort_corrections.f90   \
-   $(VLIDORT_MAIN_PATH)/vlidort_thermalsup.f90    \
-   $(VLIDORT_MAIN_PATH)/vlidort_solutions.f90     \
-   $(VLIDORT_MAIN_PATH)/vlidort_bvproblem.f90     \
-   $(VLIDORT_MAIN_PATH)/vlidort_intensity.f90	  \
-   $(VLIDORT_MAIN_PATH)/vlidort_writemodules.f90  \
-   $(VLIDORT_MAIN_PATH)/vlidort_masters.f90
+SOURCES +=   \
+   $(BASE_SOURCES) \
+   $(VLID_MAIN_PATH)/lapack_tools.f90		\
+   $(VLID_DEF_PATH)/vlidort_inputs_def.f90	\
+   $(VLID_DEF_PATH)/vlidort_sup_brdf_def.f90	\
+   $(VLID_DEF_PATH)/vlidort_sup_ss_def.f90	\
+   $(VLID_DEF_PATH)/vlidort_sup_sleave_def.f90	\
+   $(VLID_DEF_PATH)/vlidort_sup_def.f90		\
+   $(VLID_DEF_PATH)/vlidort_outputs_def.f90	\
+   $(VLID_DEF_PATH)/vlidort_io_defs.f90		\
+   $(VLID_DEF_PATH)/vlidort_work_def.f90	\
+   $(VLID_MAIN_PATH)/vlidort_aux.f90		\
+   $(VLID_MAIN_PATH)/vlidort_getplanck.f90	\
+   $(VLID_MAIN_PATH)/vlidort_geometry.f90       \
+   $(VLID_MAIN_PATH)/vlidort_Taylor.f90         \
+   $(VLID_MAIN_PATH)/vlidort_inputs.f90		\
+   $(VLID_MAIN_PATH)/vlidort_miscsetups.f90	\
+   $(VLID_MAIN_PATH)/vlidort_multipliers.f90	\
+   $(VLID_MAIN_PATH)/vlidort_corrections.f90	\
+   $(VLID_MAIN_PATH)/vlidort_thermalsup.f90	\
+   $(VLID_MAIN_PATH)/vlidort_solutions.f90	\
+   $(VLID_MAIN_PATH)/vlidort_bvproblem.f90	\
+   $(VLID_MAIN_PATH)/vlidort_intensity.f90	\
+   $(VLID_MAIN_PATH)/vlidort_writemodules.f90	\
+   $(VLID_MAIN_PATH)/vlidort_pack.f90		\
+   $(VLID_MAIN_PATH)/vlidort_unpack.f90		\
+   $(VLID_MAIN_PATH)/vlidort_masters.f90
 
-L_SOURCES +=                                          \
-   $(VLIDORT_DEF_PATH)/vlidort_lin_inputs_def.f90     \
-   $(VLIDORT_DEF_PATH)/vlidort_lin_sup_brdf_def.f90   \
-   $(VLIDORT_DEF_PATH)/vlidort_lin_sup_ss_def.f90     \
-   $(VLIDORT_DEF_PATH)/vlidort_lin_sup_sleave_def.f90 \
-   $(VLIDORT_DEF_PATH)/vlidort_lin_sup_def.f90        \
-   $(VLIDORT_DEF_PATH)/vlidort_lin_outputs_def.f90    \
-   $(VLIDORT_DEF_PATH)/vlidort_lin_io_defs.f90        \
-   $(VLIDORT_MAIN_PATH)/vlidort_l_inputs.f90          \
-   $(VLIDORT_MAIN_PATH)/vlidort_la_miscsetups.f90     \
-   $(VLIDORT_MAIN_PATH)/vlidort_la_corrections.f90    \
-   $(VLIDORT_MAIN_PATH)/vlidort_ls_corrections.f90    \
-   $(VLIDORT_MAIN_PATH)/vlidort_l_thermalsup.f90      \
-   $(VLIDORT_MAIN_PATH)/vlidort_lpc_solutions.f90     \
-   $(VLIDORT_MAIN_PATH)/vlidort_lpc_bvproblem.f90     \
-   $(VLIDORT_MAIN_PATH)/vlidort_ls_wfsurface.f90      \
-   $(VLIDORT_MAIN_PATH)/vlidort_ls_wfsleave.f90       \
-   $(VLIDORT_MAIN_PATH)/vlidort_l_writemodules.f90
+L_SOURCES += \
+   $(VLID_DEF_PATH)/vlidort_lin_inputs_def.f90	  \
+   $(VLID_DEF_PATH)/vlidort_lin_sup_brdf_def.f90  \
+   $(VLID_DEF_PATH)/vlidort_lin_sup_ss_def.f90	  \
+   $(VLID_DEF_PATH)/vlidort_lin_sup_sleave_def.f90\
+   $(VLID_DEF_PATH)/vlidort_lin_sup_def.f90	  \
+   $(VLID_DEF_PATH)/vlidort_lin_outputs_def.f90	  \
+   $(VLID_DEF_PATH)/vlidort_lin_io_defs.f90	  \
+   $(VLID_DEF_PATH)/vlidort_lin_work_def.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_l_inputs.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_la_miscsetups.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_la_corrections.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_ls_corrections.f90   \
+   $(VLID_MAIN_PATH)/vlidort_l_thermalsup.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_lpc_solutions.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_lpc_bvproblem.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_lbbf_jacobians.f90   \
+   $(VLID_MAIN_PATH)/vlidort_ls_wfsurface.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_ls_wfsleave.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_l_writemodules.f90   \
+   $(VLID_MAIN_PATH)/vlidort_l_pack.f90		  \
+   $(VLID_MAIN_PATH)/vlidort_l_unpack.f90
 
-LPS_SOURCES +=                                     \
-   $(VLIDORT_MAIN_PATH)/vlidort_lp_miscsetups.f90  \
-   $(VLIDORT_MAIN_PATH)/vlidort_lp_corrections.f90 \
-   $(VLIDORT_MAIN_PATH)/vlidort_lp_solutions.f90   \
-   $(VLIDORT_MAIN_PATH)/vlidort_lp_bvproblem.f90   \
-   $(VLIDORT_MAIN_PATH)/vlidort_lp_wfatmos.f90     \
-   $(VLIDORT_MAIN_PATH)/vlidort_lps_masters.f90
+LPS_SOURCES += \
+   $(VLID_MAIN_PATH)/vlidort_lp_miscsetups.f90    \
+   $(VLID_MAIN_PATH)/vlidort_lp_corrections.f90   \
+   $(VLID_MAIN_PATH)/vlidort_lp_solutions.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_lp_bvproblem.f90     \
+   $(VLID_MAIN_PATH)/vlidort_lp_wfatmos.f90       \
+   $(VLID_MAIN_PATH)/vlidort_lp_pack.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_lp_unpack.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_lps_masters.f90
 
-LCS_SOURCES +=                                     \
-   $(VLIDORT_MAIN_PATH)/vlidort_lc_miscsetups.f90  \
-   $(VLIDORT_MAIN_PATH)/vlidort_lc_corrections.f90 \
-   $(VLIDORT_MAIN_PATH)/vlidort_lc_solutions.f90   \
-   $(VLIDORT_MAIN_PATH)/vlidort_lc_bvproblem.f90   \
-   $(VLIDORT_MAIN_PATH)/vlidort_lc_wfatmos.f90     \
-   $(VLIDORT_MAIN_PATH)/vlidort_lcs_masters.f90
-
+LCS_SOURCES += \
+   $(VLID_MAIN_PATH)/vlidort_lc_miscsetups.f90    \
+   $(VLID_MAIN_PATH)/vlidort_lc_corrections.f90   \
+   $(VLID_MAIN_PATH)/vlidort_lc_solutions.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_lc_bvproblem.f90     \
+   $(VLID_MAIN_PATH)/vlidort_lc_wfatmos.f90       \
+   $(VLID_MAIN_PATH)/vlidort_lc_pack.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_lc_unpack.f90	  \
+   $(VLID_MAIN_PATH)/vlidort_lcs_masters.f90
 
 # (Include vector supplement source files)
-include $(VLIDORT_VSUP_PATH)/makefile.vsup
+include $(VSUP_PATH)/makefile.vsup
+
+# (Include first-order source files)
+include $(FO_MAIN_PATH)/makefile.fo
 
 SUP_SOURCES +=                \
+   $(VBRDF_SUP_SOURCES)       \
    $(VBRDF_LINSUP_SOURCES)    \
+   $(VSLEAVE_SUP_SOURCES)     \
    $(VSLEAVE_LINSUP_SOURCES)  \
-   $(VLIDORT_MAIN_PATH)/vlidort_sup_accessories.f90
+   $(VSUP_PATH)/vlidort_sup_accessories.f90
 
 F90BASE := $(notdir $(filter %.f90, $(BASE_SOURCES)))
 F90SOURCES := $(notdir $(filter %.f90, $(SOURCES)))
@@ -83,6 +98,13 @@ F90L_SOURCES := $(notdir $(filter %.f90, $(L_SOURCES)))
 F90LPS_SOURCES := $(notdir $(filter %.f90, $(LPS_SOURCES)))
 F90LCS_SOURCES := $(notdir $(filter %.f90, $(LCS_SOURCES)))
 F90SUP_SOURCES := $(notdir $(filter %.f90, $(SUP_SOURCES)))
+F90FO_SOURCES :=  $(notdir $(filter %.f90, $(FO_SOURCES)))
+F90FO_SOURCES_Thermal :=  $(notdir $(filter %.f90, $(FO_SOURCES_Thermal_SOURCES)))
+F90FO_SOURCES_L_Thermal :=  $(notdir $(filter %.f90, $(FO_SOURCES_L_Thermal_SOURCES)))
+F90FO_SOURCES_Scalar :=  $(notdir $(filter %.f90, $(FO_SOURCES_Scalar_SOURCES)))
+F90FO_SOURCES_L_Scalar :=  $(notdir $(filter %.f90, $(FO_SOURCES_L_Scalar_SOURCES)))
+F90FO_SOURCES_Vector :=  $(notdir $(filter %.f90, $(FO_SOURCES_Vector)))
+F90FO_SOURCES_L_Vector :=  $(notdir $(filter %.f90, $(FO_SOURCES_L_Vector)))
 
 F90OBJECTS_BASE := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90BASE)))
 F90OBJECTS_SOURCES := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90SOURCES)))
@@ -90,3 +112,10 @@ F90OBJECTS_L_SOURCES := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F9
 F90OBJECTS_LPS_SOURCES := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90LPS_SOURCES)))
 F90OBJECTS_LPC_SOURCES := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90LPC_SOURCES)))
 SUP_OBJECTS := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90SUP_SOURCES)))
+F90OBJECTS_FO_SOURCES := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90FO_SOURCES)))
+F90OBJECTS_FO_SOURCES_Thermal := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90FO_SOURCES_Thermal)))
+F90OBJECTS_FO_SOURCES_L_Thermal := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90FO_SOURCES_L_Thermal)))
+F90OBJECTS_FO_SOURCES_Scalar := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90FO_SOURCES_Scalar)))
+F90OBJECTS_FO_SOURCES_L_Scalar := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90FO_SOURCES_L_Scalar)))
+F90OBJECTS_FO_SOURCES_Vector := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90FO_SOURCES_Vector)))
+F90OBJECTS_FO_SOURCES_L_Vector := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90FO_SOURCES_L_Vector)))

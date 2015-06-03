@@ -138,11 +138,13 @@ $(GC_OBJ)/GC_netcdf_module.o:$(MOD_PATH)/GC_netcdf_module.f90   \
 # ----- Rules to compile Vlidort objects and modules -----
 # --------------------------------------------------------
 $(VLIDORT_OBJ)/%.o: $(VLIDORT_DEF_PATH)/%.f90
-	$(VLIDORT_COMPILE) -I$(VLIDORT_MOD) \
-                        $< -o $(VLIDORT_OBJ)/$@
+	$(VLIDORT_COMPILE) -I$(VLIDORT_MOD) $< -o $@
 	mv -f *.mod $(VLIDORT_MOD)
 
 $(VLIDORT_OBJ)/%.o: $(VLIDORT_MAIN_PATH)/%.f90 $(F90OBJECTS_BASE)
-	$(VLIDORT_COMPILE) -I$(VLIDORT_MOD) \
-                        $< -o $(VLIDORT_OBJ)/$@
+	$(VLIDORT_COMPILE) -I$(VLIDORT_MOD) $< -o $@
+	mv -f *.mod $(VLIDORT_MOD)
+
+$(VLIDORT_OBJ)/%.o: $(VSUP_PATH)/%.f90 
+	$(VLIDORT_COMPILE) -I$(VLIDORT_MOD) $< -o $@
 	mv -f *.mod $(VLIDORT_MOD)
