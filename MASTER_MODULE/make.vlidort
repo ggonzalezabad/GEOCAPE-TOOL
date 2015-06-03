@@ -86,11 +86,30 @@ include $(VSUP_PATH)/makefile.vsup
 include $(FO_MAIN_PATH)/makefile.fo
 
 SUP_SOURCES +=                \
-   $(VBRDF_SUP_SOURCES)       \
    $(VBRDF_LINSUP_SOURCES)    \
-   $(VSLEAVE_SUP_SOURCES)     \
    $(VSLEAVE_LINSUP_SOURCES)  \
    $(VSUP_PATH)/vlidort_sup_accessories.f90
+
+FO_GC_SOURCES +=                                \
+   $(FO_MAIN_PATH)/FO_geometry_Generic.f90      \
+   $(FO_MAIN_PATH)/FO_geometry_Routines.f90     \
+   $(FO_MAIN_PATH)/FO_DTgeometry_master.f90     \
+   $(FO_MAIN_PATH)/FO_SSgeometry_master.f90     \
+   $(FO_MAIN_PATH)/FO_Planckfunc.f90            \
+   $(FO_MAIN_PATH)/FO_Taylor.f90                \
+   $(FO_MAIN_PATH)/FO_Thermal_RTCalcs_I.f90     \
+   $(FO_MAIN_PATH)/FO_Thermal_RTCalcs_ILCS.f90  \
+   $(FO_MAIN_PATH)/FO_Thermal_RTCalcs_ILPS.f90  \
+   $(FO_MAIN_PATH)/FO_ScalarSS_Spherfuncs.f90   \
+   $(FO_MAIN_PATH)/FO_ScalarSS_RTCalcs_I.f90    \
+   $(FO_MAIN_PATH)/FO_ScalarSS_RTCalcs_ILCS.f90 \
+   $(FO_MAIN_PATH)/FO_ScalarSS_RTCalcs_ILPS.f90 \
+   $(FO_MAIN_PATH)/FO_VectorSS_Spherfuncs.f90   \
+   $(FO_MAIN_PATH)/FO_VectorSS_RTCalcs_I.f90    \
+   $(FO_MAIN_PATH)/VFO_Master.f90               \
+   $(FO_MAIN_PATH)/FO_VectorSS_RTCalcs_ILCS.f90 \
+   $(FO_MAIN_PATH)/FO_VectorSS_RTCalcs_ILPS.f90 \
+   $(FO_MAIN_PATH)/VFO_LinMasters.f90
 
 F90BASE := $(notdir $(filter %.f90, $(BASE_SOURCES)))
 F90SOURCES := $(notdir $(filter %.f90, $(SOURCES)))
@@ -105,6 +124,7 @@ F90FO_SOURCES_Scalar :=  $(notdir $(filter %.f90, $(FO_SOURCES_Scalar_SOURCES)))
 F90FO_SOURCES_L_Scalar :=  $(notdir $(filter %.f90, $(FO_SOURCES_L_Scalar_SOURCES)))
 F90FO_SOURCES_Vector :=  $(notdir $(filter %.f90, $(FO_SOURCES_Vector)))
 F90FO_SOURCES_L_Vector :=  $(notdir $(filter %.f90, $(FO_SOURCES_L_Vector)))
+F90FO_GC_SOURCES :=  $(notdir $(filter %.f90, $(FO_GC_SOURCES)))
 
 F90OBJECTS_BASE := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90BASE)))
 F90OBJECTS_SOURCES := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90SOURCES)))
@@ -119,3 +139,4 @@ F90OBJECTS_FO_SOURCES_Scalar := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ
 F90OBJECTS_FO_SOURCES_L_Scalar := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90FO_SOURCES_L_Scalar)))
 F90OBJECTS_FO_SOURCES_Vector := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90FO_SOURCES_Vector)))
 F90OBJECTS_FO_SOURCES_L_Vector := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90FO_SOURCES_L_Vector)))
+F90OBJECTS_FO_GC_SOURCES := $(patsubst %.f90, %.o, $(addprefix $(VLIDORT_OBJ)/, $(F90FO_GC_SOURCES)))

@@ -100,12 +100,10 @@ include ./make.vlidort
 #############
 GCTOOLV2P6  = geocape_tool_v2p6
 
-VLIDORT_OBJECTS  = $(F90OBJECTS_FO_SOURCES)            $(F90OBJECTS_FO_SOURCES_Thermal) \
-                   $(F90OBJECTS_FO_SOURCES_L_Thermal)  $(F90OBJECTS_FO_SOURCES_Scalar)  \
-                   $(F90OBJECTS_FO_SOURCES_L_Scalar)   $(F90OBJECTS_FO_SOURCES_Vector)  \
-                   $(F90OBJECTS_FO_SOURCES_L_Vector)   $(F90OBJECTS_SOURCES)            \
-                   $(F90OBJECTS_L_SOURCES)             $(F90OBJECTS_LPS_SOURCES)        \
-                   $(F90OBJECTS_LPC_SOURCES)           $(SUP_OBJECTS)
+VLIDORT_OBJECTS  = $(F90OBJECTS_FO_GC_SOURCES)                           \
+                   $(F90OBJECTS_SOURCES)       $(F90OBJECTS_L_SOURCES)   \
+                   $(F90OBJECTS_LPS_SOURCES)   $(F90OBJECTS_LPC_SOURCES) \
+                   $(SUP_OBJECTS)
 
 GC_OBJECTS       = $(OBJECTS_GEOCAPE_PREP) $(OBJECTS_NETCDF) $(OBJECTS_MODULE)\
                    $(OBJECTS_GEOCAPE_V2P6)
