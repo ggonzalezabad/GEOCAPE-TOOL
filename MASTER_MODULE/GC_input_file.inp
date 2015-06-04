@@ -61,7 +61,7 @@ debug_geocape_tool.log
 # Suggest using 2 if wavelength range is covered due to higher quality/resolution
 # ---------------------------------------------------------
 Normalized radiance
-T
+F
 ../geocape_data/chance_solarspec_jqsrt2011_bis.dat
 
 # ----------------------------------------
