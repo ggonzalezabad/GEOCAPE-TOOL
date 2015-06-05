@@ -1313,7 +1313,7 @@
       LOGICAL ::          DO_FDTEST=.FALSE.
 
 !      LOGICAL ::          DO_DEBUG_INPUT=.TRUE.
-      LOGICAL ::          DO_DEBUG_INPUT=.FALSE.
+      LOGICAL ::          DO_DEBUG_INPUT=.TRUE.
 
 !  Initialize some variables
 !  -------------------------
