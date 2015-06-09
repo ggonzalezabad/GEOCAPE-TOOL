@@ -36,8 +36,8 @@ MODULE GC_Vlidort_module
                                  GC_WindSpeed_UJacobians, deltp, pressures,                    &
                                  GC_sfcprs_Jacobians, GC_sfcprs_QJacobians,                    &
                                  GC_sfcprs_UJacobians, do_normalized_radiance, do_effcrs,      &
-                                 solar_cspec_Data, depol, rayleigh_depols, beta_2, pray_20,    &
-                                 pray_20, pray_22, pray_12, pray_32, pray_41, phasmoms_input,  &
+                                 solar_cspec_Data, depol, rayleigh_depols, beta_2, pray_22,    &
+                                 pray_12, pray_41, pray_52, phasmoms_input,                    &
                                  database_dir, maxaer, naer, aer_types, solar_spec_data,       &
                                  aer_profile, lambdas, aer_reflambda, aer_relqext, aer_phfcn,  &
                                  maxcld, ncld, cld_types, cld_profile, cld_reflambda,          &
@@ -1121,22 +1121,25 @@ CONTAINS
     ! ---------------------------
     ! Rayleigh phase matrix input
     ! ---------------------------
-    depol  = Rayleigh_depols(w)
-    beta_2 = (1.0d0 - depol) / (2.0d0 + depol) 
-    pRay_20 =1.0d0
-    pRay_22 = beta_2
+    phasmoms_input          = 0.0d0
+
+    depol   = Rayleigh_depols(w)
+    beta_2  = (1.0d0 - depol) / (2.0d0 + depol)
+
+!!$    pRay_20 = 1.0d0
+    pRay_12 = beta_2
     IF ( VLIDORT_FixIn%Cont%TS_NSTOKES .GT. 1 ) THEN
-       pRay_12 = 6.0d0 * beta_2
-       pRay_32 = -SQRT(6.0d0) * beta_2
        pRay_41 = 3.0d0 * (1.0d0 - 2.0d0*depol) / (2.0d0 + depol) 
+       pRay_22 = 6.0d0 * beta_2
+       pRay_52 = -DSQRT(6.0d0) * beta_2
     END IF
     
     phasmoms_input(0, 1, 1) = 1.0d0
-    phasmoms_input(2, 1, 1) = pRay_22  
+    phasmoms_input(2, 1, 1) = pRay_12
     IF (VLIDORT_FixIn%Cont%TS_NSTOKES > 1) THEN
-       phasmoms_input(2, 2, 1) = pRay_12
-       phasmoms_input(2, 5, 1) = pRay_32
        phasmoms_input(1, 4, 1) = pRay_41
+       phasmoms_input(2, 2, 1) = pRay_22
+       phasmoms_input(2, 5, 1) = pRay_52
     END IF
     
     ! ------------------------------------------------------------------
@@ -1286,6 +1289,9 @@ CONTAINS
                                ! -----------
           DO n = 1, GC_nlayers ! Layers loop
                                ! -----------
+
+             phasmoms_total_input   = 0.0d0
+             l_phasmoms_total_input = 0.0d0
 
              ! -----------------------------------------
              ! Temperature factors for O3 cross-sections

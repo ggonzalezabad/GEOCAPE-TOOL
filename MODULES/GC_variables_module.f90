@@ -538,7 +538,7 @@ MODULE GC_variables_module
    REAL(kind=8), DIMENSION(maxscatter) :: scaco_input
    REAL(kind=8), DIMENSION(0:maxmoms, 1:maxgksec, maxscatter)     :: phasmoms_input
    REAL(kind=8), DIMENSION(0:maxmoms, 1:maxgksec)                 :: phasmoms_total_input
-   REAL(kind=8) :: depol, beta_2, pRay_20, pRay_22, pRay_32, pRay_12, pRay_41
+   REAL(kind=8) :: depol, beta_2, pRay_12, pRay_22, pRay_52, pRay_41
    REAL(kind=8) :: total_sca, omega, total_tau, total_wf, total_Qwf, total_Uwf
    REAL(kind=8) :: total_molabs, total_molsca, total_moltau
    REAL(kind=8) :: total_aersca, total_aertau, total_cldtau, total_cldsca
