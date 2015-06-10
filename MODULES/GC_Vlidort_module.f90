@@ -1121,10 +1121,10 @@ CONTAINS
     ! ---------------------------
     ! Rayleigh phase matrix input
     ! ---------------------------
-    phasmoms_input          = 0.0d0
+    phasmoms_input = 0.0d0
 
-    depol   = Rayleigh_depols(w)
-    beta_2  = (1.0d0 - depol) / (2.0d0 + depol)
+    depol  = Rayleigh_depols(w)
+    beta_2 = (1.0d0 - depol) / (2.0d0 + depol)
 
 !!$    pRay_20 = 1.0d0
     pRay_12 = beta_2
@@ -1285,7 +1285,10 @@ CONTAINS
          
        IF (ic == 1 .OR. (ic == 2 .AND. ipafrac >= 1.0) &
             .OR. (ic == 2 .AND. .NOT. do_lambertian_cld) ) THEN
-          
+
+          VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT      = 0.0d0
+          VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT = 0.0d0         
+
                                ! -----------
           DO n = 1, GC_nlayers ! Layers loop
                                ! -----------
@@ -1734,7 +1737,6 @@ CONTAINS
                      VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(2,1,n,1),             &
                      VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(1,2,n,1),             &
                      VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(2,2,n,1)
-
              write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(0,n,1:16)
              write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(1,n,1:16)
              write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(2,n,1:16)
