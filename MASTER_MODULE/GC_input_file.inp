@@ -2,7 +2,7 @@
 # Results folder
 # --------------
 Output folder
-../test/Test_2p7_
+../test/Test_2p7_bis_
 
 # -------------------------------------
 # Database directory:
@@ -42,7 +42,7 @@ F
 #   2. Debug filename
 # ----------------------
 Debug geocape
-F
+T
 debug_geocape_tool.log
 
 # ---------------------------------------------------------

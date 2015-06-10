@@ -1377,7 +1377,7 @@ CONTAINS
                         * scaco_input(1:nscatter)) / total_sca
                 END DO
              END DO
-             
+
              VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT                                 &
                   (0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n,                       &
                   greekmat_idxs(1:nactgkmatc)) =                                           &
@@ -1734,6 +1734,11 @@ CONTAINS
                      VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(2,1,n,1),             &
                      VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(1,2,n,1),             &
                      VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(2,2,n,1)
+
+             write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(0,n,1:16)
+             write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(1,n,1:16)
+             write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(2,n,1:16)
+
              enddo
              write(du,'(a,f10.5)')'--------Total optical depth = ',total_tau
           else
