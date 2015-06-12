@@ -2582,6 +2582,11 @@
 
       ENDIF
 
+!  temporary
+
+!      do_SSCORR_NADIR = .false.
+!      do_DBCORRECTION = .false.
+
 !  #####################
 !  Correction operations
 !  #####################
@@ -3239,6 +3244,12 @@
             IF ( DO_MULTIBEAM ( IBEAM, FOURIER_COMPONENT ) ) THEN
 
 !  Convergence and radiance summation
+           write(*,*)'flags ---', DO_FO_CALC, DO_FULLRAD_MODE, DO_SSCORR_NADIR, DO_SSCORR_OUTGOING, DO_MSMODE_VLIDORT
+           write(*,*)'Converge 2p7 SS',  FOURIER_COMPONENT, IBEAM, STOKES_SS(1,1,1:nstokes,1)
+           write(*,*)'Converge 2p7 DB', FOURIER_COMPONENT, IBEAM, STOKES_DB(1,1,1:nstokes)
+           write(*,*)'Converge 2p7 FC', FOURIER_COMPONENT, IBEAM, STOKES_F(1,1,1,1:nstokes,1)
+
+           write(*,*)'Full Stokes 2p7', FOURIER_COMPONENT, IBEAM, STOKES(1,1,1:nstokes,1)
 
               IF ( .not. DO_OBSERVATION_GEOMETRY ) THEN
                 CALL VLIDORT_CONVERGE ( &
