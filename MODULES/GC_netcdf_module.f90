@@ -545,9 +545,9 @@ CONTAINS
     
     ! write the list of gases in one string
     write(gasstr, '(10(I2,A1,A4,A1))') (i,':',which_gases(i),',', i=1, ngases)
-    nlen=len_trim(gasstr); gasstr=gasstr(1:nlen-1); nlen=nlen-1
-    call ncaptc (ncid, ncglobal, 'gases', ncchar,  nlen, trim(gasstr), rcode)
-    
+    nlen=LEN(trim(gasstr)) ; gasstr=gasstr(1:nlen-1)
+    call ncaptc (ncid, ncglobal, 'gases', ncchar,  len(trim(gasstr)), trim(gasstr), rcode)
+
     ! Units for variables
     call ncaptc (ncid, ncglobal, 'windspeed_units', ncchar, 3, 'm/s', rcode)
     call ncaptc (ncid, ncglobal, 'lonlat_units',    ncchar, 7, 'degrees', rcode)
