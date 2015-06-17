@@ -1,7 +1,7 @@
 # ------------------------------------------------------------
 # environment & interface modules external to the main package
 # ------------------------------------------------------------
-OBJECTS_GEOCAPE_V2P6  = $(OBJ)/geocape_tool_v2p6.o
+OBJECTS_GEOCAPE_MAIN  = $(OBJ)/geocape_tool.o
 
 OBJECTS_GEOCAPE_PREP  = $(OBJ)/geocape_profile_prep.o               \
                            $(OBJ)/generate_plume.o                  \

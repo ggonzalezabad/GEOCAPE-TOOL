@@ -1,11 +1,11 @@
 # --------------------------------------------------------
 # -------------- Rule to compile Master programs ---------
 # --------------------------------------------------------
-$(OBJ)/geocape_tool_v2p6.o: geocape_tool_v2p6.f90 \
+$(OBJ)/geocape_tool.o: geocape_tool.f90 \
     $(VLIDORT_OBJECTS)
 	$(TOOL_COMPILE) -I$(GC_OBJ) -I$(GC_MOD) -I$(OBJ)   \
     -I$(WARN_PATH) -I$(VLIDORT_OBJ)  -I$(VLIDORT_MOD)  \
-     geocape_tool_v2p6.f90 -o $(OBJ)/geocape_tool_v2p6.o
+     geocape_tool.f90 -o $(OBJ)/geocape_tool.o
 
 # --------------------------------------------------------
 # ------------ Rules to compile VIS routines -------------

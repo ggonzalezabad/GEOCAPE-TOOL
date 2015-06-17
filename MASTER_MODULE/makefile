@@ -112,7 +112,7 @@ VLIDORT_OBJECTS  = $(F90OBJECTS_FO_GC_SOURCES)                           \
                    $(SUP_OBJECTS)
 
 GC_OBJECTS       = $(OBJECTS_GEOCAPE_PREP) $(OBJECTS_NETCDF) $(OBJECTS_MODULE)\
-                   $(OBJECTS_GEOCAPE_V2P6)
+                   $(OBJECTS_GEOCAPE_MAIN)
 
 install  : mk_folders mk_links all
 distclean: clean_all rm_folders rm_links
