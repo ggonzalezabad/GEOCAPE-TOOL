@@ -100,7 +100,8 @@ CONTAINS
     ! and avoid duplications between it and
     ! Vlidort control file
     ! =====================================
-    do_vector_calculation = (VLIDORT_FixIn%Cont%TS_NSTOKES==3)
+    do_vector_calculation = .FALSE.
+    do_vector_calculation = (VLIDORT_FixIn%Cont%TS_NSTOKES==3) .OR. (VLIDORT_FixIn%Cont%TS_NSTOKES==4)
     
     ! ----------------------------------------
     ! Check for aerosols and scattering clouds
@@ -1785,11 +1786,10 @@ CONTAINS
             'V2p7_VLIDORT_LPS_Execution.log', &
             35, OPENERRORFILEFLAG,            &
             VLIDORT_Out%Status )
-       
+
        ! --------------
        ! Stop if failed
        ! --------------
-       
        IF ( VLIDORT_Out%Status%TS_STATUS_INPUTCHECK .EQ. VLIDORT_SERIOUS ) THEN
           WRITE(*,*)'VLIDORT input abort, thread number = ', w
           STOP

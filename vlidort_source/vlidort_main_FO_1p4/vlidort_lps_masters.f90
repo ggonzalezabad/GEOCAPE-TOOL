@@ -1312,8 +1312,7 @@
 
       LOGICAL ::          DO_FDTEST=.FALSE.
 
-!      LOGICAL ::          DO_DEBUG_INPUT=.TRUE.
-      LOGICAL ::          DO_DEBUG_INPUT=.TRUE.
+      LOGICAL ::          DO_DEBUG_INPUT=.FALSE.
 
 !  Initialize some variables
 !  -------------------------
@@ -3342,12 +3341,12 @@
               ENDIF
 
 ! Out for debugging
-           write(*,*)'flags ---', DO_FULLRAD_MODE, DO_SSCORR_NADIR, DO_SSCORR_OUTGOING, DO_MSMODE_VLIDORT, DO_FO_CALC
-           write(*,*)'Converge 2p7 SS',  FOURIER_COMPONENT, IBEAM, STOKES_SS(1,1,1:nstokes,1)
-           write(*,*)'Converge 2p7 DB', FOURIER_COMPONENT, IBEAM, STOKES_DB(1,1,1:nstokes)
-           write(*,*)'Converge 2p7 FC', FOURIER_COMPONENT, IBEAM, STOKES_F(1,1,1,1:nstokes,1)
-
-           write(*,*)'Full Stokes 2p7', FOURIER_COMPONENT, IBEAM, STOKES(1,1,1:nstokes,1)
+!!$           write(*,*)'flags ---', DO_FULLRAD_MODE, DO_SSCORR_NADIR, DO_SSCORR_OUTGOING, DO_MSMODE_VLIDORT, DO_FO_CALC
+!!$           write(*,*)'Converge 2p7 SS',  FOURIER_COMPONENT, IBEAM, STOKES_SS(1,1,1:nstokes,1)
+!!$           write(*,*)'Converge 2p7 DB', FOURIER_COMPONENT, IBEAM, STOKES_DB(1,1,1:nstokes)
+!!$           write(*,*)'Converge 2p7 FC', FOURIER_COMPONENT, IBEAM, STOKES_F(1,1,1,1:nstokes,1)
+!!$
+!!$           write(*,*)'Full Stokes 2p7', FOURIER_COMPONENT, IBEAM, STOKES(1,1,1:nstokes,1)
 
 
 !  Check number of beams already converged
