@@ -91,12 +91,16 @@ CONTAINS
     
     VLIDORT_FixIn%Bool%TS_DO_QUAD_OUTPUT  = .FALSE. ! No option in Vlidort Control file
 
+    !  New to VERSION 2.7. Use of Internal FO calculation, controlled by single hard-wired flag
+!!$    VLIDORT_ModIn%MBool%TS_DO_FO_CALC  = .FALSE.
+    VLIDORT_ModIn%MBool%TS_DO_FO_CALC  = .TRUE.
+
     ! =====================================
     ! To clean up the GC control input file
     ! and avoid duplications between it and
     ! Vlidort control file
     ! =====================================
-       do_vector_calculation = VLIDORT_FixIn%Bool%TS_DO_FULLRAD_MODE
+    do_vector_calculation = (VLIDORT_FixIn%Cont%TS_NSTOKES==3)
     
     ! ----------------------------------------
     ! Check for aerosols and scattering clouds
@@ -175,8 +179,8 @@ CONTAINS
     ENDIF
 
     ! Set the Number of Stokes parameters (1 or 3) and layers
-    VLIDORT_FixIn%Cont%TS_NSTOKES = 1
-    IF ( do_vector_calculation ) VLIDORT_FixIn%Cont%TS_NSTOKES = 3 
+!!$    VLIDORT_FixIn%Cont%TS_NSTOKES = 1 ! gga Now controlled in VLIDORT_Input.cfg file 06/17/15
+!!$    IF ( do_vector_calculation ) VLIDORT_FixIn%Cont%TS_NSTOKES = 3 
     
     ngksec = 1
     IF ( do_vector_calculation ) ngksec = 6 
@@ -1737,9 +1741,9 @@ CONTAINS
                      VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(2,1,n,1),             &
                      VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(1,2,n,1),             &
                      VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(2,2,n,1)
-             write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(0,n,1:16)
-             write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(1,n,1:16)
-             write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(2,n,1:16)
+!!$             write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(0,n,1:16)
+!!$             write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(1,n,1:16)
+!!$             write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(2,n,1:16)
 
              enddo
              write(du,'(a,f10.5)')'--------Total optical depth = ',total_tau
@@ -1778,7 +1782,7 @@ CONTAINS
        ! ------------------
        OPENERRORFILEFLAG = .FALSE.
        CALL VLIDORT_WRITE_STATUS (            &
-            'V2p6_VLIDORT_LPS_Execution.log', &
+            'V2p7_VLIDORT_LPS_Execution.log', &
             35, OPENERRORFILEFLAG,            &
             VLIDORT_Out%Status )
        

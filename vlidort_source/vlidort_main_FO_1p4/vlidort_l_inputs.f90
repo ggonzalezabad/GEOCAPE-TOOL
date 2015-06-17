@@ -1235,7 +1235,8 @@
 
 !  %%%%%%%%%%%% Rob Change, 28 March 2011 %%%%%%%%%%%%%%%
 !  Number of messages
-      NMESSAGES = NMESSAGES + NM
+!      NMESSAGES = NMESSAGES + NM   ! Wrong, bug fix 6/17/15
+      NMESSAGES = NM
 !  %%%%%%%%%%%% Rob Change, 28 March 2011 %%%%%%%%%%%%%%%
 
 !  Finish
