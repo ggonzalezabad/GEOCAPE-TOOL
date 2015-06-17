@@ -55,12 +55,18 @@ VLIDORT_MOD       = $(TOOL_PATH)/VLIDORT_v2p7_MODULES
 #F77 = gfortran -O3
 #LIBS = -L/usr/lib64 -lnetcdff
 
+#TOOL_COMPILE = gfortran -c -g  -fbounds-check -Wall -fbacktrace -mcmodel=medium
+#VLIDORT_COMPILE = gfortran -c -g -fbounds-check -Wall -fbacktrace #-mcmodel=medium -fbounds-check -Wall -fbacktrace
+#LAPACK_COMPILE  = gfortran -c -g  -fbounds-check -Wall -fbacktrace #-fbounds-check -Wall -fbacktrace
+#LAPACK_NOPT_COMPILE = gfortran -c -g  -fbounds-check -Wall -fbacktrace #-fbounds-check -Wall -fbacktrace
+#F77 = gfortran -g  -fbounds-check -Wall -fbacktrace -mcmodel=medium #-fbounds-check -Wall -fbacktrace
+
 TOOL_COMPILE = gfortran -c -O3 -mcmodel=medium
-#TOOL_COMPILE = gfortran -O3 -c -pg -mcmodel=large -fbounds-check -Wall -fbacktrace
-VLIDORT_COMPILE = gfortran -c -O3 #-mcmodel=medium -fbounds-check -Wall -fbacktrace
-LAPACK_COMPILE  = gfortran -c -O3 #-fbounds-check -Wall -fbacktrace
-LAPACK_NOPT_COMPILE = gfortran -c -O3 #-fbounds-check -Wall -fbacktrace
-F77 = gfortran -O3 -mcmodel=medium #-fbounds-check -Wall -fbacktrace
+VLIDORT_COMPILE = gfortran -c -O3
+LAPACK_COMPILE  = gfortran -c -O3
+LAPACK_NOPT_COMPILE = gfortran -c -O3
+F77 = gfortran -O3 -mcmodel=medium
+
 LIBS = -L/usr/lib64 -lnetcdff
 
 #TOOL_COMPILE        = ifort -c -O3 -zero -mcmodel=medium -shared-intel #-g -traceback -check all -warn all
@@ -97,8 +103,8 @@ include ./make.vlidort
 
 #############
 # EXECUTABLES
-#############
-GCTOOLV2P6  = geocape_tool_v2p6
+######GC#######
+GCTOOL = geocape_tool
 
 VLIDORT_OBJECTS  = $(F90OBJECTS_FO_GC_SOURCES)                           \
                    $(F90OBJECTS_SOURCES)       $(F90OBJECTS_L_SOURCES)   \
@@ -110,14 +116,14 @@ GC_OBJECTS       = $(OBJECTS_GEOCAPE_PREP) $(OBJECTS_NETCDF) $(OBJECTS_MODULE)\
 
 install  : mk_folders mk_links all
 distclean: clean_all rm_folders rm_links
-all:       $(VLIDORT_OBJECTS) $(GC_OBJECTS) $(GCTOOLV2P6).exe
+all:       $(VLIDORT_OBJECTS) $(GC_OBJECTS) $(GCTOOL).exe
 
 # --------------------
 # The main executables
 # --------------------
-$(GCTOOLV2P6).exe: $(VLIDORT_OBJECTS) $(GC_OBJECTS)
-			$(LINK.f) -o $(GCTOOLV2P6).exe $(VLIDORT_OBJECTS) $(GC_OBJECTS) $(LIBS)
-			mv -fv *genmod* $(WARN_PATH); chmod a+x $(GCTOOLV2P6).exe
+$(GCTOOL).exe: $(VLIDORT_OBJECTS) $(GC_OBJECTS)
+			$(LINK.f) -o $(GCTOOL).exe $(VLIDORT_OBJECTS) $(GC_OBJECTS) $(LIBS)
+			mv -fv *genmod* $(WARN_PATH); chmod a+x $(GCTOOL).exe
 
 .PHONY : clean
 
