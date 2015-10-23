@@ -285,9 +285,13 @@ program geocape_tools_v2p6
    if ( do_debug_geocape_tool ) then
       write(du,'(/a)')'Debug from the Xsecs setter--------'
       do n = 1, nlambdas
-         write(du,'(i5,f10.5,1p150e12.4)') n,lambdas(n), gas_xsecs(n,1,1:ngases), &
-              Rayleigh_xsecs(n), Rayleigh_depols(n)
-      enddo 
+         do i = 1,GC_nlayers
+            write(du,'(i5,i3,f12.5,1p150e12.4)') n,i,lambdas(n), gas_xsecs(n,i,1:ngases), &
+                 Rayleigh_xsecs(n), Rayleigh_depols(n)
+         end do
+!!$         WRITE(du,'(i5,f11.5,1p1000E16.5E5)') n,lambdas(n), ((gas_xsecs(n,i,j),i=1,GC_nlayers),j=1,ngases), &
+!!$              Rayleigh_xsecs(n), Rayleigh_depols(n)
+      enddo
    endif
 
    ! ===============
@@ -553,18 +557,16 @@ program geocape_tools_v2p6
    ! Loop over output levels
    ! -----------------------
    DO ilev = 1, GC_n_user_levels
-
+	print*, ilev
       ! -----------------------------------------------
       ! Loop over directions (upwelling or downwelling)
       ! -----------------------------------------------
       DO idir = 1, ndir
-         
          didx = idix(idir)
          ! ----------------------------------------------
          ! Need to convolve radiances with slit functions
          ! ----------------------------------------------
-         IF (.NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN
-            
+         IF (.NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN 
             CALL convolve_slit(yn_error)
             !  ##################################################################
             !  ##################################################################
@@ -572,6 +574,7 @@ program geocape_tools_v2p6
             !  ##################################################################
             !  ##################################################################
             DO W = 1, nclambdas
+	       print*, 'Writing output #', W, didx
                ! -----------------
                ! NETCDF file write
                ! -----------------
@@ -584,6 +587,7 @@ program geocape_tools_v2p6
             !  ##################################################################
             !  ##################################################################
             DO W = 1, nlambdas
+	       print*, 'Writing output #', W, didx
                ! -----------------
                ! NETCDF file write
                ! -----------------
