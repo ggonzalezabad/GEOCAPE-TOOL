@@ -506,7 +506,7 @@ CONTAINS
                 GC_Tracegas_Jacobians(w,n,1:VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS, &
                      1:VLIDORT_Out%Main%TS_N_GEOMETRIES,g,didx) = 0.0d0
              ELSE
-                IF ( do_normalized_WFoutput ) THEN                        !  Normalized output
+                IF ( do_normalized_WFoutput ) THEN                       !  Normalized output
                    ratio = gasabs(n, g) / total_gasabs(n)
                 ELSE                                                     !  Non-normalized output
                    ratio = gasabs(n, g) / gas_partialcolumns(n,g) / total_gasabs(n)                
@@ -527,7 +527,6 @@ CONTAINS
                      -VLIDORT_LinOut%Prof%TS_PROFILEWF(q,n,1:VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS,v,1,didx) &
                      / total_gasabs(n) / GC_Radiances(w,1:VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS,v,didx)
              END DO
-             
              ! Compute Air mass factor (don't need to save for every one)
              DO g = 1, ngases
                 DO ilev = 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS
@@ -1851,6 +1850,7 @@ CONTAINS
                1:VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS,                    &
                1:VLIDORT_Out%Main%TS_N_GEOMETRIES,                          &
                1:VLIDORT_FixIn%Cont%TS_NSTOKES, 1:ndir)
+
        END IF
        
            ! ----------------------- 
@@ -1891,7 +1891,7 @@ CONTAINS
          + stokes_direct_flux(1:VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS, &
          1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES,                        &
          1:VLIDORT_FixIn%Cont%TS_NSTOKES, 2) * cfrac
-    
+   
     IF (do_jacobians) THEN
        VLIDORT_LinOut%Prof%TS_PROFILEWF(1:VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS, &
             1:GC_nlayers, 1:VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS,                    &
@@ -1940,7 +1940,7 @@ CONTAINS
        END IF
        
     END IF
-    
+
   END SUBROUTINE Vlidort_cloud_and_calculation
 
   SUBROUTINE VBRDF_TO_VLIDORT(error)
