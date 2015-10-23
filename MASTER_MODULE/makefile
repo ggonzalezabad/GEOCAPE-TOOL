@@ -67,6 +67,12 @@ LAPACK_COMPILE  = gfortran -c -O3
 LAPACK_NOPT_COMPILE = gfortran -c -O3
 F77 = gfortran -O3 -mcmodel=medium
 
+#TOOL_COMPILE = gfortran -pg -c -O3 -mcmodel=medium
+#VLIDORT_COMPILE = gfortran -pg -c -O3
+#LAPACK_COMPILE  = gfortran -pg -c -O3
+#LAPACK_NOPT_COMPILE = gfortran -pg -c -O3
+#F77 = gfortran -pg -O3 -mcmodel=medium
+
 LIBS = -L/usr/lib64 -lnetcdff
 
 #TOOL_COMPILE        = ifort -c -O3 -zero -mcmodel=medium -shared-intel #-g -traceback -check all -warn all
