@@ -152,7 +152,7 @@ CONTAINS
           IF (GC_user_altitudes(i) >= heights(0)) THEN
              GC_user_levels(i) = 0.0
           ELSE IF (GC_user_altitudes(i) <= heights(GC_nlayers)) THEN
-             GC_user_levels(i) = GC_nlayers
+             GC_user_levels(i)    = GC_nlayers
              GC_user_altitudes(i) = heights(GC_nlayers)
           ELSE
              DO j = 1, GC_nlayers
@@ -178,6 +178,14 @@ CONTAINS
                * (heights(j+1) - heights(j))
        ENDDO
     ENDIF
+
+    ! Convert VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(1:GC_n_user_levels) to whole numbers
+    ! to prevent crash when using FO code.
+    DO i = 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS
+       VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(i) = NINT(VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(i))
+       j = INT(VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(i))
+       GC_user_altitudes(i) = heights(j)
+    END DO
 
     ! Set the Number of Stokes parameters (1 or 3) and layers
 !!$    VLIDORT_FixIn%Cont%TS_NSTOKES = 1 ! gga Now controlled in VLIDORT_Input.cfg file 06/17/15
