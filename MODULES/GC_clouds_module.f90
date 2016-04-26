@@ -251,14 +251,14 @@ MODULE GC_clouds_module
       
          ! ---------------------------------------------------------------------
          ! convert from cloud specification in pressure to altitude if necessary
-         ! ---------------------------------------------------------------------
+         ! ---------------------------------------------------------------------    
          IF (.NOT. use_zcldspec) THEN
             CALL convert_cldspec_p2z(GC_nlayers, pressures(0:GC_nlayers),      &
                                      heights(0:GC_nlayers), do_lambertian_cld, &
                                      use_cldprof, maxcld, ncld, cld_tops,      &
                                      cld_bots)
-         END IF
-      
+         END IF      
+
          IF (do_lambertian_cld) THEN
             IF (cld_tops(1) < heights(GC_nlayers)) CALL write_err_message &
                  ( .TRUE., "Lambertian cloud surface below surface!!!")
@@ -324,7 +324,7 @@ MODULE GC_clouds_module
               do_lambertian_cld, maxcld, ncld, cld_bots, cld_tops, cld_taus,            &
               cld_lowers, cld_uppers, cld_profile, maxaer, naer0, aer_profile0,         &
               error, messages(nmessages+1))
-
+        
          IF (error) CALL write_err_message ( .TRUE., messages(nmessages+1))
 
       END IF

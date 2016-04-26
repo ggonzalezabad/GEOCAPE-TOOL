@@ -204,11 +204,11 @@ subroutine geocape_profile_setter_1                        &
 
 !  Parameters: Loschmidt's number (particles/cm3), STP parameters
 
-   real(kind=8), parameter ::  RHO_STAND = 2.68675D+19
+   real(kind=8), parameter ::  RHO_STAND = 2.68675D+19 !(#/cm3)
    real(kind=8), parameter ::  PZERO     = 1013.25D0
    real(kind=8), parameter ::  TZERO     = 273.15D0
    real(kind=8), parameter ::  RHO_ZERO  = RHO_STAND * TZERO / PZERO
-   real(kind=8), parameter ::  CONST     = 1.0D+05 * RHO_ZERO
+   real(kind=8), parameter ::  CONST     = 1.0D+05 * RHO_ZERO ! Since H is [km]=1.0D5[cm]
    real(kind=8), parameter ::  DU_TO_CM2 = 2.68668D16
    real(kind=8), parameter ::  O2RATIO   = 0.2095D0
 
@@ -529,7 +529,7 @@ subroutine insert_clouds(maxlayers, nlayers, heights, pressures, temperatures,  
            aer_opdeps(1:naer, i + 1) =  aer_opdeps(1:naer, i + 1)  * (1.0 - presfrac)
            daircolumns_dT(i) = -aircolumns(i) / (temperatures(i-1) + temperatures(i)) * 2.0
            daircolumns_dT(i + 1) = -aircolumns(i + 1) / (temperatures(i) + temperatures(i+1)) * 2.0  
-           nlayers = nlayers + 1
+           !nlayers = nlayers + 1
 
            if (nlayers > maxlayers) then
               message = 'Need to increase maxlayers!!!'
