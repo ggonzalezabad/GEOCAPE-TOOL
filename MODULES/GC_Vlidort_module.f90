@@ -48,7 +48,7 @@ MODULE GC_Vlidort_module
                                  total_molabs, which_gases, gas_xsecs_type, xsec, gas_xsecs,   &
                                  o3c1_xsecs, o3c2_xsecs, xsec_o3save, total_molsca, aircolumns,&
                                  rayleigh_xsecs, total_moltau, nscatter, scaco_input,          &
-                                 total_tau, total_sca, aerscaidx, scaco_input, cldscaidx,      &
+                                 total_tau, total_sca, aerscaidx, cldscaidx,                   &
                                  omega, opdeps, ssalbs, smallnum, phasmoms_total_input,        &
                                  greekmat_idxs, phasmoms_idxs, abs_o3, dxsec_dt, l_gas, l_air, &
                                  daircolumns_dt, l_phasmoms_total_input, pvar,                 &
@@ -92,8 +92,8 @@ CONTAINS
     VLIDORT_FixIn%Bool%TS_DO_QUAD_OUTPUT  = .FALSE. ! No option in Vlidort Control file
 
     !  New to VERSION 2.7. Use of Internal FO calculation, controlled by single hard-wired flag
-!!$    VLIDORT_ModIn%MBool%TS_DO_FO_CALC  = .FALSE.
-    VLIDORT_ModIn%MBool%TS_DO_FO_CALC  = .TRUE.
+    VLIDORT_ModIn%MBool%TS_DO_FO_CALC  = .FALSE.
+!!$    VLIDORT_ModIn%MBool%TS_DO_FO_CALC  = .TRUE.
 
     ! =====================================
     ! To clean up the GC control input file
@@ -181,11 +181,13 @@ CONTAINS
 
     ! Convert VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(1:GC_n_user_levels) to whole numbers
     ! to prevent crash when using FO code.
-    DO i = 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS
-       VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(i) = NINT(VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(i))
-       j = INT(VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(i))
-       GC_user_altitudes(i) = heights(j)
-    END DO
+    IF (VLIDORT_ModIn%MBool%TS_DO_FO_CALC) THEN
+       DO i = 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS
+          VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(i) = NINT(VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(i))
+          j = INT(VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(i))
+          GC_user_altitudes(i) = heights(j)
+       END DO
+    ENDIF
 
     ! Set the Number of Stokes parameters (1 or 3) and layers
 !!$    VLIDORT_FixIn%Cont%TS_NSTOKES = 1 ! gga Now controlled in VLIDORT_Input.cfg file 06/17/15
@@ -297,7 +299,7 @@ CONTAINS
     sfcprswfidx = 0; codwfidx = 0; cssawfidx = 0
     IF ( do_JACOBIANS ) THEN
 
-       VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS        = 1
+       VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS       = 1
        VLIDORT_LinFixIn%Cont%TS_profilewf_names(1)       = '-Trace Gas Volume Mixing Ratio-'
        gaswfidx = 1
        
@@ -1111,25 +1113,7 @@ CONTAINS
           VLIDORT_FixIn%Sunrays%TS_FLUX_FACTOR = solar_spec_data(w)
        ENDIF
     ENDIF
-    
-    ! ---------------------------------------------------
-    ! VLIDORT variable | ** Initialize optical properties
-    ! ---------------------------------------------------
-    VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, &
-         1:GC_nlayers, :) = 0.0d0
-    VLIDORT_FixIn%Optical%TS_DELTAU_VERT_INPUT(1:GC_nlayers)       = 0.0d0
-    VLIDORT_ModIn%MOptical%TS_OMEGA_TOTAL_INPUT(1:GC_nlayers)      = 0.0d0
-    
-    ! --------------------------------------------------------------
-    ! VLIDORT variable | ** Initialize linearized optical properties
-    ! --------------------------------------------------------------
-    IF (VLIDORT_LinModIn%MCont%TS_DO_ATMOS_LINEARIZATION) THEN
-       VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(1:n_totalprofile_wfs_wcld, &
-            0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, 1:GC_nlayers, :)                     = 0.0d0
-       VLIDORT_LinFixIn%Optical%TS_L_DELTAU_VERT_INPUT(1:n_totalprofile_wfs_wcld, 1:GC_nlayers) = 0.0d0
-       VLIDORT_LinFixIn%Optical%TS_L_OMEGA_TOTAL_INPUT(1:n_totalprofile_wfs_wcld, 1:GC_nlayers) = 0.0d0
-    END IF
-    
+            
     ! ---------------------------
     ! Rayleigh phase matrix input
     ! ---------------------------
@@ -1183,11 +1167,11 @@ CONTAINS
             cld_relqext(w, 1:GC_nlayers),                                                      &
             cld_phfcn(1:GC_nlayers, 0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, 1:ngksec),  &
             tmperrmessage, error) 
-       
+
        IF (error) CALL write_err_message (.FALSE., tmperrmessage)
 
     END IF
-    
+
   END SUBROUTINE Vlidort_set_optical
 
   SUBROUTINE Vlidort_cloud_and_calculation (error)
@@ -1243,7 +1227,6 @@ CONTAINS
           ipafrac = cfrac     ! Cloudy part
           IF (do_lambertian_cld) VLIDORT_FixIn%Cont%TS_NLAYERS = cld_uppers(1) - 1
        END IF
-       
        IF (ipafrac == 0.0d0) CYCLE
        
        ! ---------------------------
@@ -1298,8 +1281,23 @@ CONTAINS
        IF (ic == 1 .OR. (ic == 2 .AND. ipafrac >= 1.0) &
             .OR. (ic == 2 .AND. .NOT. do_lambertian_cld) ) THEN
 
-          VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT      = 0.0d0
-          VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT = 0.0d0         
+          ! ---------------------------------------------------
+          ! VLIDORT variable | ** Initialize optical properties
+          ! ---------------------------------------------------
+          VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, &
+               1:GC_nlayers, :) = 0.0d0
+          VLIDORT_FixIn%Optical%TS_DELTAU_VERT_INPUT(1:GC_nlayers)       = 0.0d0
+          VLIDORT_ModIn%MOptical%TS_OMEGA_TOTAL_INPUT(1:GC_nlayers)      = 0.0d0
+
+          ! --------------------------------------------------------------
+          ! VLIDORT variable | ** Initialize linearized optical properties
+          ! --------------------------------------------------------------
+          IF (VLIDORT_LinModIn%MCont%TS_DO_ATMOS_LINEARIZATION) THEN
+             VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(1:n_totalprofile_wfs_wcld, &
+                  0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, 1:GC_nlayers, :)                     = 0.0d0
+             VLIDORT_LinFixIn%Optical%TS_L_DELTAU_VERT_INPUT(1:n_totalprofile_wfs_wcld, 1:GC_nlayers) = 0.0d0
+             VLIDORT_LinFixIn%Optical%TS_L_OMEGA_TOTAL_INPUT(1:n_totalprofile_wfs_wcld, 1:GC_nlayers) = 0.0d0
+          END IF
 
                                ! -----------
           DO n = 1, GC_nlayers ! Layers loop
@@ -1347,9 +1345,9 @@ CONTAINS
              total_moltau = total_molabs + total_molsca
              
              nscatter = 1
-             scaco_input(1) = total_molsca
              total_tau = total_moltau
              total_sca = total_molsca
+             scaco_input(nscatter) = total_molsca
              
              IF ( aer_flags(n) ) THEN
                 nscatter = nscatter + 1
@@ -1455,12 +1453,12 @@ CONTAINS
                       EXIT
                    END IF
                 END DO
-                
+
                 ratio = total_moltau / total_tau
                 L_air = ratio * daircolumns_dT(n) / aircolumns(n)
                 VLIDORT_LinFixIn%Optical%TS_L_DELTAU_VERT_INPUT(q,n) = &
                      mid_temperatures(n) * ( L_gas + L_air )
-                
+
                 ratio = total_molsca / total_sca
                 L_air = mid_temperatures(n) * ratio * daircolumns_dT(n) / aircolumns(n)
                 VLIDORT_LinFixIn%Optical%TS_L_OMEGA_TOTAL_INPUT(q,n) = &
@@ -1502,7 +1500,7 @@ CONTAINS
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12)   
                 ENDIF
 
-             END IF
+             END IF ! End Temperature Jacobians IF
              
              ! ------------------------------------------------------------
              ! Ground surface pressure Jacobians, only if flagged
@@ -1749,9 +1747,6 @@ CONTAINS
                      VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(2,1,n,1),             &
                      VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(1,2,n,1),             &
                      VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(2,2,n,1)
-!!$             write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(0,n,1:16)
-!!$             write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(1,n,1:16)
-!!$             write(46,'(1p16e13.3)') VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(2,n,1:16)
 
              enddo
              write(du,'(a,f10.5)')'--------Total optical depth = ',total_tau
