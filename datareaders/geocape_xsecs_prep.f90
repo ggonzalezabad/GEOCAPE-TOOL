@@ -71,7 +71,7 @@ subroutine geocape_xsec_setter_1                                            &
         fz, lz, nz1, ntlambdas, ni0
    real(kind=8)  :: lamb1, lamb2, wav, val, c1, c2,conversion, xsec, fwhm, scale
    real(kind=8), dimension(maxlambdas) :: tlambdas
-   integer, parameter :: maxio = 500000
+   integer, parameter :: maxio = 600000
    real(kind=8), dimension(maxio)      :: hwave, hi0
    real(kind=8)  :: CO2_PPMV_MIXRATIO
    real(kind=8)  :: x(maxspline), y(maxspline), y2(maxspline)
