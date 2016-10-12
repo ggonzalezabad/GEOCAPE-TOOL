@@ -46,7 +46,7 @@ MODULE GC_Vlidort_module
                                  profilewf_sum, surfacewf_clrcld, ipafrac,                     &
                                  cfrac, cld_uppers, lambertian_cldalb, temp, temp_sq,          &
                                  total_molabs, which_gases, gas_xsecs_type, xsec, gas_xsecs,   &
-                                 o3c1_xsecs, o3c2_xsecs, xsec_o3save, total_molsca, aircolumns,&
+                                 o3c1_xsecs, o3c2_xsecs, total_molsca, aircolumns,             &
                                  rayleigh_xsecs, total_moltau, nscatter, scaco_input,          &
                                  total_tau, total_sca, aerscaidx, cldscaidx,                   &
                                  omega, opdeps, ssalbs, smallnum, phasmoms_total_input,        &

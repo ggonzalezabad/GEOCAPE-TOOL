@@ -543,7 +543,7 @@ MODULE GC_variables_module
    REAL(kind=8) :: total_molabs, total_molsca, total_moltau
    REAL(kind=8) :: total_aersca, total_aertau, total_cldtau, total_cldsca
    REAL(kind=8) :: total_vaerssa, total_vcldssa
-   REAL(kind=8) :: xsec_o3save(GC_maxlayers), total_gasabs(GC_maxlayers), temp, temp_sq
+   REAL(kind=8) :: total_gasabs(GC_maxlayers), temp, temp_sq
    REAL(kind=8) :: ratio, xsec, dxsec_dT, L_gas, L_air, pvar
    REAL(kind=8) :: gasabs(GC_maxlayers,maxgases), abs_o3(GC_maxlayers)
    REAL(kind=8) :: O3_partialcolumns(GC_maxlayers)
