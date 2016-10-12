@@ -1318,11 +1318,7 @@ CONTAINS
              total_molabs = 0.0d0
              DO g = 1, ngases
                 gasabs(n,g) = 0.0d0
-                IF ( which_gases(g) == 'O3  ' .AND. gas_xsecs_type(g) == 2 ) THEN
-                   xsec = gas_xsecs(w,1,g) + temp * o3c1_xsecs(w) + temp_sq * o3c2_xsecs(w)
-                   xsec_o3save(n) = xsec
-                   gasabs(n,g) = gas_partialcolumns(n,g) * xsec
-                ELSE IF (gas_xsecs_type(g) == 2) THEN
+                IF (gas_xsecs_type(g) == 2) THEN
                    xsec = gas_xsecs(w,1,g) + temp * gas_xsecs(w,2,g) + temp_sq * gas_xsecs(w,3,g)
                    gasabs(n,g) = gas_partialcolumns(n,g) * xsec
                 ELSE IF (gas_xsecs_type(g) == 3) THEN

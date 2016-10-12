@@ -155,7 +155,7 @@ subroutine geocape_xsec_setter_1                                            &
 
    do g = 1, ngases
 
-     ! print *, g, which_gases(g), gas_xsecs_type(g), TRIM(ADJUSTL(xsec_data_filenames(g)))
+!      print *, g, which_gases(g), gas_xsecs_type(g), TRIM(ADJUSTL(xsec_data_filenames(g)))
 
       if (gas_xsecs_type(g) .eq. 1 .or. gas_xsecs_type(g) .eq. 2) then
 
@@ -253,7 +253,7 @@ subroutine geocape_xsec_setter_1                                            &
 !  .. Read second line, and check window is covered
          read(1,*, iostat = io) wav, val, c1, c2
          if (lamb1 .lt. wav ) then
-!            print *, 'O3 Xsec data does not cover input window at lower end'
+            print *, filename, ' Xsec data does not cover input window at lower end'
          endif
 !  .. Read more lines, saving to spline buffer
          reading = .true.
@@ -274,7 +274,7 @@ subroutine geocape_xsec_setter_1                                            &
 
 !  .. Check if last data line is present, then window not covered
          if (reading) then
-!            print *, 'O3 Xsec data does not cover input window at upper end'
+            print *, filename, ' Xsec data does not cover input window at upper end'
          endif
          close(1)
 
@@ -301,9 +301,9 @@ subroutine geocape_xsec_setter_1                                            &
          do n = 1, nlambdas
             if (lambdas(n) >= x(1) .and. lambdas(n) <= x(nbuff)) then 
                call splint(x,yc1,y2,nbuff,lambdas(n),xsec)
-               o3c1_xsecs(n) = xsec / conversion
+               gas_xsecs(n,2,g) = xsec / conversion
             else
-               o3c1_xsecs(n) = 0.d0
+               gas_xsecs(n,2,g) = 0.d0
             endif
          enddo
 
@@ -311,15 +311,17 @@ subroutine geocape_xsec_setter_1                                            &
          do n = 1, nlambdas
             if (lambdas(n) >= x(1) .and. lambdas(n) <= x(nbuff)) then 
                call splint(x,yc2,y2,nbuff,lambdas(n),xsec)
-               o3c2_xsecs(n) = xsec / conversion
+               gas_xsecs(n,3,g) = xsec / conversion
             else
-               o3c2_xsecs(n) = 0.0d0
+               gas_xsecs(n,3,g) = 0.d0
             endif
-   
          enddo
-         gas_xsecs(1:nlambdas, 2, g) = o3c1_xsecs(1:nlambdas)
-         gas_xsecs(1:nlambdas, 3, g) = o3c2_xsecs(1:nlambdas)
-         
+
+         if (TRIM(which_gases(g)) .EQ. 'O3') then
+            o3c1_xsecs(1:nlambdas) = gas_xsecs(1:nlambdas, 2, g)
+            o3c2_xsecs(1:nlambdas) = gas_xsecs(1:nlambdas, 3, g)
+         endif
+
 ! Use HITRAN database
       else if (gas_xsecs_type(g) .eq. 3 .and. trim(adjustl(xsec_data_filenames(g))) .eq. 'HITRAN') then
 
@@ -367,6 +369,7 @@ subroutine geocape_xsec_setter_1                                            &
             ! Check off this gas           
             ngas_check = ngas_check + 1
          endif
+
 !  Finish cross - sections
 
       endif
