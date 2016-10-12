@@ -262,7 +262,7 @@ subroutine geocape_profile_setter_1                        &
    do g = 1, ngases
       gasidxs(g) = -1   ! initialize to -1
       gasname = which_gases(g)
-      if (gasname == 'O4  ') gasname = 'O2  '
+!!$      if (gasname == 'O4  ') gasname = 'O2  '
       do i = 1, pnc
          !if ( TRIM(StrUpCase(datanames(i))) == TRIM(StrUpCase(gasname)) ) then
          if ( TRIM(datanames(i)) == TRIM(gasname) ) then
@@ -270,10 +270,9 @@ subroutine geocape_profile_setter_1                        &
             CYCLE
          endif
       enddo
-
-      !write(*, '(I4,2A6,I4,A6)') g, which_gases(g), gasname, gasidxs(g), datanames(gasidxs(g))
+!!$      write(*, '(I4,2A6,I4,A6)') g, which_gases(g), gasname, gasidxs(g), datanames(gasidxs(g))
    enddo
-      
+
 !  Develop gas partial columns
 !  ---------------------------
 
@@ -289,7 +288,7 @@ subroutine geocape_profile_setter_1                        &
          do n = 1, GC_nlayers
             n1 = GC_nlayers + 1 - n
             if (profile_is_level) then
-               gasconcen(n) = ( profile_data(n1, gasidxs(g)) + profile_data(n1+1, gasidxs(g)) ) /2.
+               gasconcen(n) = ( profile_data(n1, gasidxs(g)) + profile_data(n1+1, gasidxs(g)) ) / 2.0
             else
                gasconcen(n) = profile_data(n1, gasidxs(g))
             endif
@@ -311,8 +310,7 @@ subroutine geocape_profile_setter_1                        &
             if (gasidxs(g) == -1) then
                gas_partialcolumns(n,g) = (aircolumns(n) * O2RATIO) ** 2.0 / (heights(n-1)-heights(n)) / 1.0D5
             else 
-               gas_partialcolumns(n,g) = (pp * aircolumns(n) * gasconcen(n) ) ** 2.0 &
-                    / (heights(n-1)-heights(n)) / 1.0D5 
+               gas_partialcolumns(n,g) = pp * aircolumns(n) * gasconcen(n)
             endif
          enddo
       else if (gasidxs(g) .ge. 1) then    ! Other gases
@@ -322,7 +320,7 @@ subroutine geocape_profile_setter_1                        &
          enddo
       endif
    enddo
-   
+
 !  Check that All input gases have been found
 
    if ( ngas_check .ne. ngases ) then
@@ -335,7 +333,7 @@ subroutine geocape_profile_setter_1                        &
 
    do g = 1, ngases
       do n = 1, GC_nlayers
-         if (gas_partialcolumns(n,g).lt.0.0d0)gas_partialcolumns(n,g)=0.0d0
+         if (gas_partialcolumns(n,g).lt.0.0d0) gas_partialcolumns(n,g)=0.0d0
       enddo
    enddo
 
