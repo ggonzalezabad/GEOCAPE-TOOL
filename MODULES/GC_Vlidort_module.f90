@@ -1320,11 +1320,14 @@ CONTAINS
                 gasabs(n,g) = 0.0d0
                 IF (gas_xsecs_type(g) == 2) THEN
                    xsec = gas_xsecs(w,1,g) + temp * gas_xsecs(w,2,g) + temp_sq * gas_xsecs(w,3,g)
+                   IF (xsec .LT. 0) xsec = 0.0
                    gasabs(n,g) = gas_partialcolumns(n,g) * xsec
                 ELSE IF (gas_xsecs_type(g) == 3) THEN
                    gasabs(n,g) = gas_partialcolumns(n,g) * gas_xsecs(w,n,g)
+                   IF (xsec .LT. 0) xsec = 0.0
                 ELSE IF (gas_xsecs_type(g) == 1) THEN
                    gasabs(n,g) = gas_partialcolumns(n,g) * gas_xsecs(w,1,g)
+                   IF (xsec .LT. 0) xsec = 0.0
                 END IF
                 total_molabs = total_molabs + gasabs(n,g)
              END DO
