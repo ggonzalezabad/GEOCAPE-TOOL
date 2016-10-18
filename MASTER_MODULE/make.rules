@@ -16,9 +16,9 @@ $(OBJ)/%.o: $(DATA_PATH)/%.f90
 # --------------------------------------------------------
 # ----------Rule to compile NETCDF routines --------------
 # --------------------------------------------------------
-$(OBJ)/netcdf_wrt.o: $(NC_PATH)/netcdf_wrt.f90 \
-	$(NC_PATH)/netcdf.inc
-	$(TOOL_COMPILE) $(NC_PATH)/netcdf_wrt.f90 -o $(OBJ)/netcdf_wrt.o
+#$(OBJ)/netcdf_wrt.o: $(NC_PATH)/netcdf_wrt.f90 \
+#	$(NC_PATH)/netcdf.inc
+#	$(TOOL_COMPILE) $(NC_PATH)/netcdf_wrt.f90 -o $(OBJ)/netcdf_wrt.o
 
 # --------------------------------------------------------
 # ------------- Rules to compile GC modules --------------
@@ -129,10 +129,18 @@ $(GC_OBJ)/GC_netcdf_module.o:$(MOD_PATH)/GC_netcdf_module.f90   \
                                $(GC_OBJ)/GC_parameters_module.o \
                                $(GC_OBJ)/GC_error_module.o      \
                                $(GC_OBJ)/GC_variables_module.o  \
-                               $(OBJ)/netcdf_wrt.o
+                               $(OBJ)/netcdf_wrt.o ${OBJ}/netcdf_wrt.o
 	$(TOOL_COMPILE) $(MOD_PATH)/GC_netcdf_module.f90 -I$(OBJ)  -I$(GC_OBJ)  -I$(GC_MOD) \
     -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_netcdf_module.o
 	mv -f *.mod $(GC_MOD)
+
+# --------------------------------------------------------
+# ----------Rule to compile NETCDF routines --------------
+# --------------------------------------------------------
+$(OBJ)/netcdf_wrt.o: $(NC_PATH)/netcdf_wrt.f90 \
+	$(NC_PATH)/netcdf.inc
+	$(TOOL_COMPILE) $(NC_PATH)/netcdf_wrt.f90 -I$(OBJ)  -I$(GC_OBJ)  -I$(GC_MOD) \
+    -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(OBJ)/netcdf_wrt.o
 
 # --------------------------------------------------------
 # ----- Rules to compile Vlidort objects and modules -----

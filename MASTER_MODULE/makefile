@@ -117,7 +117,7 @@ VLIDORT_OBJECTS  = $(F90OBJECTS_FO_GC_SOURCES)                           \
                    $(F90OBJECTS_LPS_SOURCES)   $(F90OBJECTS_LPC_SOURCES) \
                    $(SUP_OBJECTS)
 
-GC_OBJECTS       = $(OBJECTS_GEOCAPE_PREP) $(OBJECTS_NETCDF) $(OBJECTS_MODULE)\
+GC_OBJECTS       = $(OBJECTS_GEOCAPE_PREP) $(OBJECTS_MODULE) $(OBJECTS_NETCDF)\
                    $(OBJECTS_GEOCAPE_MAIN)
 
 install  : mk_folders mk_links all

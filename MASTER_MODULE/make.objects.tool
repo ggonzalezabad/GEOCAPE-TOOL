@@ -19,7 +19,7 @@ OBJECTS_GEOCAPE_PREP  = $(OBJ)/geocape_profile_prep.o               \
                            $(OBJ)/solar_angles.o                    \
                            $(OBJ)/satellite_angles.o            
 
-OBJECTS_NETCDF        = $(OBJ)/netcdf_wrt.o  
+OBJECTS_NETCDF        = $(OBJ)/netcdf_wrt.o
 
 OBJECTS_MODULE        = $(GC_OBJ)/GC_parameters_module.o            \
                         $(GC_OBJ)/GC_variables_module.o             \
