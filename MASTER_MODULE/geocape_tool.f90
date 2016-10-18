@@ -544,62 +544,38 @@ program geocape_tools_v2p6
       ! -------------------
    END DO ! End wavelength loop
    ! -------------------
-  
-   ! -----------------------
-   ! Create the output files
-   ! -----------------------
+
+   !  ##################################################################
+   !  ##################################################################
+   !                 W R I T E    R E S U L T S
+   !  ##################################################################
+   !  ################################################################## 
    DO idir = 1, ndir
-         didx = idix(idir)      
-         CALL Create_netcdf_output_file (yn_error)
-   END DO
-         
-   ! -----------------------
-   ! Loop over output levels
-   ! -----------------------
-   DO ilev = 1, GC_n_user_levels
-	print*, ilev
-      ! -----------------------------------------------
-      ! Loop over directions (upwelling or downwelling)
-      ! -----------------------------------------------
-      DO idir = 1, ndir
-         didx = idix(idir)
-         ! ----------------------------------------------
-         ! Need to convolve radiances with slit functions
-         ! ----------------------------------------------
-         IF (.NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN 
-            CALL convolve_slit(yn_error)
-            !  ##################################################################
-            !  ##################################################################
-            !                 W R I T E    R E S U L T S
-            !  ##################################################################
-            !  ##################################################################
-            DO W = 1, nclambdas
-	       print*, 'Writing output #', W, didx
-               ! -----------------
-               ! NETCDF file write
-               ! -----------------
-               CALL netcdf_output (yn_error)
-            END DO
-         ELSE
-            !  ##################################################################
-            !  ##################################################################
-            !                 W R I T E    R E S U L T S
-            !  ##################################################################
-            !  ##################################################################
-            DO W = 1, nlambdas
-	       print*, 'Writing output #', W, didx
-               ! -----------------
-               ! NETCDF file write
-               ! -----------------
-               CALL netcdf_output (yn_error)
-            END DO
-         END IF
-         ! --------------------------   
-      END DO ! End directions loop
-      ! --------------------------
-      ! End output levels loop
-   END DO
-   ! ----
+      ! -----------------------
+      ! Create the output files
+      ! -----------------------
+      didx = idix(idir)      
+      CALL Create_netcdf_output_file (yn_error)
+
+      ! ----------------------------------------------
+      ! Need to convolve radiances with slit functions
+      ! ----------------------------------------------
+      IF (.NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN 
+         print*, 'Convolving effective cross sections'
+         CALL convolve_slit(yn_error)
+      END IF
+      ! -----------------
+      ! NETCDF file write
+      ! -----------------
+      CALL netcdf_output (yn_error)
+   !---------------------------
+   END DO ! End directions loop
+   ! --------------------------
+   !  ##################################################################
+   !  ##################################################################
+   !                 W R I T E    R E S U L T S
+   !  ##################################################################
+   !  ##################################################################
 
    ! ----------------
    ! Close debug file

@@ -69,54 +69,7 @@ CONTAINS
        WRITE(*,*) 'No upwelling or downwelling selected... no output'
        STOP
     END IF
-    call netcdf_wrt ( netfname, GC_n_sun_positions, VLIDORT_Out%Main%TS_N_GEOMETRIES, &
-         GC_nlayers, ngases, opdeps(W, 1:GC_nlayers), ssalbs(W, 1:GC_nlayers),        &
-         aer_opdeps(W, 1:GC_nlayers), aer_ssalbs(W, 1:GC_nlayers),                    &
-         cld_opdeps(W, 1:GC_nlayers), cld_ssalbs(W, 1:GC_nlayers),                    &
-         ground_ler(W), do_vector_calculation, do_StokesQU_output, do_Jacobians,      &
-         do_QU_Jacobians, do_AMF_calculation, do_T_Jacobians, do_sfcprs_Jacobians,    &
-         do_aod_Jacobians, do_assa_Jacobians, do_cod_Jacobians, do_cssa_Jacobians,    &
-         do_cfrac_Jacobians, do_aer_columnwf, do_cld_columnwf, use_lambertian,        &
-         solar_cspec_data(W), GC_radiances(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),    &
-         GC_Qvalues(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
-         GC_Uvalues(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
-         GC_Tracegas_Jacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx),  &
-         GC_Scattering_Weights(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),            &
-         GC_AMFs(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx),                              &
-         GC_Tracegas_QJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx), &
-         GC_Tracegas_UJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, 1:ngases, didx), &
-         GC_Temperature_Jacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),         &
-         GC_Surfalbedo_Jacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                        &
-         GC_Surfalbedo_QJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                       &
-         GC_Surfalbedo_UJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                       &
-         GC_Windspeed_Jacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                         &
-         GC_Windspeed_QJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                        &
-         GC_Windspeed_UJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                        &
-         GC_aod_Jacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                 &
-         GC_aod_QJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
-         GC_aod_UJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
-         GC_assa_Jacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
-         GC_assa_QJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
-         GC_assa_UJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
-         GC_cod_Jacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                 &
-         GC_cod_QJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
-         GC_cod_UJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
-         GC_cssa_Jacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                &
-         GC_cssa_QJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
-         GC_cssa_UJacobians(W, 1:GC_nlayers, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),               &
-         GC_cfrac_Jacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                             &
-         GC_cfrac_QJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                            &
-         GC_cfrac_UJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                            &
-         GC_sfcprs_Jacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                            &
-         GC_sfcprs_QJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
-         GC_sfcprs_UJacobians(W, ilev, 1:VLIDORT_Out%Main%TS_N_GEOMETRIES, didx),                           &
-         GC_flux(W, ilev, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                                    &
-         GC_Qflux(W, ilev, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                                   &
-         GC_Uflux(W, ilev, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                                   &
-         GC_direct_flux(W, ilev, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                             &
-         GC_Qdirect_flux(W, ilev, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                            &
-         GC_Udirect_flux(W, ilev, 1:VLIDORT_ModIn%MSunrays%TS_N_SZANGLES, didx),                            &
-         W, ilev, tmperror, error)
+    call netcdf_wrt_test( netfname, tmperror, error)
 
     IF (error) CALL write_err_message (.TRUE., tmperror)
 
