@@ -69,7 +69,7 @@ CONTAINS
        WRITE(*,*) 'No upwelling or downwelling selected... no output'
        STOP
     END IF
-    call netcdf_wrt_test( netfname, tmperror, error)
+    call netcdf_wrt( netfname, tmperror, error)
 
     IF (error) CALL write_err_message (.TRUE., tmperror)
 

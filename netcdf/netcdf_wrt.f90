@@ -1,4 +1,4 @@
-subroutine netcdf_wrt_test ( fname, message, fail)   
+subroutine netcdf_wrt ( fname, message, fail)   
 
   USE GC_variables_module, ONLY: GC_n_sun_positions, VLIDORT_Out, & !# SZA, # geometries (TS_N_GEOMETRIES)
        GC_nlayers, ngases, nlambdas, nclambdas, & !# layers, gases, wavelengths, covolved wavelengths if needed
@@ -190,178 +190,178 @@ subroutine netcdf_wrt_test ( fname, message, fail)
   ngeom = VLIDORT_Out%Main%TS_N_GEOMETRIES
 
   ! Loop over lambdas
-  DO iwav = 1, nwav
-
-     print*, 'Writing output #', iwav, didx
+!!$  DO iwav = 1, nwav
+!!$
+     print*, 'Writing output #', didx
 
      ! write 1D variables with wavdim
-     ndimstart1 = (/ iwav /)
-     ndimcount1 = (/ 1 /)  
-     call ncvpt (ncid, irradid, ndimstart1, ndimcount1, real(solar_cspec_data(iwav), kind=4), rcode)
-     call ncvpt (ncid, sfcid,   ndimstart1, ndimcount1, real(ground_ler(iwav), kind=4),    rcode)
+     ndimstart1 = (/ 1 /)
+     ndimcount1 = (/ nwav /)  
+     call ncvpt (ncid, irradid, ndimstart1, ndimcount1, real(solar_cspec_data(1:nwav), kind=4), rcode)
+     call ncvpt (ncid, sfcid,   ndimstart1, ndimcount1, real(ground_ler(1:nwav), kind=4),    rcode)
 
      ! 2D, variables, wavdim, laydim
-     ndimstart2 = (/ iwav,  1 /)
-     ndimcount2 = (/     1, GC_nlayers /) 
-     call ncvpt (ncid, odsid,   ndimstart2, ndimcount2, real(opdeps(iwav,1:GC_nlayers), kind=4), rcode)
-     call ncvpt (ncid, ssasid,  ndimstart2, ndimcount2, real(ssalbs(iwav,1:GC_nlayers), kind=4), rcode)
-     call ncvpt (ncid, aodsid,  ndimstart2, ndimcount2, real(aer_opdeps(iwav,1:GC_nlayers), kind=4), rcode)
-     call ncvpt (ncid, assasid, ndimstart2, ndimcount2, real(aer_ssalbs(iwav,1:GC_nlayers), kind=4), rcode)
-     call ncvpt (ncid, codsid,  ndimstart2, ndimcount2, real(cld_opdeps(iwav,1:GC_nlayers), kind=4), rcode)
-     call ncvpt (ncid, cssasid, ndimstart2, ndimcount2, real(cld_ssalbs(iwav,1:GC_nlayers), kind=4), rcode)
+     ndimstart2 = (/    1,  1 /)
+     ndimcount2 = (/ nwav, GC_nlayers /) 
+     call ncvpt (ncid, odsid,   ndimstart2, ndimcount2, real(opdeps(1:nwav,1:GC_nlayers), kind=4), rcode)
+     call ncvpt (ncid, ssasid,  ndimstart2, ndimcount2, real(ssalbs(1:nwav,1:GC_nlayers), kind=4), rcode)
+     call ncvpt (ncid, aodsid,  ndimstart2, ndimcount2, real(aer_opdeps(1:nwav,1:GC_nlayers), kind=4), rcode)
+     call ncvpt (ncid, assasid, ndimstart2, ndimcount2, real(aer_ssalbs(1:nwav,1:GC_nlayers), kind=4), rcode)
+     call ncvpt (ncid, codsid,  ndimstart2, ndimcount2, real(cld_opdeps(1:nwav,1:GC_nlayers), kind=4), rcode)
+     call ncvpt (ncid, cssasid, ndimstart2, ndimcount2, real(cld_ssalbs(1:nwav,1:GC_nlayers), kind=4), rcode)
 
      ! write 3D variables with wavdim,geodim,olvdim
      DO iout = 1, GC_n_user_levels
-        ndimstart3 = (/ iwav, 1 , iout/)
-        ndimcount3 = (/  1, ngeom , 1/)  
+        ndimstart3 = (/ 1, 1 , iout/)
+        ndimcount3 = (/ nwav, ngeom , 1/)  
         call ncvpt (ncid, radid,   ndimstart3, ndimcount3, &
-             real(GC_radiances(iwav,iout,1:ngeom,didx), kind=4), rcode)
+             real(GC_radiances(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
         ndimcount3 = (/   1, GC_n_sun_positions , 1/)  
         call ncvpt (ncid, fluxid,  ndimstart3, ndimcount3, &
-             real(GC_flux(iwav,iout,1:GC_n_sun_positions,didx), kind=4), rcode)
+             real(GC_flux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4), rcode)
         call ncvpt (ncid, dfluxid, ndimstart3, ndimcount3, &
-             real(GC_direct_flux(iwav,iout,1:GC_n_sun_positions,didx), kind=4), rcode)
+             real(GC_direct_flux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4), rcode)
         if (do_vector_calculation .and. do_StokesQU_output) then
            ndimcount3 = (/ 1 , ngeom , 1/)
            call ncvpt (ncid, qid, ndimstart3, ndimcount3, &
-                real(GC_Qvalues(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_Qvalues(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
            call ncvpt (ncid, uid, ndimstart3, ndimcount3, &
-                real(GC_Uvalues(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_Uvalues(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
            ndimcount3 = (/   1, GC_n_sun_positions , 1/)  
            call ncvpt (ncid, qfluxid,  ndimstart3, ndimcount3, &
-                real(GC_Qflux(iwav,iout,1:GC_n_sun_positions,didx), kind=4), rcode)
+                real(GC_Qflux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4), rcode)
            call ncvpt (ncid, ufluxid,  ndimstart3, ndimcount3, &
-                real(GC_Uflux(iwav,iout,1:GC_n_sun_positions,didx), kind=4), rcode)
+                real(GC_Uflux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4), rcode)
            call ncvpt (ncid, qdfluxid, ndimstart3, ndimcount3, &
-                real(GC_Qdirect_flux(iwav,iout,1:GC_n_sun_positions,didx), kind=4), rcode)
+                real(GC_Qdirect_flux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4), rcode)
            call ncvpt (ncid, udfluxid, ndimstart3, ndimcount3, &
-                real(GC_Udirect_flux(iwav,iout,1:GC_n_sun_positions,didx), kind=4), rcode)
+                real(GC_Udirect_flux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4), rcode)
         endif
         
-        ndimstart3 = (/ iwav, 1 , iout/)
-        ndimcount3 = (/  1, ngeom , 1/)  
+        ndimstart3 = (/ 1, 1 , iout/)
+        ndimcount3 = (/ nwav, ngeom , 1/)  
         if (do_Jacobians) then
            if (use_lambertian) then
               call ncvpt (ncid, sfcwfid, ndimstart3, ndimcount3, &
-                   real(GC_Surfalbedo_Jacobians(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                   real(GC_Surfalbedo_Jacobians(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
            else 
               call ncvpt (ncid, wswfid, ndimstart3, ndimcount3, &
-                   real(GC_Windspeed_Jacobians(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                   real(GC_Windspeed_Jacobians(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
            endif
            if (do_cfrac_Jacobians) &
                 call ncvpt (ncid, cfracwfid,  ndimstart3, ndimcount3, &
-                real(GC_cfrac_Jacobians(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_cfrac_Jacobians(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
            if (do_sfcprs_Jacobians) &
                 call ncvpt (ncid, sfcprswfid, ndimstart3, ndimcount3, &
-                real(GC_sfcprs_Jacobians(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_sfcprs_Jacobians(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
         endif
         
         if (do_QU_Jacobians) then
            if (use_lambertian) then
               call ncvpt (ncid, sfcqwfid, ndimstart3, ndimcount3, &
-                   real(GC_Surfalbedo_QJacobians(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                   real(GC_Surfalbedo_QJacobians(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
            else 
               call ncvpt (ncid, wsqwfid,  ndimstart3, ndimcount3, &
-                   real(GC_Windspeed_QJacobians(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                   real(GC_Windspeed_QJacobians(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
            endif
            if (do_cfrac_Jacobians) &
                 call ncvpt (ncid, cfracqwfid, ndimstart3, ndimcount3, &
-                real(GC_cfrac_QJacobians(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_cfrac_QJacobians(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
            if (do_sfcprs_Jacobians) &
                 call ncvpt (ncid, sfcprsqwfid, ndimstart3, ndimcount3, &
-                real(GC_sfcprs_QJacobians(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_sfcprs_QJacobians(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
            if (use_lambertian) then
               call ncvpt (ncid, sfcuwfid, ndimstart3, ndimcount3, &
-                   real(GC_Surfalbedo_UJacobians(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                   real(GC_Surfalbedo_UJacobians(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
            else 
               call ncvpt (ncid, wsuwfid, ndimstart3, ndimcount3, &
-                   real(GC_Windspeed_UJacobians(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                   real(GC_Windspeed_UJacobians(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
            endif
            if (do_cfrac_Jacobians) &
                 call ncvpt (ncid, cfracuwfid, ndimstart3, ndimcount3, &
-                real(GC_cfrac_UJacobians(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_cfrac_UJacobians(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
            if (do_sfcprs_Jacobians) &
                 call ncvpt (ncid, sfcprsuwfid, ndimstart3, ndimcount3, &
-                real(GC_sfcprs_UJacobians(iwav,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_sfcprs_UJacobians(1:nwav,iout,1:ngeom,didx), kind=4), rcode)
         endif
         
         ! 4D variables, wavdim, altdim, geodim, olvdim
-        ndimstart4 = (/ iwav,          1,     1, iout/)
-        ndimcount4 = (/    1, GC_nlayers, ngeom,    1/) 
+        ndimstart4 = (/    1,          1,     1, iout/)
+        ndimcount4 = (/ nwav, GC_nlayers, ngeom,    1/) 
         if (do_AMF_calculation) then
            call ncvpt (ncid, scatwtid, ndimstart4, ndimcount4, &
-                real(GC_Scattering_Weights(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_Scattering_Weights(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
         endif
         
         if (do_Jacobians) then
            if (do_T_Jacobians) &
                 call ncvpt (ncid, tempwfid, ndimstart4, ndimcount4, &
-                real(GC_Temperature_Jacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_Temperature_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
            if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
                 call ncvpt (ncid, aodwfid, ndimstart4, ndimcount4, &
-                real(GC_aod_Jacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_aod_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
            if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
                 call ncvpt (ncid, assawfid, ndimstart4, ndimcount4, &
-                real(GC_assa_Jacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_assa_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
            if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
                 call ncvpt (ncid, codwfid, ndimstart4, ndimcount4, &
-                real(GC_cod_Jacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_cod_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
            if (.not. do_cld_columnwf .and. do_cssa_Jacobians) &
                 call ncvpt (ncid, cssawfid, ndimstart4, ndimcount4, &
-                real(GC_cssa_Jacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)   
+                real(GC_cssa_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)   
         endif
         
         if (do_QU_Jacobians) then
            if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
                 call ncvpt (ncid, aodqwfid, ndimstart4, ndimcount4, &
-                real(GC_aod_QJacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_aod_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
            if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
                 call ncvpt (ncid, assaqwfid, ndimstart4, ndimcount4, &
-                real(GC_assa_QJacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_assa_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
            if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
                 call ncvpt (ncid, codqwfid, ndimstart4, ndimcount4, &
-                real(GC_cod_QJacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_cod_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
            if (.not. do_cld_columnwf .and. do_cssa_Jacobians) &
                 call ncvpt (ncid, cssaqwfid, ndimstart4, ndimcount4, &
-                real(GC_cssa_QJacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode) 
+                real(GC_cssa_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode) 
            
            if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
                 call ncvpt (ncid, aoduwfid, ndimstart4, ndimcount4, &
-                real(GC_aod_UJacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_aod_UJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
            if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
                 call ncvpt (ncid, assauwfid, ndimstart4, ndimcount4, &
-                real(GC_assa_UJacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_assa_UJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
            if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
                 call ncvpt (ncid, coduwfid, ndimstart4, ndimcount4, &
-                real(GC_cod_UJacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
+                real(GC_cod_UJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)
            if (.not. do_cld_columnwf .and. do_cssa_Jacobians) &
                 call ncvpt (ncid, cssauwfid, ndimstart4, ndimcount4, &
-                real(GC_cssa_UJacobians(iwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)    
+                real(GC_cssa_UJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4), rcode)    
         endif
         
         ! 4D variables, wavdim, geodim, gasdim, olvdim
         if (do_AMF_calculation) then
-           ndimstart4 = (/ iwav, 1, 1, iout/)
-           ndimcount4 = (/ 1, ngeom, ngases, 1 /) 
+           ndimstart4 = (/ 1, 1, 1, iout/)
+           ndimcount4 = (/ nwav, ngeom, ngases, 1 /) 
            call ncvpt (ncid, amfid, ndimstart4, ndimcount4, &
-                real(GC_AMFs(iwav,iout,1:ngeom,1:ngases,didx), kind=4), rcode)
+                real(GC_AMFs(1:nwav,iout,1:ngeom,1:ngases,didx), kind=4), rcode)
         endif
         
         ! 5D variables, wavdim, laydim, geodim, gasdim, olvdim
-        ndimstart5 = (/ iwav,          1,     1,      1, iout /)
-        ndimcount5 = (/    1, GC_nlayers, ngeom, ngases,    1 /) 
+        ndimstart5 = (/ 1,          1,     1,      1, iout /)
+        ndimcount5 = (/ nwav, GC_nlayers, ngeom, ngases,    1 /) 
         if (do_Jacobians) then
            call ncvpt (ncid, gaswfid, ndimstart5, ndimcount5, &
-                real(GC_Tracegas_Jacobians(iwav,1:GC_nlayers,iout,1:ngeom,1:ngases,didx), kind=4), rcode)  
+                real(GC_Tracegas_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,1:ngases,didx), kind=4), rcode)  
            if (do_QU_Jacobians) then
               call ncvpt (ncid, gasqwfid, ndimstart5, ndimcount5, &
-                   real(GC_Tracegas_QJacobians(iwav,1:GC_nlayers,iout,1:ngeom,1:ngases,didx), kind=4), rcode)  
+                   real(GC_Tracegas_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,1:ngases,didx), kind=4), rcode)  
               call ncvpt (ncid, gasuwfid, ndimstart5, ndimcount5, &
-                   real(GC_Tracegas_UJacobians(iwav,1:GC_nlayers,iout,1:ngeom,1:ngases,didx), kind=4), rcode)  
+                   real(GC_Tracegas_UJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,1:ngases,didx), kind=4), rcode)  
            endif
         endif
      end do ! End output levels loop
-  end do ! End wavelength loop
+!!$  end do ! End wavelength loop
 
   !==============================================================================
   ! CLOSE the NetCDF file
@@ -370,4 +370,4 @@ subroutine netcdf_wrt_test ( fname, message, fail)
   call ncclos (ncid, rcode)
      
   return
-end subroutine netcdf_wrt_test
+end subroutine netcdf_wrt
