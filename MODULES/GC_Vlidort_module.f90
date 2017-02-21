@@ -1399,17 +1399,17 @@ CONTAINS
              IF ( nactgkmatc > 1 ) THEN
                 VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT           &
                   (0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2) =                 &
-                  -VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(                         &
+                  VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(                         &
                   0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2)
 
                 VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT           &
                   (0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 5) =                 &
-                  -VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(                          &
+                  VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(                          &
                   0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 5)
 
                 VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT                              &
                   (0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12) =                 &
-                  -VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(                          &
+                  VLIDORT_FixIn%Optical%TS_GREEKMAT_TOTAL_INPUT(                          &
                   0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12)
              ENDIF
     
@@ -1485,17 +1485,17 @@ CONTAINS
 
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                     &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2)                   &
-                     = -VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2)
 
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                     &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 5)                   &
-                     = -VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 5)      
 
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                     &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12)                   &
-                     = -VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12)   
                 ENDIF
 
@@ -1562,17 +1562,17 @@ CONTAINS
                IF ( nactgkmatc > 1 )  THEN
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2)                   &
-                     = -VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2)
 
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 5)                   &
-                     = -VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 5)
 
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12)                   &
-                     = -VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12)
                 ENDIF
  
@@ -1608,17 +1608,17 @@ CONTAINS
                 IF ( nactgkmatc > 1 )  THEN
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2)                   &
-                     = - VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2)
 
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 5)                   &
-                     = - VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 5)
 
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12)                   &
-                     = - VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12)
                 ENDIF
 
@@ -1656,17 +1656,17 @@ CONTAINS
                 IF ( nactgkmatc > 1 ) THEN
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,  &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2)                    &
-                     = -VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                 &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                 &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2)
 
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,  &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 5)                    &
-                     = -VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                 &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                 &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 5)
 
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,  &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12)                    &
-                     = -VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                 &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,                 &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12)
                 ENDIF
                 
@@ -1703,17 +1703,17 @@ CONTAINS
                 IF ( nactgkmatc > 1 ) THEN
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2)                   &
-                     = - VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 2)
 
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 5)                   &
-                     = - VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 5)
 
                    VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q, &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12)                   &
-                     = - VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
+                     = VLIDORT_LinFixIn%Optical%TS_L_GREEKMAT_TOTAL_INPUT(q,               &
                      0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, n, 12)
                 ENDIF
 
