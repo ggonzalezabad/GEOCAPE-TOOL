@@ -130,40 +130,40 @@ CONTAINS
     END IF
     error = .false.; tmperror = ' '
     
-    ncid = nccre(trim(netfname), ncclob, rcode)
-    if (rcode .eq. -1) then
+    rcode = NF_CREATE(netfname, NF_CLOBBER, ncid)
+    IF (rcode .NE. NF_NOERR) then
        tmperror =  ' error in netcdf_out: nccre failed'
        error = .true.; return
     endif
 
     ngeom = GC_n_sun_positions * GC_n_view_angles * GC_n_azimuths
     ! Create the dimensions of the dataset:
-    onedim  = ncddef (ncid, 'one', 1,  rcode)
-    szadim  = ncddef (ncid, 'nsza', GC_n_sun_positions, rcode)
-    vzadim  = ncddef (ncid, 'nvza', GC_n_view_angles, rcode)
-    azadim  = ncddef (ncid, 'naza', GC_n_azimuths, rcode)
-    gasdim  = ncddef (ncid, 'ngas', ngases, rcode)
-    lvldim  = ncddef (ncid, 'nlevel', GC_nlayers+1, rcode)
-    olvdim  = ncddef (ncid, 'noutputlevel', GC_n_user_levels, rcode)
-    laydim  = ncddef (ncid, 'nlayer', GC_nlayers, rcode)
+    rcode = NF_DEF_DIM (ncid, 'one', 1, onedim)
+    rcode = NF_DEF_DIM (ncid, 'nsza', GC_n_sun_positions, szadim)
+    rcode = NF_DEF_DIM (ncid, 'nvza', GC_n_view_angles, vzadim)
+    rcode = NF_DEF_DIM (ncid, 'naza', GC_n_azimuths, azadim)
+    rcode = NF_DEF_DIM (ncid, 'ngas', ngases, gasdim)
+    rcode = NF_DEF_DIM (ncid, 'nlevel', GC_nlayers+1, lvldim)
+    rcode = NF_DEF_DIM (ncid, 'noutputlevel', GC_n_user_levels, olvdim)
+    rcode  = NF_DEF_DIM (ncid, 'nlayer', GC_nlayers, laydim)
     IF ( .NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN
-       wavdim  = ncddef (ncid, 'nw', nclambdas, rcode)
+       rcode = NF_DEF_DIM (ncid, 'nw', nclambdas, wavdim)
     ELSE
-       wavdim  = ncddef (ncid, 'nw', nlambdas, rcode)
+       rcode = NF_DEF_DIM (ncid, 'nw', nlambdas, wavdim)
     END IF
-    geodim  = ncddef (ncid, 'ngeom',  ngeom, rcode)
-    nsqdim  = ncddef (ncid, 'nstokessq', NSTOKESSQ, rcode)
+    rcode = NF_DEF_DIM (ncid, 'ngeom',  ngeom, geodim)
+    rcode = NF_DEF_DIM (ncid, 'nstokessq', NSTOKESSQ, nsqdim)
     
     !=============================================================================
     ! Create the coordinate (aka independent) variables:
     !============================================================================= 
-    szaid    = ncvdef (ncid, 'Solarzenithangle',     ncfloat, 1, szadim, rcode)
-    vzaid    = ncvdef (ncid, 'Viewingzenithangle',   ncfloat, 1, vzadim, rcode)
-    azaid    = ncvdef (ncid, 'Relativeazimuthangle', ncfloat, 1, azadim, rcode)
-    gasid    = ncvdef (ncid, 'gas',                  nclong,  1, gasdim, rcode)
-    lvlid    = ncvdef (ncid, 'zs',                   ncfloat, 1, lvldim, rcode)
-    wavid    = ncvdef (ncid, 'Wavelength',           ncfloat, 1, wavdim, rcode)
-    outlevid = ncvdef (ncid, 'outputlevels',         ncfloat, 1, olvdim, rcode)
+    rcode = NF_DEF_VAR (ncid, 'Solarzenithangle',     NF_FLOAT, 1, szadim, szaid)
+    rcode = NF_DEF_VAR (ncid, 'Viewingzenithangle',   NF_FLOAT, 1, vzadim, vzaid)
+    rcode = NF_DEF_VAR (ncid, 'Relativeazimuthangle', NF_FLOAT, 1, azadim, azaid)
+    rcode = NF_DEF_VAR (ncid, 'gas',                  NF_INT,   1, gasdim, gasid)
+    rcode = NF_DEF_VAR (ncid, 'zs',                   NF_FLOAT, 1, lvldim, lvlid)
+    rcode = NF_DEF_VAR (ncid, 'Wavelength',           NF_FLOAT, 1, wavdim, wavid)
+    rcode = NF_DEF_VAR (ncid, 'outputlevels',         NF_FLOAT, 1, olvdim, outlevid)
     
     !=============================================================================
     ! Create a vector containing the often referred to spacetime coordinates:
@@ -185,385 +185,385 @@ CONTAINS
     ! Create the dependent variables:
     !=============================================================================
     ! ps, ts
-    psid = ncvdef(ncid, 'ps', ncfloat, 1, lvldim, rcode)
-    tsid = ncvdef(ncid, 'ts', ncfloat, 1, lvldim, rcode)
+    rcode = NF_DEF_VAR(ncid, 'ps', NF_FLOAT, 1, lvldim, psid)
+    rcode = NF_DEF_VAR(ncid, 'ts', NF_FLOAT, 1, lvldim, tsid)
     
     ! aircol, aods0, cods0
-    airid  = ncvdef(ncid, 'aircol', ncfloat, 1, laydim, rcode)
-    aer0id = ncvdef(ncid, 'aods0',  ncfloat, 1, laydim, rcode)
-    cld0id = ncvdef(ncid, 'cods0',  ncfloat, 1, laydim, rcode)
+    rcode = NF_DEF_VAR(ncid, 'aircol', NF_FLOAT, 1, laydim, airid)
+    rcode = NF_DEF_VAR(ncid, 'aods0',  NF_FLOAT, 1, laydim, aer0id)
+    rcode = NF_DEF_VAR(ncid, 'cods0',  NF_FLOAT, 1, laydim, cld0id)
         
     ! varaibles with 1D, wavdim
-    irradid = ncvdef(ncid, 'irradiance', ncfloat, 1, wavdim, rcode)
-    sfcid   = ncvdef(ncid, 'surfalb',    ncfloat, 1, wavdim, rcode)
+    rcode = NF_DEF_VAR(ncid, 'irradiance', NF_FLOAT, 1, wavdim, irradid)
+    rcode = NF_DEF_VAR(ncid, 'surfalb',    NF_FLOAT, 1, wavdim, sfcid)
     
     ! variables with 2D, laydim, gasdim
-    gascolid = ncvdef(ncid,  'gascol', ncdouble, 2, gascol_dims, rcode)
+    rcode = NF_DEF_VAR(ncid,  'gascol', NF_DOUBLE, 2, gascol_dims, gascolid)
     
     ! variables with 2D, wavdim, laydim
-    odsid   = ncvdef(ncid, 'ods',   ncfloat, 2, wavalt_dims, rcode)
-    ssasid  = ncvdef(ncid, 'ssas',  ncfloat, 2, wavalt_dims, rcode)
-    aodsid  = ncvdef(ncid, 'aods',  ncfloat, 2, wavalt_dims, rcode)
-    assasid = ncvdef(ncid, 'assas', ncfloat, 2, wavalt_dims, rcode)
-    codsid  = ncvdef(ncid, 'cods',  ncfloat, 2, wavalt_dims, rcode)
-    cssasid = ncvdef(ncid, 'cssas', ncfloat, 2, wavalt_dims, rcode)
+    rcode = NF_DEF_VAR(ncid, 'ods',   NF_FLOAT, 2, wavalt_dims, odsid)
+    rcode = NF_DEF_VAR(ncid, 'ssas',  NF_FLOAT, 2, wavalt_dims, ssasid)
+    rcode = NF_DEF_VAR(ncid, 'aods',  NF_FLOAT, 2, wavalt_dims, aodsid)
+    rcode = NF_DEF_VAR(ncid, 'assas', NF_FLOAT, 2, wavalt_dims, assasid)
+    rcode = NF_DEF_VAR(ncid, 'cods',  NF_FLOAT, 2, wavalt_dims, codsid)
+    rcode = NF_DEF_VAR(ncid, 'cssas', NF_FLOAT, 2, wavalt_dims, cssasid)
     
     ! variables with 3D, wavdim, geodim, olvdim
-    radid   = ncvdef(ncid, 'radiance',    ncfloat, 3, wavgeolev_dims, rcode)
-    fluxid  = ncvdef(ncid, 'flux',        ncfloat, 3, wavszalev_dims, rcode)
-    dfluxid = ncvdef(ncid, 'direct_flux', ncfloat, 3, wavszalev_dims, rcode)
+    rcode = NF_DEF_VAR(ncid, 'radiance',    NF_FLOAT, 3, wavgeolev_dims, radid)
+    rcode = NF_DEF_VAR(ncid, 'flux',        NF_FLOAT, 3, wavszalev_dims, fluxid)
+    rcode = NF_DEF_VAR(ncid, 'direct_flux', NF_FLOAT, 3, wavszalev_dims, dfluxid)
     if (do_vector_calculation .and. do_StokesQU_output) then
-       qid      = ncvdef(ncid, 'q',            ncfloat, 3, wavgeolev_dims, rcode)
-       uid      = ncvdef(ncid, 'u',            ncfloat, 3, wavgeolev_dims, rcode)
-       qfluxid  = ncvdef(ncid, 'qflux',        ncfloat, 3, wavszalev_dims, rcode)
-       ufluxid  = ncvdef(ncid, 'uflux',        ncfloat, 3, wavszalev_dims, rcode)
-       qdfluxid = ncvdef(ncid, 'qdirect_flux', ncfloat, 3, wavszalev_dims, rcode)
-       udfluxid = ncvdef(ncid, 'udirect_flux', ncfloat, 3, wavszalev_dims, rcode)
+       rcode = NF_DEF_VAR(ncid, 'q',            NF_FLOAT, 3, wavgeolev_dims, qid)
+       rcode = NF_DEF_VAR(ncid, 'u',            NF_FLOAT, 3, wavgeolev_dims, uid)
+       rcode = NF_DEF_VAR(ncid, 'qflux',        NF_FLOAT, 3, wavszalev_dims, qfluxid)
+       rcode = NF_DEF_VAR(ncid, 'uflux',        NF_FLOAT, 3, wavszalev_dims, ufluxid)
+       rcode = NF_DEF_VAR(ncid, 'qdirect_flux', NF_FLOAT, 3, wavszalev_dims, qdfluxid)
+       rcode = NF_DEF_VAR(ncid, 'udirect_flux', NF_FLOAT, 3, wavszalev_dims, udfluxid)
     endif
     
     if (do_Jacobians) then
        
        if (use_lambertian) then
-          sfcwfid = ncvdef(ncid, 'surfalb_jac',   ncfloat, 3, wavgeolev_dims, rcode)
+          rcode = NF_DEF_VAR(ncid, 'surfalb_jac',   NF_FLOAT, 3, wavgeolev_dims, sfcwfid)
        else 
-          wswfid  = ncvdef(ncid, 'windspeed_jac', ncfloat, 3, wavgeolev_dims, rcode)
+          rcode = NF_DEF_VAR(ncid, 'windspeed_jac', NF_FLOAT, 3, wavgeolev_dims, wswfid)
        endif
        
        if (do_cfrac_Jacobians) &
-            cfracwfid  = ncvdef(ncid, 'cfrac_jac',     ncfloat, 3, wavgeolev_dims, rcode)
+            rcode = NF_DEF_VAR(ncid, 'cfrac_jac',     NF_FLOAT, 3, wavgeolev_dims, cfracwfid)
        if (do_sfcprs_Jacobians) &
-            sfcprswfid = ncvdef(ncid, 'sfcprs_jac',    ncfloat, 3, wavgeolev_dims, rcode)
+            rcode = NF_DEF_VAR(ncid, 'sfcprs_jac',    NF_FLOAT, 3, wavgeolev_dims, sfcprswfid)
        if (do_aer_columnwf .and. do_aod_Jacobians) &  !No column jacobians yet
-            aodwfid    = ncvdef(ncid, 'aodcolwf_jac',  ncfloat, 3, wavgeolev_dims, rcode)
+            rcode = NF_DEF_VAR(ncid, 'aodcolwf_jac',  NF_FLOAT, 3, wavgeolev_dims, aodwfid)
        if (do_aer_columnwf .and. do_assa_Jacobians) & !No column jacobians yet
-            assawfid   = ncvdef(ncid, 'assacolwf_jac', ncfloat, 3, wavgeolev_dims, rcode)
+            rcode = NF_DEF_VAR(ncid, 'assacolwf_jac', NF_FLOAT, 3, wavgeolev_dims, assawfid)
        if (do_cld_columnwf .and. do_cod_Jacobians) &  !No column jacobians yet
-            codwfid    = ncvdef(ncid, 'codcolwf_jac',  ncfloat, 3, wavgeolev_dims, rcode)
+            rcode = NF_DEF_VAR(ncid, 'codcolwf_jac',  NF_FLOAT, 3, wavgeolev_dims, codwfid)
        if (do_cld_columnwf .and. do_cssa_Jacobians) & !No column jacobians yet
-            cssawfid   = ncvdef(ncid, 'cssacolwf_jac', ncfloat, 3, wavgeolev_dims, rcode)
+            rcode = NF_DEF_VAR(ncid, 'cssacolwf_jac', NF_FLOAT, 3, wavgeolev_dims, cssawfid)
        
     endif
     
     if (do_QU_Jacobians) then
        
        if (use_lambertian) then
-          sfcqwfid = ncvdef(ncid, 'surfalb_qjac',  ncfloat, 3, wavgeolev_dims, rcode)
-          sfcuwfid = ncvdef(ncid, 'surfalb_ujac',  ncfloat, 3, wavgeolev_dims, rcode)
+          rcode = NF_DEF_VAR(ncid, 'surfalb_qjac',  NF_FLOAT, 3, wavgeolev_dims, sfcqwfid)
+          rcode = NF_DEF_VAR(ncid, 'surfalb_ujac',  NF_FLOAT, 3, wavgeolev_dims, sfcuwfid)
        else 
-          wsqwfid = ncvdef(ncid, 'windspeed_qjac', ncfloat, 3, wavgeolev_dims, rcode)
-          wsuwfid = ncvdef(ncid, 'windspeed_ujac', ncfloat, 3, wavgeolev_dims, rcode)
+          rcode = NF_DEF_VAR(ncid, 'windspeed_qjac', NF_FLOAT, 3, wavgeolev_dims, wsqwfid)
+          rcode = NF_DEF_VAR(ncid, 'windspeed_ujac', NF_FLOAT, 3, wavgeolev_dims, wsuwfid)
        endif
        
        if (do_cfrac_Jacobians) then
-          cfracqwfid = ncvdef(ncid, 'cfrac_qjac',  ncfloat, 3, wavgeolev_dims, rcode)
-          cfracuwfid = ncvdef(ncid, 'cfrac_ujac',  ncfloat, 3, wavgeolev_dims, rcode)
+          rcode = NF_DEF_VAR(ncid, 'cfrac_qjac',  NF_FLOAT, 3, wavgeolev_dims, cfracqwfid)
+          rcode = NF_DEF_VAR(ncid, 'cfrac_ujac',  NF_FLOAT, 3, wavgeolev_dims, cfracuwfid)
        endif
        if (do_sfcprs_Jacobians) then
-          sfcprsqwfid = ncvdef(ncid, 'sfcprs_qjac',  ncfloat, 3, wavgeolev_dims, rcode)
-          sfcprsuwfid = ncvdef(ncid, 'sfcprs_ujac',  ncfloat, 3, wavgeolev_dims, rcode)
+          rcode = NF_DEF_VAR(ncid, 'sfcprs_qjac',  NF_FLOAT, 3, wavgeolev_dims, sfcprsqwfid)
+          rcode = NF_DEF_VAR(ncid, 'sfcprs_ujac',  NF_FLOAT, 3, wavgeolev_dims, sfcprsuwfid)
        endif
        if (do_aer_columnwf .and. do_aod_Jacobians) then  !No column jacobians yet
-          aodqwfid = ncvdef(ncid, 'aodcol_qjac',  ncfloat, 3, wavgeolev_dims, rcode)
-          aoduwfid = ncvdef(ncid, 'aodcol_ujac',  ncfloat, 3, wavgeolev_dims, rcode)
+          rcode = NF_DEF_VAR(ncid, 'aodcol_qjac',  NF_FLOAT, 3, wavgeolev_dims, aodqwfid)
+          rcode = NF_DEF_VAR(ncid, 'aodcol_ujac',  NF_FLOAT, 3, wavgeolev_dims, aoduwfid)
        endif
        if (do_aer_columnwf .and. do_assa_Jacobians) then !No column jacobians yet
-          assaqwfid = ncvdef(ncid, 'assacol_qjac', ncfloat, 3, wavgeolev_dims, rcode)
-          assauwfid = ncvdef(ncid, 'assacol_ujac', ncfloat, 3, wavgeolev_dims, rcode)
+          rcode = NF_DEF_VAR(ncid, 'assacol_qjac', NF_FLOAT, 3, wavgeolev_dims, assaqwfid)
+          rcode = NF_DEF_VAR(ncid, 'assacol_ujac', NF_FLOAT, 3, wavgeolev_dims, assauwfid)
        endif
        if (do_cld_columnwf .and. do_cod_Jacobians) then  !No column jacobians yet
-          codqwfid = ncvdef(ncid, 'codcol_qjac',  ncfloat, 3, wavgeolev_dims, rcode)
-          coduwfid = ncvdef(ncid, 'codcol_ujac',  ncfloat, 3, wavgeolev_dims, rcode)
+          rcode = NF_DEF_VAR(ncid, 'codcol_qjac',  NF_FLOAT, 3, wavgeolev_dims, codqwfid)
+          rcode = NF_DEF_VAR(ncid, 'codcol_ujac',  NF_FLOAT, 3, wavgeolev_dims, coduwfid)
        endif
        if (do_cld_columnwf .and. do_cssa_Jacobians) then !No column jacobians yet
-          cssaqwfid = ncvdef(ncid, 'cssacol_qjac', ncfloat, 3, wavgeolev_dims, rcode)
-          cssauwfid = ncvdef(ncid, 'cssacol_ujac', ncfloat, 3, wavgeolev_dims, rcode)
+          rcode = NF_DEF_VAR(ncid, 'cssacol_qjac', NF_FLOAT, 3, wavgeolev_dims, cssaqwfid)
+          rcode = NF_DEF_VAR(ncid, 'cssacol_ujac', NF_FLOAT, 3, wavgeolev_dims, cssauwfid)
        endif
        
     endif
     
     ! variables with 4D, wavdim, laydim, geodim, olvdim
     if (do_AMF_calculation) then
-       scatwtid = ncvdef(ncid, 'scatweights', ncfloat, 4, wavaltgeolev_dims, rcode)
+       rcode = NF_DEF_VAR(ncid, 'scatweights', NF_FLOAT, 4, wavaltgeolev_dims, scatwtid)
     endif
     
     if (do_Jacobians) then
        if (do_T_Jacobians) &
-            tempwfid = ncvdef(ncid, 't_jac',    ncfloat, 4, wavaltgeolev_dims, rcode)
+            rcode = NF_DEF_VAR(ncid, 't_jac',    NF_FLOAT, 4, wavaltgeolev_dims, tempwfid)
        if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
-            aodwfid  = ncvdef(ncid, 'aod_jac',  ncfloat, 4, wavaltgeolev_dims, rcode)  
+            rcode = NF_DEF_VAR(ncid, 'aod_jac',  NF_FLOAT, 4, wavaltgeolev_dims, aodwfid)  
        if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
-            assawfid = ncvdef(ncid, 'assa_jac', ncfloat, 4, wavaltgeolev_dims, rcode)   
+            rcode = NF_DEF_VAR(ncid, 'assa_jac', NF_FLOAT, 4, wavaltgeolev_dims, assawfid)   
        if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
-            codwfid  = ncvdef(ncid, 'cod_jac',  ncfloat, 4, wavaltgeolev_dims, rcode)  
+            rcode = NF_DEF_VAR(ncid, 'cod_jac',  NF_FLOAT, 4, wavaltgeolev_dims, codwfid)  
        if (.not. do_cld_columnwf .and. do_cssa_Jacobians) &
-            cssawfid = ncvdef(ncid, 'cssa_jac', ncfloat, 4, wavaltgeolev_dims, rcode)  
+            rcode = NF_DEF_VAR(ncid, 'cssa_jac', NF_FLOAT, 4, wavaltgeolev_dims, cssawfid)  
     endif
     
     if (do_QU_Jacobians) then
        if (.not. do_aer_columnwf .and. do_aod_Jacobians) then 
-          aodqwfid = ncvdef(ncid, 'aod_qjac', ncfloat, 4, wavaltgeolev_dims, rcode)  
-          aoduwfid = ncvdef(ncid, 'aod_ujac', ncfloat, 4, wavaltgeolev_dims, rcode)  
+          rcode = NF_DEF_VAR(ncid, 'aod_qjac', NF_FLOAT, 4, wavaltgeolev_dims, aodqwfid)  
+          rcode = NF_DEF_VAR(ncid, 'aod_ujac', NF_FLOAT, 4, wavaltgeolev_dims, aoduwfid)  
        endif
        if (.not. do_aer_columnwf .and. do_assa_Jacobians) then
-          assaqwfid = ncvdef(ncid, 'assa_qjac', ncfloat, 4, wavaltgeolev_dims, rcode)   
-          assauwfid = ncvdef(ncid, 'assa_ujac', ncfloat, 4, wavaltgeolev_dims, rcode)   
+          rcode = NF_DEF_VAR(ncid, 'assa_qjac', NF_FLOAT, 4, wavaltgeolev_dims, assaqwfid)   
+          rcode = NF_DEF_VAR(ncid, 'assa_ujac', NF_FLOAT, 4, wavaltgeolev_dims, assauwfid)   
        endif
        if (.not. do_cld_columnwf .and. do_cod_Jacobians) then
-          codqwfid = ncvdef(ncid, 'cod_qjac', ncfloat, 4, wavaltgeolev_dims, rcode)  
-          coduwfid = ncvdef(ncid, 'cod_ujac', ncfloat, 4, wavaltgeolev_dims, rcode)  
+          rcode = NF_DEF_VAR(ncid, 'cod_qjac', NF_FLOAT, 4, wavaltgeolev_dims, codqwfid)  
+          rcode = NF_DEF_VAR(ncid, 'cod_ujac', NF_FLOAT, 4, wavaltgeolev_dims, coduwfid)  
        endif
        if (.not. do_cld_columnwf .and. do_cssa_Jacobians) then
-          cssaqwfid = ncvdef(ncid, 'cssa_qjac', ncfloat, 4, wavaltgeolev_dims, rcode)  
-          cssauwfid = ncvdef(ncid, 'cssa_ujac', ncfloat, 4, wavaltgeolev_dims, rcode) 
+          rcode = NF_DEF_VAR(ncid, 'cssa_qjac', NF_FLOAT, 4, wavaltgeolev_dims, cssaqwfid)  
+          rcode = NF_DEF_VAR(ncid, 'cssa_ujac', NF_FLOAT, 4, wavaltgeolev_dims, cssauwfid) 
        endif
     endif
     
     ! variables with 4D, wavdim, geodim, gasdim, olvdim
     if (do_AMF_calculation) then
-       amfid = ncvdef(ncid, 'amf', ncfloat, 4, wavgeogaslev_dims, rcode)
+       rcode = NF_DEF_VAR(ncid, 'amf', NF_FLOAT, 4, wavgeogaslev_dims, amfid)
     endif
     
     ! variables with 4D, wavdim, laydim, geodim, gasdim, olvdim
     if (do_Jacobians) then
-       gaswfid = ncvdef(ncid,  'gas_jac', ncfloat, 5, wavaltgeogaslev_dims, rcode)
+       rcode = NF_DEF_VAR(ncid,  'gas_jac', NF_FLOAT, 5, wavaltgeogaslev_dims, gaswfid)
        if (do_QU_Jacobians) then
-          gasqwfid = ncvdef(ncid,  'gas_qjac', ncfloat, 5, wavaltgeogaslev_dims, rcode)
-          gasuwfid = ncvdef(ncid,  'gas_ujac', ncfloat, 5, wavaltgeogaslev_dims, rcode)
+          rcode = NF_DEF_VAR(ncid,  'gas_qjac', NF_FLOAT, 5, wavaltgeogaslev_dims, gasqwfid)
+          rcode = NF_DEF_VAR(ncid,  'gas_ujac', NF_FLOAT, 5, wavaltgeogaslev_dims, gasuwfid)
        endif
     endif
     
     ! BRDF variables onedim, nsqdim, nvza, naza, nsza
     if (do_brdf_surface) then
     ! WSA, BSA amd BRDF
-       wsaid = ncvdef(ncid, 'WSA', ncfloat, 1, onedim, rcode)
-       bsaid = ncvdef(ncid, 'BSA', ncfloat, 1, onedim, rcode)
-       brdfid = ncvdef(ncid, 'BRDF', ncfloat, 4, brdfdim, rcode)
+       rcode = NF_DEF_VAR(ncid, 'WSA', NF_FLOAT, 1, onedim, wsaid)
+       rcode = NF_DEF_VAR(ncid, 'BSA', NF_FLOAT, 1, onedim, bsaid)
+       rcode = NF_DEF_VAR(ncid, 'BRDF', NF_FLOAT, 4, brdfdim, brdfid)
     endif
 
     !=============================================================================
     ! Assign attributes (meta-data) to the various variables:
     !============================================================================= 
-    call ncapt (ncid, ncglobal, 'lon',          ncfloat, 1, real(longitude, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'lat',          ncfloat, 1, real(latitude, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'month',        nclong,  1, month, rcode)
-    call ncapt (ncid, ncglobal, 'year',         nclong,  1, year, rcode)
-    call ncapt (ncid, ncglobal, 'day',          nclong,  1, day, rcode)
-    call ncapt (ncid, ncglobal, 'utc',          ncfloat, 1, real(utc, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'cfrac',        ncfloat, 1, real(cfrac, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'zcldtop',      ncfloat, 1, real(cld_tops, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'cldalb',       ncfloat, 1, real(lambertian_cldalb, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'userlvl',      ncfloat, 1, real(VLIDORT_ModIn%MUserVal%TS_USER_LEVELS, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'windspeed',    ncfloat, 1, real(wind_speed, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'lam_reso',     ncfloat, 1, real(lambda_resolution, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'aer_reflam',   ncfloat, 1, real(aer_reflambda, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'cld_reflam',   ncfloat, 1, real(cld_reflambda, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'lam_dw',       ncfloat, 1, real(lambda_dw, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'lam_dfw',      ncfloat, 1, real(lambda_dfw, kind=4), rcode)
-    call ncapt (ncid, ncglobal, 'nstreams',     nclong,  1, VLIDORT_FixIn%Cont%TS_NSTREAMS, rcode)
-    call ncapt (ncid, ncglobal, 'aercld_nmoms', nclong,  1, VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, rcode)
-    call ncapt (ncid, ncglobal, 'nsza',         nclong,  1, GC_n_sun_positions, rcode)
-    call ncapt (ncid, ncglobal, 'nvza',         nclong,  1, GC_n_view_angles, rcode)
-    call ncapt (ncid, ncglobal, 'naza',         nclong,  1, GC_n_azimuths, rcode)
-    call ncapt (ncid, ncglobal, 'ngeometries',  nclong,  1, ngeom, rcode)
-    call ncapt (ncid, ncglobal, 'noutputlevels',nclong,  1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS, rcode)
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'lon',          NF_FLOAT, 1, real(longitude, kind=4))
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'lat',          NF_FLOAT, 1, real(latitude, kind=4))
+    rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'month',        NF_INT,  1, month)
+    rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'year',         NF_INT,  1, year)
+    rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'day',          NF_INT,  1, day)
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'utc',          NF_FLOAT, 1, real(utc, kind=4))
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'cfrac',        NF_FLOAT, 1, real(cfrac, kind=4))
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'zcldtop',      NF_FLOAT, 1, real(cld_tops, kind=4))
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'cldalb',       NF_FLOAT, 1, real(lambertian_cldalb, kind=4))
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'userlvl',      NF_FLOAT, 1, real(VLIDORT_ModIn%MUserVal%TS_USER_LEVELS, kind=4))
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'windspeed',    NF_FLOAT, 1, real(wind_speed, kind=4))
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'lam_reso',     NF_FLOAT, 1, real(lambda_resolution, kind=4))
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'aer_reflam',   NF_FLOAT, 1, real(aer_reflambda, kind=4))
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'cld_reflam',   NF_FLOAT, 1, real(cld_reflambda, kind=4))
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'lam_dw',       NF_FLOAT, 1, real(lambda_dw, kind=4))
+    rcode = NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'lam_dfw',      NF_FLOAT, 1, real(lambda_dfw, kind=4))
+    rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'nstreams',     NF_INT,  1, VLIDORT_FixIn%Cont%TS_NSTREAMS)
+    rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'aercld_nmoms', NF_INT,  1, VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT)
+    rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'nsza',         NF_INT,  1, GC_n_sun_positions)
+    rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'nvza',         NF_INT,  1, GC_n_view_angles)
+    rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'naza',         NF_INT,  1, GC_n_azimuths)
+    rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'ngeometries',  NF_INT,  1, ngeom)
+    rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'noutputlevels',NF_INT,  1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS)
 
     IF ( .NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN
-       call ncapt (ncid, ncglobal, 'nwavelengths', nclong,  1, nclambdas, rcode)
+       rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'nwavelengths', NF_INT,  1, nclambdas)
     ELSE
-       call ncapt (ncid, ncglobal, 'nwavelengths', nclong,  1, nlambdas, rcode)
+       rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'nwavelengths', NF_INT,  1, nlambdas)
     END IF
-    call ncapt (ncid, ncglobal, 'nlayers',      nclong,  1, GC_nlayers, rcode)
-    call ncapt (ncid, ncglobal, 'ngas',         nclong,  1, ngases, rcode)
+    rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'nlayers',      NF_INT,  1, GC_nlayers)
+    rcode = NF_PUT_ATT_INT (ncid, NF_GLOBAL, 'ngas',         NF_INT,  1, ngases)
     
     if (use_lambertian) then
-       call ncapt (ncid, ncglobal, 'user_lambertian', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'user_lambertian', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'user_lambertian', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'user_lambertian', NF_INT1, 1, 0)
     endif
     if (do_lambertian_cld) then
-       call ncapt (ncid, ncglobal, 'do_lambertian_cld', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_lambertian_cld', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_lambertian_cld', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_lambertian_cld', NF_INT1, 1, 0)
     endif
     if (do_effcrs) then
-       call ncapt (ncid, ncglobal, 'do_effcrs', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_effcrs', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_effcrs', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_effcrs', NF_INT1, 1, 0)
     endif
     if (use_wavelength) then
-       call ncapt (ncid, ncglobal, 'use_wavelength', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'use_wavelength', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'use_wavelength', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'use_wavelength', NF_INT1, 1, 0)
     endif
     if (VLIDORT_FixIn%Bool%TS_DO_UPWELLING) then
-       call ncapt (ncid, ncglobal, 'do_upwelling', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_upwelling', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_upwelling', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_upwelling', NF_INT1, 1, 0)
     endif
     if (do_normalized_WFoutput) then
-       call ncapt (ncid, ncglobal, 'do_norm_WFoutput', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_norm_WFoutput', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_norm_WFoutput', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_norm_WFoutput', NF_INT1, 1, 0)
     endif
     if (do_normalized_radiance) then
-       call ncapt (ncid, ncglobal, 'do_norm_radiance', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_norm_radiance', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_norm_radiance', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_norm_radiance', NF_INT1, 1, 0)
     endif
     if (use_solar_photons) then
-       call ncapt (ncid, ncglobal, 'use_solar_photons', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'use_solar_photons', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'use_solar_photons', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'use_solar_photons', NF_INT1, 1, 0)
     endif
     if (do_vector_calculation) then
-       call ncapt (ncid, ncglobal, 'do_vector_calc', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_vector_calc', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_vector_calc', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_vector_calc', NF_INT1, 1, 0)
     endif
     if (do_StokesQU_output) then
-       call ncapt (ncid, ncglobal, 'do_QU_output', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_QU_output', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_QU_output', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_QU_output', NF_INT1, 1, 0)
     endif
     if (do_Jacobians) then
-       call ncapt (ncid, ncglobal, 'do_Jacobian', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_Jacobian', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_Jacobian', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_Jacobian', NF_INT1, 1, 0)
     endif
     if (do_QU_Jacobians) then
-       call ncapt (ncid, ncglobal, 'do_QU_Jacobian', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_QU_Jacobian', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_QU_Jacobian', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_QU_Jacobian', NF_INT1, 1, 0)
     endif
     if (do_AMF_calculation) then
-       call ncapt (ncid, ncglobal, 'do_AMF_calc', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_AMF_calc', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_AMF_calc', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_AMF_calc', NF_INT1, 1, 0)
     endif
     if (do_T_Jacobians) then
-       call ncapt (ncid, ncglobal, 'do_T_Jacobian', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_T_Jacobian', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_T_Jacobian', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_T_Jacobian', NF_INT1, 1, 0)
     endif
     if (do_sfcprs_Jacobians) then
-       call ncapt (ncid, ncglobal, 'do_sfcprs_Jacobian', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_sfcprs_Jacobian', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_sfcprs_Jacobian', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_sfcprs_Jacobian', NF_INT1, 1, 0)
     endif
     if (do_aod_Jacobians) then
-       call ncapt (ncid, ncglobal, 'do_aod_Jacobian', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_aod_Jacobian', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_aod_Jacobian', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_aod_Jacobian', NF_INT1, 1, 0)
     endif
     if (do_assa_Jacobians) then
-       call ncapt (ncid, ncglobal, 'do_assa_Jacobian', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_assa_Jacobian', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_assa_Jacobian', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_assa_Jacobian', NF_INT1, 1, 0)
     endif
     if (do_cod_Jacobians) then
-       call ncapt (ncid, ncglobal, 'do_cod_Jacobian', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_cod_Jacobian', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_cod_Jacobian', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_cod_Jacobian', NF_INT1, 1, 0)
     endif
     if (do_cssa_Jacobians) then
-       call ncapt (ncid, ncglobal, 'do_cssa_Jacobian', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_cssa_Jacobian', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_cssa_Jacobian', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_cssa_Jacobian', NF_INT1, 1, 0)
     endif
     if (do_cfrac_Jacobians) then
-       call ncapt (ncid, ncglobal, 'do_cfrac_Jacobian', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_cfrac_Jacobian', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_cfrac_Jacobian', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_cfrac_Jacobian', NF_INT1, 1, 0)
     endif
     if (do_aer_columnwf) then
-       call ncapt (ncid, ncglobal, 'do_aer_columnwf', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_aer_columnwf', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_aer_columnwf', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_aer_columnwf', NF_INT1, 1, 0)
     endif
     if (do_cld_columnwf) then
-       call ncapt (ncid, ncglobal, 'do_cld_columnwf', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_cld_columnwf', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_cld_columnwf', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_cld_columnwf', NF_INT1, 1, 0)
     endif
     if (do_brdf_surface) then
-       call ncapt (ncid, ncglobal, 'do_brdf', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_brdf', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_brdf', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_brdf', NF_INT1, 1, 0)
     endif
     if (OUTPUT_WSABSA) then
-       call ncapt (ncid, ncglobal, 'do_output_wsabsa', ncbyte, 1, 1, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_output_wsabsa', NF_INT1, 1, 1)
     else
-       call ncapt (ncid, ncglobal, 'do_output_wsabsa', ncbyte, 1, 0, rcode)
+       rcode = NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_output_wsabsa', NF_INT1, 1, 0)
     endif
     
     ! write the list of gases in one string
     write(gasstr, '(10(I2,A1,A4,A1))') (i,':',which_gases(i),',', i=1, ngases)
     nlen=LEN(trim(gasstr)) ; gasstr=gasstr(1:nlen-1)
-    call ncaptc (ncid, ncglobal, 'gases', ncchar,  len(trim(gasstr)), trim(gasstr), rcode)
+    rcode = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'gases', ncchar,  len(trim(gasstr)), trim(gasstr))
 
     ! Units for variables
-    call ncaptc (ncid, ncglobal, 'windspeed_units', ncchar, 3, 'm/s', rcode)
-    call ncaptc (ncid, ncglobal, 'lonlat_units',    ncchar, 7, 'degrees', rcode)
-    call ncaptc (ncid, ncglobal, 'zcldtop_units',   ncchar, 2, 'km', rcode)
-    call ncaptc (ncid, szaid,    'units', ncchar, 7, 'degrees', rcode)
-    call ncaptc (ncid, vzaid,    'units', ncchar, 7, 'degrees', rcode)
-    call ncaptc (ncid, azaid,    'units', ncchar, 7, 'degrees', rcode)
-    call ncaptc (ncid, lvlid,    'units', ncchar, 2, 'km', rcode)
-    call ncaptc (ncid, outlevid, 'units', ncchar, 8, 'unitless', rcode)
+    rcode = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'windspeed_units', ncchar, 3, 'm/s')
+    rcode = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'lonlat_units',    ncchar, 7, 'degrees')
+    rcode = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'zcldtop_units',   ncchar, 2, 'km')
+    rcode = NF_PUT_ATT_TEXT (ncid, szaid,    'units', ncchar, 7, 'degrees')
+    rcode = NF_PUT_ATT_TEXT (ncid, vzaid,    'units', ncchar, 7, 'degrees')
+    rcode = NF_PUT_ATT_TEXT (ncid, azaid,    'units', ncchar, 7, 'degrees')
+    rcode = NF_PUT_ATT_TEXT (ncid, lvlid,    'units', ncchar, 2, 'km')
+    rcode = NF_PUT_ATT_TEXT (ncid, outlevid, 'units', ncchar, 8, 'unitless')
     if (use_wavelength) then
-       call ncaptc(ncid,wavid,'units', ncchar,2, 'nm',rcode)
+       rcode = NF_PUT_ATT_TEXT(ncid,wavid,'units', ncchar,2, 'nm',rcode)
     else 
-       call ncaptc(ncid,wavid,'units', ncchar,4, 'cm-1',rcode)
+       rcode = NF_PUT_ATT_TEXT(ncid,wavid,'units', ncchar,4, 'cm-1',rcode)
     endif
     if (use_solar_photons) then
        irrad_unitc='photons/cm2/nm/s'
     else
        irrad_unitc='W/m2/cm-1'
     endif
-    call ncaptc(ncid, irradid, 'units', ncchar, len_trim(irrad_unitc), irrad_unitc, rcode)
+    rcode = NF_PUT_ATT_TEXT(ncid, irradid, 'units', ncchar, len_trim(irrad_unitc), irrad_unitc)
     if (do_normalized_radiance) then
        rad_unitc='unitless'
     else
        rad_unitc=TRIM(irrad_unitc)//'/sr'
     endif
-    call ncaptc(ncid, radid,    'units', ncchar, len_trim(rad_unitc), rad_unitc, rcode) 
-    call ncaptc(ncid, gascolid, 'units', ncchar, 13, 'molecules/cm2',            rcode)
-    call ncaptc(ncid, airid,    'units', ncchar, 13, 'molecules/cm2',            rcode)
-    call ncaptc(ncid, psid,     'units', ncchar, 3,  'hPa',                      rcode)
-    call ncaptc(ncid, tsid,     'units', ncchar, 1,  'K',                        rcode)    
+    rcode = NF_PUT_ATT_TEXT(ncid, radid,    'units', ncchar, len_trim(rad_unitc), rad_unitc) 
+    rcode = NF_PUT_ATT_TEXT(ncid, gascolid, 'units', ncchar, 13, 'molecules/cm2')
+    rcode = NF_PUT_ATT_TEXT(ncid, airid,    'units', ncchar, 13, 'molecules/cm2')
+    rcode = NF_PUT_ATT_TEXT(ncid, psid,     'units', ncchar, 3,  'hPa')
+    rcode = NF_PUT_ATT_TEXT(ncid, tsid,     'units', ncchar, 1,  'K')    
 
     !=============================================================================
     ! Get out of 'define' mode, and into 'data' mode
     !=============================================================================
-    call ncendf (ncid, rcode)
+    rcode = NF_ENDDEF (ncid)
 
     !=============================================================================
     ! Fill in the values of the non time varying variables.
     ! Remember, we're still in "initialization" here - this is only done the
     ! first time through.
     !=============================================================================
-    call ncvpt (ncid, szaid, 1, GC_n_sun_positions, &
-         real(VLIDORT_ModIn%MSunrays%TS_SZANGLES(1:GC_n_sun_positions), kind=4), rcode)
-    call ncvpt (ncid, vzaid, 1, GC_n_view_angles, &
-         real(VLIDORT_ModIn%MUserVal%TS_USER_VZANGLES_INPUT(1:GC_n_view_angles), kind=4), rcode)
-    call ncvpt (ncid, azaid, 1, GC_n_azimuths, &
-         real(VLIDORT_ModIn%MUserVal%TS_USER_RELAZMS(1:GC_n_azimuths), kind=4), rcode)
-    call ncvpt (ncid, lvlid, 1, GC_nlayers+1, &
-         real(heights(0:GC_nlayers), kind=4), rcode)
+    rcode = NF_PUT_VARA_REAL (ncid, szaid, 1, GC_n_sun_positions, &
+         real(VLIDORT_ModIn%MSunrays%TS_SZANGLES(1:GC_n_sun_positions), kind=4))
+    rcode = NF_PUT_VARA_REAL (ncid, vzaid, 1, GC_n_view_angles, &
+         real(VLIDORT_ModIn%MUserVal%TS_USER_VZANGLES_INPUT(1:GC_n_view_angles), kind=4))
+    rcode = NF_PUT_VARA_REAL (ncid, azaid, 1, GC_n_azimuths, &
+         real(VLIDORT_ModIn%MUserVal%TS_USER_RELAZMS(1:GC_n_azimuths), kind=4))
+    rcode = NF_PUT_VARA_REAL (ncid, lvlid, 1, GC_nlayers+1, &
+         real(heights(0:GC_nlayers), kind=4))
     IF ( .NOT. do_effcrs .AND. lambda_resolution /= 0.0d0) THEN
-       call ncvpt (ncid, wavid, 1, nclambdas, &
-            real(clambdas(1:nclambdas), kind=4), rcode)
+       rcode = NF_PUT_VARA_REAL (ncid, wavid, 1, nclambdas, &
+            real(clambdas(1:nclambdas), kind=4))
     ELSE
-       call ncvpt (ncid, wavid, 1, nlambdas, &
-            real(lambdas(1:nlambdas), kind=4), rcode)
+       rcode = NF_PUT_VARA_REAL (ncid, wavid, 1, nlambdas, &
+            real(lambdas(1:nlambdas), kind=4))
     END IF
     
     do i = 1, ngases
        gas_indices(i) = i
     enddo
-    call ncvpt (ncid, gasid, 1, ngases, gas_indices, rcode)
-    call ncvpt (ncid, outlevid, 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS, &
-         real(VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(1:VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS), kind=4), rcode)
+    rcode = NF_PUT_VARA_INT (ncid, gasid, 1, ngases, gas_indices)
+    rcode = NF_PUT_VARA_REAL (ncid, outlevid, 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS, &
+         real(VLIDORT_ModIn%MUserVal%TS_USER_LEVELS(1:VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS), kind=4))
 
     !=============================================================================
     ! Define the START and COUNT arrays for each of the array variables.
@@ -572,32 +572,32 @@ CONTAINS
     ! write ps and ts
     ndimstart1 = (/ 1 /)
     ndimcount1 = (/ GC_nlayers+1 /)  
-    call ncvpt (ncid, psid, ndimstart1, ndimcount1, real(pressures(0:GC_nlayers), kind=4), rcode)
-    call ncvpt (ncid, tsid, ndimstart1, ndimcount1, real(temperatures(0:GC_nlayers), kind=4), rcode)
+    rcode = NF_PUT_VARA_REAL (ncid, psid, ndimstart1, ndimcount1, real(pressures(0:GC_nlayers), kind=4))
+    rcode = NF_PUT_VARA_REAL (ncid, tsid, ndimstart1, ndimcount1, real(temperatures(0:GC_nlayers), kind=4))
     
     ! write 1D with laydim aircol
     ndimstart1 = (/ 1 /)
     ndimcount1 = (/ GC_nlayers /)  
-    call ncvpt (ncid, airid,  ndimstart1, ndimcount1, real(aircolumns(1:GC_nlayers), kind=4), rcode)
-    call ncvpt (ncid, aer0id, ndimstart1, ndimcount1, real(taer_profile(1:GC_nlayers), kind=4),  rcode)
-    call ncvpt (ncid, cld0id, ndimstart1, ndimcount1, real(tcld_profile(1:GC_nlayers), kind=4),  rcode)
+    rcode = NF_PUT_VARA_REAL (ncid, airid,  ndimstart1, ndimcount1, real(aircolumns(1:GC_nlayers), kind=4))
+    rcode = NF_PUT_VARA_REAL (ncid, aer0id, ndimstart1, ndimcount1, real(taer_profile(1:GC_nlayers), kind=4),  rcode)
+    rcode = NF_PUT_VARA_REAL (ncid, cld0id, ndimstart1, ndimcount1, real(tcld_profile(1:GC_nlayers), kind=4),  rcode)
 
     ! 2D, variables, laydim, gasdim
     ndimstart2 = (/ 1, 1 /)
     ndimcount2 = (/ GC_nlayers, ngases /)  
-    call ncvpt (ncid, gascolid, ndimstart2, ndimcount2, gas_partialcolumns(1:GC_nlayers, 1:ngases), rcode)
+    rcode = NF_PUT_VARA_DOUBLE (ncid, gascolid, ndimstart2, ndimcount2, gas_partialcolumns(1:GC_nlayers, 1:ngases))
 
     ! 4d variables, nsqdim, vzadim, azadim, szadim
     ndimstart4 = (/ 1, 1, 1, 1 /)
     ndimcount4 = (/ NSTOKESSQ, GC_n_view_angles, GC_n_azimuths, GC_n_sun_positions /) 
     if (do_brdf_surface) then
-       call ncvpt (ncid, brdfid, ndimstart4, ndimcount4, &
-            real(Total_brdf(1:NSTOKESSQ,1:GC_n_view_angles,1:GC_n_azimuths,1:GC_n_sun_positions), kind=4), rcode)  
+       rcode = NF_PUT_VARA_REAL (ncid, brdfid, ndimstart4, ndimcount4, &
+            real(Total_brdf(1:NSTOKESSQ,1:GC_n_view_angles,1:GC_n_azimuths,1:GC_n_sun_positions), kind=4))  
        if (OUTPUT_WSABSA) then
           ndimstart1 = (/ 1 /)
           ndimcount1 = (/ 1 /)  
-          call ncvpt (ncid, wsaid, ndimstart1, ndimcount1, real(WSA_CALCULATED, kind=4), rcode)
-          call ncvpt (ncid, bsaid, ndimstart1, ndimcount1, real(BSA_CALCULATED, kind=4), rcode)
+          rcode = NF_PUT_VARA_REAL (ncid, wsaid, ndimstart1, ndimcount1, real(WSA_CALCULATED, kind=4))
+          rcode = NF_PUT_VARA_REAL (ncid, bsaid, ndimstart1, ndimcount1, real(BSA_CALCULATED, kind=4))
        endif
     endif
 
@@ -605,7 +605,7 @@ CONTAINS
     ! CLOSE the NetCDF file
     !==============================================================================
     
-    call ncclos (ncid, rcode)
+    rcode = NF_CLOSE(ncid)
     
   END SUBROUTINE Create_netcdf_output_file
   
