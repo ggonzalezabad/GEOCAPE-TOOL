@@ -112,6 +112,14 @@ CONTAINS
     character(len=30)          :: irrad_unitc, rad_unitc
     integer(kind=4)            :: ngeom
 
+    ! -----------
+    ! Fill values
+    ! ----------
+    INTEGER, parameter :: FILL_MODE   = 0 !Set to 1 to disable fill mode
+    INTEGER, parameter :: FILL_INT    = -9999
+    REAL*4,  parameter :: FILL_FLOAT  = -9999
+    REAL*4,  parameter :: FILL_DOUBLE = -9999
+
     ! ----------------
     ! Code starts here
     ! ----------------
@@ -130,7 +138,7 @@ CONTAINS
     END IF
     error = .false.; tmperror = ' '
     
-    rcode = NF_CREATE(netfname, NF_CLOBBER, ncid)
+    rcode = NF_CREATE(netfname, OR(NF_CLOBBER,NF_NETCDF4), ncid)
     IF (rcode .NE. NF_NOERR) then
        tmperror =  ' error in netcdf_out: nccre failed'
        error = .true.; return
@@ -158,12 +166,19 @@ CONTAINS
     ! Create the coordinate (aka independent) variables:
     !============================================================================= 
     rcode = NF_DEF_VAR (ncid, 'Solarzenithangle',     NF_FLOAT, 1, szadim, szaid)
+    rcode = NF_DEF_VAR_FILL(ncid, szaid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR (ncid, 'Viewingzenithangle',   NF_FLOAT, 1, vzadim, vzaid)
+    rcode = NF_DEF_VAR_FILL(ncid, vzaid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR (ncid, 'Relativeazimuthangle', NF_FLOAT, 1, azadim, azaid)
+    rcode = NF_DEF_VAR_FILL(ncid, azaid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR (ncid, 'gas',                  NF_INT,   1, gasdim, gasid)
+    rcode = NF_DEF_VAR_FILL(ncid, gasid, FILL_MODE, FILL_INT)
     rcode = NF_DEF_VAR (ncid, 'zs',                   NF_FLOAT, 1, lvldim, lvlid)
+    rcode = NF_DEF_VAR_FILL(ncid, lvlid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR (ncid, 'Wavelength',           NF_FLOAT, 1, wavdim, wavid)
+    rcode = NF_DEF_VAR_FILL(ncid, wavid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR (ncid, 'outputlevels',         NF_FLOAT, 1, olvdim, outlevid)
+    rcode = NF_DEF_VAR_FILL(ncid, outlevid, FILL_MODE, FILL_FLOAT)
     
     !=============================================================================
     ! Create a vector containing the often referred to spacetime coordinates:
@@ -186,61 +201,98 @@ CONTAINS
     !=============================================================================
     ! ps, ts
     rcode = NF_DEF_VAR(ncid, 'ps', NF_FLOAT, 1, lvldim, psid)
+    rcode = NF_DEF_VAR_FILL(ncid, psid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR(ncid, 'ts', NF_FLOAT, 1, lvldim, tsid)
+    rcode = NF_DEF_VAR_FILL(ncid, tsid, FILL_MODE, FILL_FLOAT)
     
     ! aircol, aods0, cods0
     rcode = NF_DEF_VAR(ncid, 'aircol', NF_FLOAT, 1, laydim, airid)
+    rcode = NF_DEF_VAR_FILL(ncid, airid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR(ncid, 'aods0',  NF_FLOAT, 1, laydim, aer0id)
+    rcode = NF_DEF_VAR_FILL(ncid, aer0id, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR(ncid, 'cods0',  NF_FLOAT, 1, laydim, cld0id)
+    rcode = NF_DEF_VAR_FILL(ncid, cld0id, FILL_MODE, FILL_FLOAT)
         
     ! varaibles with 1D, wavdim
     rcode = NF_DEF_VAR(ncid, 'irradiance', NF_FLOAT, 1, wavdim, irradid)
+    rcode = NF_DEF_VAR_FILL(ncid, irradid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR(ncid, 'surfalb',    NF_FLOAT, 1, wavdim, sfcid)
+    rcode = NF_DEF_VAR_FILL(ncid, sfcid, FILL_MODE, FILL_FLOAT)
     
     ! variables with 2D, laydim, gasdim
     rcode = NF_DEF_VAR(ncid,  'gascol', NF_DOUBLE, 2, gascol_dims, gascolid)
+    rcode = NF_DEF_VAR_FILL(ncid, gascolid, FILL_MODE, FILL_DOUBLE)
     
     ! variables with 2D, wavdim, laydim
     rcode = NF_DEF_VAR(ncid, 'ods',   NF_FLOAT, 2, wavalt_dims, odsid)
+    rcode = NF_DEF_VAR_FILL(ncid, odsid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR(ncid, 'ssas',  NF_FLOAT, 2, wavalt_dims, ssasid)
+    rcode = NF_DEF_VAR_FILL(ncid, ssasid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR(ncid, 'aods',  NF_FLOAT, 2, wavalt_dims, aodsid)
+    rcode = NF_DEF_VAR_FILL(ncid, aodsid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR(ncid, 'assas', NF_FLOAT, 2, wavalt_dims, assasid)
+    rcode = NF_DEF_VAR_FILL(ncid, assasid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR(ncid, 'cods',  NF_FLOAT, 2, wavalt_dims, codsid)
+    rcode = NF_DEF_VAR_FILL(ncid, codsid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR(ncid, 'cssas', NF_FLOAT, 2, wavalt_dims, cssasid)
+    rcode = NF_DEF_VAR_FILL(ncid, cssasid, FILL_MODE, FILL_FLOAT)
     
     ! variables with 3D, wavdim, geodim, olvdim
     rcode = NF_DEF_VAR(ncid, 'radiance',    NF_FLOAT, 3, wavgeolev_dims, radid)
+    rcode = NF_DEF_VAR_FILL(ncid, radid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR(ncid, 'flux',        NF_FLOAT, 3, wavszalev_dims, fluxid)
+    rcode = NF_DEF_VAR_FILL(ncid, fluxid, FILL_MODE, FILL_FLOAT)
     rcode = NF_DEF_VAR(ncid, 'direct_flux', NF_FLOAT, 3, wavszalev_dims, dfluxid)
+    rcode = NF_DEF_VAR_FILL(ncid, dfluxid, FILL_MODE, FILL_FLOAT)
     if (do_vector_calculation .and. do_StokesQU_output) then
        rcode = NF_DEF_VAR(ncid, 'q',            NF_FLOAT, 3, wavgeolev_dims, qid)
+    rcode = NF_DEF_VAR_FILL(ncid, qid, FILL_MODE, FILL_FLOAT)
        rcode = NF_DEF_VAR(ncid, 'u',            NF_FLOAT, 3, wavgeolev_dims, uid)
+    rcode = NF_DEF_VAR_FILL(ncid, uid, FILL_MODE, FILL_FLOAT)
        rcode = NF_DEF_VAR(ncid, 'qflux',        NF_FLOAT, 3, wavszalev_dims, qfluxid)
+    rcode = NF_DEF_VAR_FILL(ncid, qfluxid, FILL_MODE, FILL_FLOAT)
        rcode = NF_DEF_VAR(ncid, 'uflux',        NF_FLOAT, 3, wavszalev_dims, ufluxid)
+    rcode = NF_DEF_VAR_FILL(ncid, ufluxid, FILL_MODE, FILL_FLOAT)
        rcode = NF_DEF_VAR(ncid, 'qdirect_flux', NF_FLOAT, 3, wavszalev_dims, qdfluxid)
+    rcode = NF_DEF_VAR_FILL(ncid, qdfluxid, FILL_MODE, FILL_FLOAT)
        rcode = NF_DEF_VAR(ncid, 'udirect_flux', NF_FLOAT, 3, wavszalev_dims, udfluxid)
+    rcode = NF_DEF_VAR_FILL(ncid, udfluxid, FILL_MODE, FILL_FLOAT)
     endif
     
     if (do_Jacobians) then
        
        if (use_lambertian) then
           rcode = NF_DEF_VAR(ncid, 'surfalb_jac',   NF_FLOAT, 3, wavgeolev_dims, sfcwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, sfcwfid, FILL_MODE, FILL_FLOAT)
        else 
           rcode = NF_DEF_VAR(ncid, 'windspeed_jac', NF_FLOAT, 3, wavgeolev_dims, wswfid)
+          rcode = NF_DEF_VAR_FILL(ncid, wswfid, FILL_MODE, FILL_FLOAT)
        endif
        
-       if (do_cfrac_Jacobians) &
+       if (do_cfrac_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 'cfrac_jac',     NF_FLOAT, 3, wavgeolev_dims, cfracwfid)
-       if (do_sfcprs_Jacobians) &
+            rcode = NF_DEF_VAR_FILL(ncid, cfracwfid, FILL_MODE, FILL_FLOAT)
+         endif
+       if (do_sfcprs_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 'sfcprs_jac',    NF_FLOAT, 3, wavgeolev_dims, sfcprswfid)
-       if (do_aer_columnwf .and. do_aod_Jacobians) &  !No column jacobians yet
-            rcode = NF_DEF_VAR(ncid, 'aodcolwf_jac',  NF_FLOAT, 3, wavgeolev_dims, aodwfid)
-       if (do_aer_columnwf .and. do_assa_Jacobians) & !No column jacobians yet
-            rcode = NF_DEF_VAR(ncid, 'assacolwf_jac', NF_FLOAT, 3, wavgeolev_dims, assawfid)
-       if (do_cld_columnwf .and. do_cod_Jacobians) &  !No column jacobians yet
-            rcode = NF_DEF_VAR(ncid, 'codcolwf_jac',  NF_FLOAT, 3, wavgeolev_dims, codwfid)
-       if (do_cld_columnwf .and. do_cssa_Jacobians) & !No column jacobians yet
-            rcode = NF_DEF_VAR(ncid, 'cssacolwf_jac', NF_FLOAT, 3, wavgeolev_dims, cssawfid)
+            rcode = NF_DEF_VAR_FILL(ncid, sfcprswfid, FILL_MODE, FILL_FLOAT)
+         endif
+       if (do_aer_columnwf .and. do_aod_Jacobians) then  !No column jacobians yet
+          rcode = NF_DEF_VAR(ncid, 'aodcolwf_jac',  NF_FLOAT, 3, wavgeolev_dims, aodwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, aodwfid, FILL_MODE, FILL_FLOAT)
+       endif
+       if (do_aer_columnwf .and. do_assa_Jacobians) then !No column jacobians yet
+          rcode = NF_DEF_VAR(ncid, 'assacolwf_jac', NF_FLOAT, 3, wavgeolev_dims, assawfid)
+          rcode = NF_DEF_VAR_FILL(ncid, assawfid, FILL_MODE, FILL_FLOAT)
+       endif
+       if (do_cld_columnwf .and. do_cod_Jacobians) then  !No column jacobians yet
+          rcode = NF_DEF_VAR(ncid, 'codcolwf_jac',  NF_FLOAT, 3, wavgeolev_dims, codwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, codwfid, FILL_MODE, FILL_FLOAT)
+       endif
+       if (do_cld_columnwf .and. do_cssa_Jacobians) then !No column jacobians yet
+          rcode = NF_DEF_VAR(ncid, 'cssacolwf_jac', NF_FLOAT, 3, wavgeolev_dims, cssawfid)
+          rcode = NF_DEF_VAR_FILL(ncid, cssawfid, FILL_MODE, FILL_FLOAT)
+       endif
        
     endif
     
@@ -248,7 +300,9 @@ CONTAINS
        
        if (use_lambertian) then
           rcode = NF_DEF_VAR(ncid, 'surfalb_qjac',  NF_FLOAT, 3, wavgeolev_dims, sfcqwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, sfcqwfid, FILL_MODE, FILL_FLOAT)
           rcode = NF_DEF_VAR(ncid, 'surfalb_ujac',  NF_FLOAT, 3, wavgeolev_dims, sfcuwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, sfcuwfid, FILL_MODE, FILL_FLOAT)
        else 
           rcode = NF_DEF_VAR(ncid, 'windspeed_qjac', NF_FLOAT, 3, wavgeolev_dims, wsqwfid)
           rcode = NF_DEF_VAR(ncid, 'windspeed_ujac', NF_FLOAT, 3, wavgeolev_dims, wsuwfid)
@@ -256,27 +310,39 @@ CONTAINS
        
        if (do_cfrac_Jacobians) then
           rcode = NF_DEF_VAR(ncid, 'cfrac_qjac',  NF_FLOAT, 3, wavgeolev_dims, cfracqwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, cfracqwfid, FILL_MODE, FILL_FLOAT)
           rcode = NF_DEF_VAR(ncid, 'cfrac_ujac',  NF_FLOAT, 3, wavgeolev_dims, cfracuwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, cfracuwfid, FILL_MODE, FILL_FLOAT)
        endif
        if (do_sfcprs_Jacobians) then
           rcode = NF_DEF_VAR(ncid, 'sfcprs_qjac',  NF_FLOAT, 3, wavgeolev_dims, sfcprsqwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, sfcprsqwfid, FILL_MODE, FILL_FLOAT)
           rcode = NF_DEF_VAR(ncid, 'sfcprs_ujac',  NF_FLOAT, 3, wavgeolev_dims, sfcprsuwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, sfcprsuwfid, FILL_MODE, FILL_FLOAT)
        endif
        if (do_aer_columnwf .and. do_aod_Jacobians) then  !No column jacobians yet
           rcode = NF_DEF_VAR(ncid, 'aodcol_qjac',  NF_FLOAT, 3, wavgeolev_dims, aodqwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, aodqwfid, FILL_MODE, FILL_FLOAT)
           rcode = NF_DEF_VAR(ncid, 'aodcol_ujac',  NF_FLOAT, 3, wavgeolev_dims, aoduwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, aoduwfid, FILL_MODE, FILL_FLOAT)
        endif
        if (do_aer_columnwf .and. do_assa_Jacobians) then !No column jacobians yet
           rcode = NF_DEF_VAR(ncid, 'assacol_qjac', NF_FLOAT, 3, wavgeolev_dims, assaqwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, assaqwfid, FILL_MODE, FILL_FLOAT)
           rcode = NF_DEF_VAR(ncid, 'assacol_ujac', NF_FLOAT, 3, wavgeolev_dims, assauwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, assauwfid, FILL_MODE, FILL_FLOAT)
        endif
        if (do_cld_columnwf .and. do_cod_Jacobians) then  !No column jacobians yet
           rcode = NF_DEF_VAR(ncid, 'codcol_qjac',  NF_FLOAT, 3, wavgeolev_dims, codqwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, codqwfid, FILL_MODE, FILL_FLOAT)
           rcode = NF_DEF_VAR(ncid, 'codcol_ujac',  NF_FLOAT, 3, wavgeolev_dims, coduwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, coduwfid, FILL_MODE, FILL_FLOAT)
        endif
        if (do_cld_columnwf .and. do_cssa_Jacobians) then !No column jacobians yet
           rcode = NF_DEF_VAR(ncid, 'cssacol_qjac', NF_FLOAT, 3, wavgeolev_dims, cssaqwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, cssaqwfid, FILL_MODE, FILL_FLOAT)
           rcode = NF_DEF_VAR(ncid, 'cssacol_ujac', NF_FLOAT, 3, wavgeolev_dims, cssauwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, cssauwfid, FILL_MODE, FILL_FLOAT)
        endif
        
     endif
@@ -284,51 +350,74 @@ CONTAINS
     ! variables with 4D, wavdim, laydim, geodim, olvdim
     if (do_AMF_calculation) then
        rcode = NF_DEF_VAR(ncid, 'scatweights', NF_FLOAT, 4, wavaltgeolev_dims, scatwtid)
+       rcode = NF_DEF_VAR_FILL(ncid, scatwtid, FILL_MODE, FILL_FLOAT)
     endif
     
     if (do_Jacobians) then
-       if (do_T_Jacobians) &
+       if (do_T_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 't_jac',    NF_FLOAT, 4, wavaltgeolev_dims, tempwfid)
-       if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
+            rcode = NF_DEF_VAR_FILL(ncid, tempwfid, FILL_MODE, FILL_FLOAT)
+         endif
+       if (.not. do_aer_columnwf .and. do_aod_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 'aod_jac',  NF_FLOAT, 4, wavaltgeolev_dims, aodwfid)  
-       if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
+            rcode = NF_DEF_VAR_FILL(ncid, aodwfid, FILL_MODE, FILL_FLOAT)
+         endif
+       if (.not. do_aer_columnwf .and. do_assa_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 'assa_jac', NF_FLOAT, 4, wavaltgeolev_dims, assawfid)   
-       if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
+            rcode = NF_DEF_VAR_FILL(ncid, assawfid, FILL_MODE, FILL_FLOAT)
+         endif
+       if (.not. do_cld_columnwf .and. do_cod_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 'cod_jac',  NF_FLOAT, 4, wavaltgeolev_dims, codwfid)  
-       if (.not. do_cld_columnwf .and. do_cssa_Jacobians) &
+            rcode = NF_DEF_VAR_FILL(ncid, codwfid, FILL_MODE, FILL_FLOAT)
+         endif
+       if (.not. do_cld_columnwf .and. do_cssa_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 'cssa_jac', NF_FLOAT, 4, wavaltgeolev_dims, cssawfid)  
+            rcode = NF_DEF_VAR_FILL(ncid, cssawfid, FILL_MODE, FILL_FLOAT)
+         endif
     endif
     
     if (do_QU_Jacobians) then
        if (.not. do_aer_columnwf .and. do_aod_Jacobians) then 
           rcode = NF_DEF_VAR(ncid, 'aod_qjac', NF_FLOAT, 4, wavaltgeolev_dims, aodqwfid)  
+          rcode = NF_DEF_VAR_FILL(ncid, aodqwfid, FILL_MODE, FILL_FLOAT)
           rcode = NF_DEF_VAR(ncid, 'aod_ujac', NF_FLOAT, 4, wavaltgeolev_dims, aoduwfid)  
+          rcode = NF_DEF_VAR_FILL(ncid, aoduwfid, FILL_MODE, FILL_FLOAT)
        endif
        if (.not. do_aer_columnwf .and. do_assa_Jacobians) then
           rcode = NF_DEF_VAR(ncid, 'assa_qjac', NF_FLOAT, 4, wavaltgeolev_dims, assaqwfid)   
+          rcode = NF_DEF_VAR_FILL(ncid, assaqwfid, FILL_MODE, FILL_FLOAT)
           rcode = NF_DEF_VAR(ncid, 'assa_ujac', NF_FLOAT, 4, wavaltgeolev_dims, assauwfid)   
+          rcode = NF_DEF_VAR_FILL(ncid, assauwfid, FILL_MODE, FILL_FLOAT)
        endif
        if (.not. do_cld_columnwf .and. do_cod_Jacobians) then
           rcode = NF_DEF_VAR(ncid, 'cod_qjac', NF_FLOAT, 4, wavaltgeolev_dims, codqwfid)  
+          rcode = NF_DEF_VAR_FILL(ncid, codqwfid, FILL_MODE, FILL_FLOAT)
           rcode = NF_DEF_VAR(ncid, 'cod_ujac', NF_FLOAT, 4, wavaltgeolev_dims, coduwfid)  
+          rcode = NF_DEF_VAR_FILL(ncid, coduwfid, FILL_MODE, FILL_FLOAT)
        endif
        if (.not. do_cld_columnwf .and. do_cssa_Jacobians) then
           rcode = NF_DEF_VAR(ncid, 'cssa_qjac', NF_FLOAT, 4, wavaltgeolev_dims, cssaqwfid)  
+          rcode = NF_DEF_VAR_FILL(ncid, cssaqwfid, FILL_MODE, FILL_FLOAT)
           rcode = NF_DEF_VAR(ncid, 'cssa_ujac', NF_FLOAT, 4, wavaltgeolev_dims, cssauwfid) 
+          rcode = NF_DEF_VAR_FILL(ncid, cssauwfid, FILL_MODE, FILL_FLOAT)
        endif
     endif
     
     ! variables with 4D, wavdim, geodim, gasdim, olvdim
     if (do_AMF_calculation) then
        rcode = NF_DEF_VAR(ncid, 'amf', NF_FLOAT, 4, wavgeogaslev_dims, amfid)
+       rcode = NF_DEF_VAR_FILL(ncid, amfid, FILL_MODE, FILL_FLOAT)
     endif
     
     ! variables with 4D, wavdim, laydim, geodim, gasdim, olvdim
     if (do_Jacobians) then
        rcode = NF_DEF_VAR(ncid,  'gas_jac', NF_FLOAT, 5, wavaltgeogaslev_dims, gaswfid)
+       rcode = NF_DEF_VAR_FILL(ncid, gaswfid, FILL_MODE, FILL_FLOAT)
        if (do_QU_Jacobians) then
           rcode = NF_DEF_VAR(ncid,  'gas_qjac', NF_FLOAT, 5, wavaltgeogaslev_dims, gasqwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, gasqwfid, FILL_MODE, FILL_FLOAT)
           rcode = NF_DEF_VAR(ncid,  'gas_ujac', NF_FLOAT, 5, wavaltgeogaslev_dims, gasuwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, gasuwfid, FILL_MODE, FILL_FLOAT)
        endif
     endif
     
@@ -336,8 +425,11 @@ CONTAINS
     if (do_brdf_surface) then
     ! WSA, BSA amd BRDF
        rcode = NF_DEF_VAR(ncid, 'WSA', NF_FLOAT, 1, onedim, wsaid)
+       rcode = NF_DEF_VAR_FILL(ncid, wsaid, FILL_MODE, FILL_FLOAT)
        rcode = NF_DEF_VAR(ncid, 'BSA', NF_FLOAT, 1, onedim, bsaid)
+       rcode = NF_DEF_VAR_FILL(ncid, bsaid, FILL_MODE, FILL_FLOAT)
        rcode = NF_DEF_VAR(ncid, 'BRDF', NF_FLOAT, 4, brdfdim, brdfid)
+       rcode = NF_DEF_VAR_FILL(ncid, brdfid, FILL_MODE, FILL_FLOAT)
     endif
 
     !=============================================================================
