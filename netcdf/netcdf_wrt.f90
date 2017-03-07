@@ -42,8 +42,7 @@ subroutine netcdf_wrt ( fname, message, fail)
   !=================================  
   !     Local variables
   !=================================
-  integer :: ncid, rcode, iwav, nwav, iout, ngeom
-  integer :: szadim, vzadim, azadim, gasdim, laydim, wavdim, geodim, nsqdim
+  integer :: ncid, rcode, nwav, iout, ngeom
   integer :: radid, qid, uid, irradid, sfcid, sfcwfid, wswfid, cfracwfid, &
        sfcprswfid, aodwfid, assawfid, codwfid, cssawfid, sfcqwfid, wsqwfid, cfracqwfid, &
        sfcprsqwfid, aodqwfid, assaqwfid, codqwfid, cssaqwfid, sfcuwfid, wsuwfid, cfracuwfid,&
@@ -59,6 +58,7 @@ subroutine netcdf_wrt ( fname, message, fail)
   fail = .false.; message = ' '
 
   rcode = NF_OPEN(trim(fname), NF_WRITE, ncid)
+  print*, rcode
   if (rcode .ne. NF_NOERR) then
      message =  ' error in netcdf_out: nccre failed'
      fail = .true.; return
