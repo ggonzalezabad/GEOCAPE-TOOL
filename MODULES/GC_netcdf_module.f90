@@ -144,7 +144,6 @@ CONTAINS
     error = .false.; tmperror = ' '
     
     rcode = NF_CREATE(netfname, OR(NF_CLOBBER,NF_NETCDF4), ncid)
-    print*, rcode
     IF (rcode .NE. NF_NOERR) then
        tmperror =  ' error in netcdf_out: nccre failed'
        error = .true.; return
@@ -166,7 +165,7 @@ CONTAINS
        rcode = NF_DEF_DIM (ncid, 'nw', nlambdas, wavdim)
     END IF
     rcode = NF_DEF_DIM (ncid, 'ngeom',  ngeom, geodim)
-    rcode = NF_DEF_DIM (ncid, 'nstokessq', NSTOKESSQ, nsqdim)
+    IF (do_brdf_surface) rcode = NF_DEF_DIM (ncid, 'nstokessq', NSTOKESSQ, nsqdim)
     
     !=============================================================================
     ! Create the coordinate (aka independent) variables:
@@ -693,9 +692,9 @@ CONTAINS
     rcode = NF_PUT_VARA_DOUBLE (ncid, gascolid, ndimstart2, ndimcount2, gas_partialcolumns(1:GC_nlayers, 1:ngases))
 
     ! 4d variables, nsqdim, vzadim, azadim, szadim
-    ndimstart4 = (/ 1, 1, 1, 1 /)
-    ndimcount4 = (/ NSTOKESSQ, GC_n_view_angles, GC_n_azimuths, GC_n_sun_positions /) 
     if (do_brdf_surface) then
+       ndimstart4 = (/ 1, 1, 1, 1 /)
+       ndimcount4 = (/ NSTOKESSQ, GC_n_view_angles, GC_n_azimuths, GC_n_sun_positions /) 
        rcode = NF_PUT_VARA_REAL (ncid, brdfid, ndimstart4, ndimcount4, &
             real(Total_brdf(1:NSTOKESSQ,1:GC_n_view_angles,1:GC_n_azimuths,1:GC_n_sun_positions), kind=4))  
        if (OUTPUT_WSABSA) then
