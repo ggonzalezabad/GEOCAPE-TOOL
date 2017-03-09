@@ -250,7 +250,7 @@ CONTAINS
     
     ! variables with 2D, wavdim, laydim
     ! Work out chunking
-    max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(laydim,KIND=4))
+    max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(laydim,KIND=4)),1)
     IF (wavdim .LT. max_chunk) THEN
        chunk_2d(1) = wavdim
     ELSE
@@ -279,7 +279,7 @@ CONTAINS
     
     ! variables with 3D, wavdim, geodim, olvdim
     ! Work out chunking
-    max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim,KIND=4))
+    max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim,KIND=4)),1)
     IF (wavdim .LT. max_chunk) THEN
        chunk_3d(1) = wavdim
     ELSE
@@ -304,7 +304,7 @@ CONTAINS
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, uid, FILL_MODE, NF_FILL_REAL))
        CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, uid,NF_CHUNKED,chunk_3d))
        ! Work out chunking
-       max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(szadim,KIND=4))
+       max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(szadim,KIND=4)),1)
        IF (wavdim .LT. max_chunk) THEN
           chunk_3d(1) = wavdim
        ELSE
@@ -325,7 +325,7 @@ CONTAINS
        CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, udfluxid,NF_CHUNKED,chunk_3d))
     endif
     ! Work out chunking
-    max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim,KIND=4))
+    max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim,KIND=4)),1)
     IF (wavdim .LT. max_chunk) THEN
        chunk_3d(1) = wavdim
     ELSE
@@ -448,7 +448,7 @@ CONTAINS
     
     ! variables with 4D, wavdim, laydim, geodim, olvdim
     ! Work out chunking
-    max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim*laydim,KIND=4))
+    max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim*laydim,KIND=4)),1)
     IF (wavdim .LT. max_chunk) THEN
        chunk_4d(1) = wavdim
     ELSE
@@ -526,7 +526,7 @@ CONTAINS
     endif
     
     ! variables with 4D, wavdim, geodim, gasdim, olvdim
-    max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim,KIND=4))
+    max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim,KIND=4)),1)
     IF (wavdim .LT. max_chunk) THEN
        chunk_4d(1) = wavdim
     ELSE
@@ -541,7 +541,7 @@ CONTAINS
     endif
     
     ! variables with 5D, wavdim, laydim, geodim, gasdim, olvdim
-    max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / (REAL(laydim,KIND=4)*REAL(geodim,KIND=4)) )
+    max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / (REAL(laydim,KIND=4)*REAL(geodim,KIND=4)) ),1)
     IF (wavdim .LT. max_chunk) THEN
        chunk_5d(1) = wavdim
     ELSE
