@@ -20,8 +20,8 @@ SHELL= /bin/tcsh
 
 # Paths for too subroutines and tool path
 TOOL_PATH = ..
-DATA_PATH = $(TOOL_PATH)/datareaders/
-NC_PATH   = $(TOOL_PATH)/netcdf/
+DATA_PATH = $(TOOL_PATH)/datareaders
+NC_PATH   = $(TOOL_PATH)/netcdf
 OBJ       = $(TOOL_PATH)/OBJECTS
 WARN_PATH = $(TOOL_PATH)/WARN
 EXE_PATH  = .
@@ -55,17 +55,17 @@ VLIDORT_MOD       = $(TOOL_PATH)/VLIDORT_v2p7_MODULES
 #F77 = gfortran -O3
 #LIBS = -L/usr/lib64 -lnetcdff
 
-#TOOL_COMPILE = gfortran -c -g  -fbounds-check -Wall -fbacktrace -mcmodel=medium
-#VLIDORT_COMPILE = gfortran -c -g -fbounds-check -Wall -fbacktrace #-mcmodel=medium -fbounds-check -Wall -fbacktrace
-#LAPACK_COMPILE  = gfortran -c -g  -fbounds-check -Wall -fbacktrace #-fbounds-check -Wall -fbacktrace
-#LAPACK_NOPT_COMPILE = gfortran -c -g  -fbounds-check -Wall -fbacktrace #-fbounds-check -Wall -fbacktrace
-#F77 = gfortran -g  -fbounds-check -Wall -fbacktrace -mcmodel=medium #-fbounds-check -Wall -fbacktrace
+TOOL_COMPILE = gfortran -c -g  -fbounds-check -Wall -fbacktrace -mcmodel=medium
+VLIDORT_COMPILE = gfortran -c -g -fbounds-check -Wall -fbacktrace #-mcmodel=medium -fbounds-check -Wall -fbacktrace
+LAPACK_COMPILE  = gfortran -c -g  -fbounds-check -Wall -fbacktrace #-fbounds-check -Wall -fbacktrace
+LAPACK_NOPT_COMPILE = gfortran -c -g  -fbounds-check -Wall -fbacktrace #-fbounds-check -Wall -fbacktrace
+F77 = gfortran -g  -fbounds-check -Wall -fbacktrace -mcmodel=medium #-fbounds-check -Wall -fbacktrace
 
-TOOL_COMPILE = gfortran -c -O3 -mcmodel=medium
-VLIDORT_COMPILE = gfortran -c -O3
-LAPACK_COMPILE  = gfortran -c -O3
-LAPACK_NOPT_COMPILE = gfortran -c -O3
-F77 = gfortran -O3 -mcmodel=medium
+#TOOL_COMPILE = gfortran -c -O3 -mcmodel=medium
+#VLIDORT_COMPILE = gfortran -c -O3
+#LAPACK_COMPILE  = gfortran -c -O3
+#LAPACK_NOPT_COMPILE = gfortran -c -O3
+#F77 = gfortran -O3 -mcmodel=medium
 
 #TOOL_COMPILE = gfortran -pg -c -O3 -mcmodel=medium
 #VLIDORT_COMPILE = gfortran -pg -c -O3

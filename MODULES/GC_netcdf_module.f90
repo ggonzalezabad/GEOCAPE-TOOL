@@ -50,7 +50,6 @@ CONTAINS
     ! ---------------
     ! Local variables
     ! ---------------
-    CHARACTER(LEN=max_ch_len) :: tmperror
     CHARACTER(LEN=max_ch_len) :: netfname
 
     ! ----------------
@@ -69,9 +68,7 @@ CONTAINS
        WRITE(*,*) 'No upwelling or downwelling selected... no output'
        STOP
     END IF
-    call netcdf_wrt( netfname, tmperror, error)
-
-    IF (error) CALL write_err_message (.TRUE., tmperror)
+    call netcdf_wrt( netfname)
 
   END SUBROUTINE netcdf_output
 
