@@ -92,6 +92,8 @@ CONTAINS
 
     integer :: ncid, rcode, nlen, i
     integer :: szadim, vzadim, azadim, gasdim, lvldim, laydim, wavdim, geodim, nsqdim, onedim, olvdim
+    integer :: szadimid, vzadimid, azadimid, gasdimid, lvldimid, laydimid, wavdimid, &
+         geodimid, nsqdimid, onedimid, olvdimid
     integer :: szaid, vzaid, azaid, gasid, lvlid, wavid, psid, tsid, airid, &
          aer0id, cld0id, radid, qid, uid, irradid, sfcid, sfcwfid, wswfid, cfracwfid, &
          sfcprswfid, aodwfid, assawfid, codwfid, cssawfid, sfcqwfid, wsqwfid, cfracqwfid, &
@@ -117,13 +119,19 @@ CONTAINS
     ! ----------
     INTEGER, parameter :: FILL_MODE   = 0 !Set to 1 to disable fill mode
  
-   ! ---------------
+    ! ---------------
     ! Chunking arrays
     ! ---------------
+    INTEGER, parameter, dimension(1) :: members_chunk_1 = 4096
+    INTEGER, parameter, dimension(1) :: members_chunk_2 = 2048
+    INTEGER, parameter, dimension(1) :: members_chunk_4 = 1024
+    INTEGER, parameter, dimension(1) :: members_chunk_8 =  512
     INTEGER, dimension(1) :: chunk_1d
     INTEGER, dimension(2) :: chunk_2d
     INTEGER, dimension(3) :: chunk_3d
     INTEGER, dimension(4) :: chunk_4d
+    INTEGER, dimension(5) :: chunk_5d
+    INTEGER :: max_chunk
 
     ! ----------------
     ! Code starts here
@@ -151,124 +159,164 @@ CONTAINS
 
     ngeom = GC_n_sun_positions * GC_n_view_angles * GC_n_azimuths
     ! Create the dimensions of the dataset:
-    rcode = NF_DEF_DIM (ncid, 'one', 1, onedim)
-    rcode = NF_DEF_DIM (ncid, 'nsza', GC_n_sun_positions, szadim)
-    rcode = NF_DEF_DIM (ncid, 'nvza', GC_n_view_angles, vzadim)
-    rcode = NF_DEF_DIM (ncid, 'naza', GC_n_azimuths, azadim)
-    rcode = NF_DEF_DIM (ncid, 'ngas', ngases, gasdim)
-    rcode = NF_DEF_DIM (ncid, 'nlevel', GC_nlayers+1, lvldim)
-    rcode = NF_DEF_DIM (ncid, 'noutputlevel', GC_n_user_levels, olvdim)
-    rcode = NF_DEF_DIM (ncid, 'nlayer', GC_nlayers, laydim)
+    rcode = NF_DEF_DIM (ncid, 'one', 1, onedimid); onedim = 1
+    rcode = NF_DEF_DIM (ncid, 'nsza', GC_n_sun_positions, szadimid); szadim = GC_n_sun_positions
+    rcode = NF_DEF_DIM (ncid, 'nvza', GC_n_view_angles, vzadimid); vzadim = GC_n_view_angles
+    rcode = NF_DEF_DIM (ncid, 'naza', GC_n_azimuths, azadimid); azadim = GC_n_azimuths
+    rcode = NF_DEF_DIM (ncid, 'ngas', ngases, gasdimid); gasdim = ngases
+    rcode = NF_DEF_DIM (ncid, 'nlevel', GC_nlayers+1, lvldimid); lvldim = GC_nlayers+1
+    rcode = NF_DEF_DIM (ncid, 'noutputlevel', GC_n_user_levels, olvdimid); olvdim = GC_n_user_levels
+    rcode = NF_DEF_DIM (ncid, 'nlayer', GC_nlayers, laydimid); laydim = GC_nlayers
     IF ( .NOT. do_effcrs .AND. lambda_resolution /= 0.0d0 ) THEN
-       rcode = NF_DEF_DIM (ncid, 'nw', nclambdas, wavdim)
+       rcode = NF_DEF_DIM (ncid, 'nw', nclambdas, wavdimid); wavdim = nclambdas
     ELSE
-       rcode = NF_DEF_DIM (ncid, 'nw', nlambdas, wavdim)
+       rcode = NF_DEF_DIM (ncid, 'nw', nlambdas, wavdimid); wavdim = nlambdas
     END IF
-    rcode = NF_DEF_DIM (ncid, 'ngeom',  ngeom, geodim)
-    IF (do_brdf_surface) rcode = NF_DEF_DIM (ncid, 'nstokessq', NSTOKESSQ, nsqdim)
+    rcode = NF_DEF_DIM (ncid, 'ngeom',  ngeom, geodimid); geodim = ngeom
+    IF (do_brdf_surface) THEN
+       rcode = NF_DEF_DIM (ncid, 'nstokessq', NSTOKESSQ, nsqdimid); nsqdim = NSTOKESSQ
+    END IF
     
     !=============================================================================
     ! Create the coordinate (aka independent) variables:
     !============================================================================= 
-    rcode = NF_DEF_VAR (ncid, 'Solarzenithangle',     NF_FLOAT, 1, szadim, szaid)
+    rcode = NF_DEF_VAR (ncid, 'Solarzenithangle',     NF_FLOAT, 1, szadimid, szaid)
     rcode = NF_DEF_VAR_FILL(ncid, szaid, FILL_MODE, NF_FILL_REAL)
-    chunk_1d(1) = szadim
 
-    rcode = NF_DEF_VAR (ncid, 'Viewingzenithangle',   NF_FLOAT, 1, vzadim, vzaid)
+    rcode = NF_DEF_VAR (ncid, 'Viewingzenithangle',   NF_FLOAT, 1, vzadimid, vzaid)
     rcode = NF_DEF_VAR_FILL(ncid, vzaid, FILL_MODE, NF_FILL_REAL)
 
-    rcode = NF_DEF_VAR (ncid, 'Relativeazimuthangle', NF_FLOAT, 1, azadim, azaid)
+    rcode = NF_DEF_VAR (ncid, 'Relativeazimuthangle', NF_FLOAT, 1, azadimid, azaid)
     rcode = NF_DEF_VAR_FILL(ncid, azaid, FILL_MODE, NF_FILL_REAL)
 
-    rcode = NF_DEF_VAR (ncid, 'gas',                  NF_INT,   1, gasdim, gasid)
+    rcode = NF_DEF_VAR (ncid, 'gas',                  NF_INT,   1, gasdimid, gasid)
     rcode = NF_DEF_VAR_FILL(ncid, gasid, FILL_MODE, NF_FILL_INT)
 
-    rcode = NF_DEF_VAR (ncid, 'zs',                   NF_FLOAT, 1, lvldim, lvlid)
+    rcode = NF_DEF_VAR (ncid, 'zs',                   NF_FLOAT, 1, lvldimid, lvlid)
     rcode = NF_DEF_VAR_FILL(ncid, lvlid, FILL_MODE, NF_FILL_REAL)
 
-    rcode = NF_DEF_VAR (ncid, 'Wavelength',           NF_FLOAT, 1, wavdim, wavid)
+    rcode = NF_DEF_VAR (ncid, 'Wavelength',           NF_FLOAT, 1, wavdimid, wavid)
     rcode = NF_DEF_VAR_FILL(ncid, wavid, FILL_MODE, NF_FILL_REAL)
+    IF (wavdim .LT. members_chunk_4(1)) THEN
+       chunk_1d(1) = wavdim
+    ELSE
+       chunk_1d(1) = members_chunk_4(1)
+    END IF
+    rcode = NF_DEF_VAR_CHUNKING(ncid, wavid,NF_CHUNKED,chunk_1d)
 
-    rcode = NF_DEF_VAR (ncid, 'outputlevels',         NF_FLOAT, 1, olvdim, outlevid)
+    rcode = NF_DEF_VAR (ncid, 'outputlevels',         NF_FLOAT, 1, olvdimid, outlevid)
     rcode = NF_DEF_VAR_FILL(ncid, outlevid, FILL_MODE, NF_FILL_REAL)
     
     !=============================================================================
     ! Create a vector containing the often referred to spacetime coordinates:
     !=============================================================================
-    gascol_dims(1) = laydim; gascol_dims(2) = gasdim
-    wavalt_dims(1) = wavdim; wavalt_dims(2) = laydim
-    wavgeolev_dims(1) = wavdim; wavgeolev_dims(2) = geodim; wavgeolev_dims(3) = olvdim
-    wavszalev_dims(1) = wavdim; wavszalev_dims(2) = szadim; wavszalev_dims(3) = olvdim
+    gascol_dims(1) = laydimid; gascol_dims(2) = gasdimid
+    wavalt_dims(1) = wavdimid; wavalt_dims(2) = laydimid
+    wavgeolev_dims(1) = wavdimid; wavgeolev_dims(2) = geodimid; wavgeolev_dims(3) = olvdimid
+    wavszalev_dims(1) = wavdimid; wavszalev_dims(2) = szadimid; wavszalev_dims(3) = olvdimid
     
-    wavaltgeolev_dims(1) = wavdim; wavaltgeolev_dims(2) = laydim; wavaltgeolev_dims(3) = geodim; wavaltgeolev_dims(4) = olvdim
-    wavgeogaslev_dims(1) = wavdim; wavgeogaslev_dims(2) = geodim; wavgeogaslev_dims(3) = gasdim; wavgeogaslev_dims(4) = olvdim
+    wavaltgeolev_dims(1) = wavdimid; wavaltgeolev_dims(2) = laydimid
+    wavaltgeolev_dims(3) = geodimid; wavaltgeolev_dims(4) = olvdimid
+
+    wavgeogaslev_dims(1) = wavdimid; wavgeogaslev_dims(2) = geodimid 
+    wavgeogaslev_dims(3) = gasdimid; wavgeogaslev_dims(4) = olvdimid
     
-    wavaltgeogaslev_dims(1) = wavdim; wavaltgeogaslev_dims(2) = laydim
-    wavaltgeogaslev_dims(3) = geodim; wavaltgeogaslev_dims(4) = gasdim; wavaltgeogaslev_dims(5) = olvdim
+    wavaltgeogaslev_dims(1) = wavdimid; wavaltgeogaslev_dims(2) = laydimid
+    wavaltgeogaslev_dims(3) = geodimid; wavaltgeogaslev_dims(4) = gasdimid; wavaltgeogaslev_dims(5) = olvdimid
     
-    brdfdim(1) = nsqdim; brdfdim(2) = vzadim; brdfdim(3)=azadim; brdfdim(4) = szadim
+    brdfdim(1) = nsqdimid; brdfdim(2) = vzadimid; brdfdim(3)=azadimid; brdfdim(4) = szadimid
 
     !=============================================================================
     ! Create the dependent variables:
     !=============================================================================
     ! ps, ts
-    rcode = NF_DEF_VAR(ncid, 'ps', NF_FLOAT, 1, lvldim, psid)
+    rcode = NF_DEF_VAR(ncid, 'ps', NF_FLOAT, 1, lvldimid, psid)
     rcode = NF_DEF_VAR_FILL(ncid, psid, FILL_MODE, NF_FILL_REAL)
-    rcode = NF_DEF_VAR(ncid, 'ts', NF_FLOAT, 1, lvldim, tsid)
+    rcode = NF_DEF_VAR(ncid, 'ts', NF_FLOAT, 1, lvldimid, tsid)
     rcode = NF_DEF_VAR_FILL(ncid, tsid, FILL_MODE, NF_FILL_REAL)
     
     ! aircol, aods0, cods0
-    rcode = NF_DEF_VAR(ncid, 'aircol', NF_FLOAT, 1, laydim, airid)
+    rcode = NF_DEF_VAR(ncid, 'aircol', NF_FLOAT, 1, laydimid, airid)
     rcode = NF_DEF_VAR_FILL(ncid, airid, FILL_MODE, NF_FILL_REAL)
-    rcode = NF_DEF_VAR(ncid, 'aods0',  NF_FLOAT, 1, laydim, aer0id)
+    rcode = NF_DEF_VAR(ncid, 'aods0',  NF_FLOAT, 1, laydimid, aer0id)
     rcode = NF_DEF_VAR_FILL(ncid, aer0id, FILL_MODE, NF_FILL_REAL)
-    rcode = NF_DEF_VAR(ncid, 'cods0',  NF_FLOAT, 1, laydim, cld0id)
+    rcode = NF_DEF_VAR(ncid, 'cods0',  NF_FLOAT, 1, laydimid, cld0id)
     rcode = NF_DEF_VAR_FILL(ncid, cld0id, FILL_MODE, NF_FILL_REAL)
         
     ! varaibles with 1D, wavdim
-    rcode = NF_DEF_VAR(ncid, 'irradiance', NF_FLOAT, 1, wavdim, irradid)
+    rcode = NF_DEF_VAR(ncid, 'irradiance', NF_FLOAT, 1, wavdimid, irradid)
     rcode = NF_DEF_VAR_FILL(ncid, irradid, FILL_MODE, NF_FILL_REAL)
-    rcode = NF_DEF_VAR(ncid, 'surfalb',    NF_FLOAT, 1, wavdim, sfcid)
+    rcode = NF_DEF_VAR_CHUNKING(ncid, irradid,NF_CHUNKED,chunk_1d)
+    ! Work out chunking
+    rcode = NF_DEF_VAR(ncid, 'surfalb',    NF_FLOAT, 1, wavdimid, sfcid)
     rcode = NF_DEF_VAR_FILL(ncid, sfcid, FILL_MODE, NF_FILL_REAL)
+    rcode = NF_DEF_VAR_CHUNKING(ncid, sfcid,NF_CHUNKED,chunk_1d)
 
     ! variables with 2D, laydim, gasdim
     rcode = NF_DEF_VAR(ncid,  'gascol', NF_DOUBLE, 2, gascol_dims, gascolid)
     rcode = NF_DEF_VAR_FILL(ncid, gascolid, FILL_MODE, NF_FILL_DOUBLE)
     
     ! variables with 2D, wavdim, laydim
+    ! Work out chunking
+    max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(laydim,KIND=4))
+    IF (wavdim .LT. max_chunk) THEN
+       chunk_2d(1) = wavdim
+    ELSE
+       chunk_2d(1) = max_chunk
+    END IF
+    chunk_2d(2) = laydim
+
     rcode = NF_DEF_VAR(ncid, 'ods',   NF_FLOAT, 2, wavalt_dims, odsid)
     rcode = NF_DEF_VAR_FILL(ncid, odsid, FILL_MODE, NF_FILL_REAL)
+    rcode = NF_DEF_VAR_CHUNKING(ncid, odsid,NF_CHUNKED,chunk_2d)
     rcode = NF_DEF_VAR(ncid, 'ssas',  NF_FLOAT, 2, wavalt_dims, ssasid)
     rcode = NF_DEF_VAR_FILL(ncid, ssasid, FILL_MODE, NF_FILL_REAL)
+    rcode = NF_DEF_VAR_CHUNKING(ncid, ssasid,NF_CHUNKED,chunk_2d)
     rcode = NF_DEF_VAR(ncid, 'aods',  NF_FLOAT, 2, wavalt_dims, aodsid)
     rcode = NF_DEF_VAR_FILL(ncid, aodsid, FILL_MODE, NF_FILL_REAL)
+    rcode = NF_DEF_VAR_CHUNKING(ncid, aodsid,NF_CHUNKED,chunk_2d)
     rcode = NF_DEF_VAR(ncid, 'assas', NF_FLOAT, 2, wavalt_dims, assasid)
     rcode = NF_DEF_VAR_FILL(ncid, assasid, FILL_MODE, NF_FILL_REAL)
+    rcode = NF_DEF_VAR_CHUNKING(ncid, assasid,NF_CHUNKED,chunk_2d)
     rcode = NF_DEF_VAR(ncid, 'cods',  NF_FLOAT, 2, wavalt_dims, codsid)
     rcode = NF_DEF_VAR_FILL(ncid, codsid, FILL_MODE, NF_FILL_REAL)
+    rcode = NF_DEF_VAR_CHUNKING(ncid, codsid,NF_CHUNKED,chunk_2d)
     rcode = NF_DEF_VAR(ncid, 'cssas', NF_FLOAT, 2, wavalt_dims, cssasid)
     rcode = NF_DEF_VAR_FILL(ncid, cssasid, FILL_MODE, NF_FILL_REAL)
+    rcode = NF_DEF_VAR_CHUNKING(ncid, cssasid,NF_CHUNKED,chunk_2d)
     
     ! variables with 3D, wavdim, geodim, olvdim
+    ! Work out chunking
+    max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim,KIND=4))
+    IF (wavdim .LT. max_chunk) THEN
+       chunk_3d(1) = wavdim
+    ELSE
+       chunk_3d(1) = max_chunk
+    END IF
+    chunk_3d(2) = geodim; chunk_3d(3) = 1
+
     rcode = NF_DEF_VAR(ncid, 'radiance',    NF_FLOAT, 3, wavgeolev_dims, radid)
     rcode = NF_DEF_VAR_FILL(ncid, radid, FILL_MODE, NF_FILL_REAL)
+    rcode = NF_DEF_VAR_CHUNKING(ncid, radid,NF_CHUNKED,chunk_3d)
     rcode = NF_DEF_VAR(ncid, 'flux',        NF_FLOAT, 3, wavszalev_dims, fluxid)
     rcode = NF_DEF_VAR_FILL(ncid, fluxid, FILL_MODE, NF_FILL_REAL)
+    rcode = NF_DEF_VAR_CHUNKING(ncid, fluxid,NF_CHUNKED,chunk_3d)
     rcode = NF_DEF_VAR(ncid, 'direct_flux', NF_FLOAT, 3, wavszalev_dims, dfluxid)
     rcode = NF_DEF_VAR_FILL(ncid, dfluxid, FILL_MODE, NF_FILL_REAL)
+    rcode = NF_DEF_VAR_CHUNKING(ncid, dfluxid,NF_CHUNKED,chunk_3d)
     if (do_vector_calculation .and. do_StokesQU_output) then
        rcode = NF_DEF_VAR(ncid, 'q',            NF_FLOAT, 3, wavgeolev_dims, qid)
-    rcode = NF_DEF_VAR_FILL(ncid, qid, FILL_MODE, NF_FILL_REAL)
+       rcode = NF_DEF_VAR_FILL(ncid, qid, FILL_MODE, NF_FILL_REAL)
        rcode = NF_DEF_VAR(ncid, 'u',            NF_FLOAT, 3, wavgeolev_dims, uid)
-    rcode = NF_DEF_VAR_FILL(ncid, uid, FILL_MODE, NF_FILL_REAL)
+       rcode = NF_DEF_VAR_FILL(ncid, uid, FILL_MODE, NF_FILL_REAL)
        rcode = NF_DEF_VAR(ncid, 'qflux',        NF_FLOAT, 3, wavszalev_dims, qfluxid)
-    rcode = NF_DEF_VAR_FILL(ncid, qfluxid, FILL_MODE, NF_FILL_REAL)
+       rcode = NF_DEF_VAR_FILL(ncid, qfluxid, FILL_MODE, NF_FILL_REAL)
        rcode = NF_DEF_VAR(ncid, 'uflux',        NF_FLOAT, 3, wavszalev_dims, ufluxid)
-    rcode = NF_DEF_VAR_FILL(ncid, ufluxid, FILL_MODE, NF_FILL_REAL)
+       rcode = NF_DEF_VAR_FILL(ncid, ufluxid, FILL_MODE, NF_FILL_REAL)
        rcode = NF_DEF_VAR(ncid, 'qdirect_flux', NF_FLOAT, 3, wavszalev_dims, qdfluxid)
-    rcode = NF_DEF_VAR_FILL(ncid, qdfluxid, FILL_MODE, NF_FILL_REAL)
+       rcode = NF_DEF_VAR_FILL(ncid, qdfluxid, FILL_MODE, NF_FILL_REAL)
        rcode = NF_DEF_VAR(ncid, 'udirect_flux', NF_FLOAT, 3, wavszalev_dims, udfluxid)
-    rcode = NF_DEF_VAR_FILL(ncid, udfluxid, FILL_MODE, NF_FILL_REAL)
+       rcode = NF_DEF_VAR_FILL(ncid, udfluxid, FILL_MODE, NF_FILL_REAL)
     endif
     
     if (do_Jacobians) then
@@ -276,34 +324,42 @@ CONTAINS
        if (use_lambertian) then
           rcode = NF_DEF_VAR(ncid, 'surfalb_jac',   NF_FLOAT, 3, wavgeolev_dims, sfcwfid)
           rcode = NF_DEF_VAR_FILL(ncid, sfcwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, sfcwfid,NF_CHUNKED,chunk_3d)
        else 
           rcode = NF_DEF_VAR(ncid, 'windspeed_jac', NF_FLOAT, 3, wavgeolev_dims, wswfid)
           rcode = NF_DEF_VAR_FILL(ncid, wswfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, wswfid,NF_CHUNKED,chunk_3d)
        endif
        
        if (do_cfrac_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 'cfrac_jac',     NF_FLOAT, 3, wavgeolev_dims, cfracwfid)
             rcode = NF_DEF_VAR_FILL(ncid, cfracwfid, FILL_MODE, NF_FILL_REAL)
+            rcode = NF_DEF_VAR_CHUNKING(ncid, cfracwfid,NF_CHUNKED,chunk_3d)
          endif
        if (do_sfcprs_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 'sfcprs_jac',    NF_FLOAT, 3, wavgeolev_dims, sfcprswfid)
             rcode = NF_DEF_VAR_FILL(ncid, sfcprswfid, FILL_MODE, NF_FILL_REAL)
+            rcode = NF_DEF_VAR_CHUNKING(ncid, sfcprswfid,NF_CHUNKED,chunk_3d)
          endif
        if (do_aer_columnwf .and. do_aod_Jacobians) then  !No column jacobians yet
           rcode = NF_DEF_VAR(ncid, 'aodcolwf_jac',  NF_FLOAT, 3, wavgeolev_dims, aodwfid)
           rcode = NF_DEF_VAR_FILL(ncid, aodwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, aodwfid,NF_CHUNKED,chunk_3d)
        endif
        if (do_aer_columnwf .and. do_assa_Jacobians) then !No column jacobians yet
           rcode = NF_DEF_VAR(ncid, 'assacolwf_jac', NF_FLOAT, 3, wavgeolev_dims, assawfid)
           rcode = NF_DEF_VAR_FILL(ncid, assawfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, assawfid,NF_CHUNKED,chunk_3d)
        endif
        if (do_cld_columnwf .and. do_cod_Jacobians) then  !No column jacobians yet
           rcode = NF_DEF_VAR(ncid, 'codcolwf_jac',  NF_FLOAT, 3, wavgeolev_dims, codwfid)
           rcode = NF_DEF_VAR_FILL(ncid, codwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, codwfid,NF_CHUNKED,chunk_3d)
        endif
        if (do_cld_columnwf .and. do_cssa_Jacobians) then !No column jacobians yet
           rcode = NF_DEF_VAR(ncid, 'cssacolwf_jac', NF_FLOAT, 3, wavgeolev_dims, cssawfid)
           rcode = NF_DEF_VAR_FILL(ncid, cssawfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, cssawfid,NF_CHUNKED,chunk_3d)
        endif
        
     endif
@@ -313,78 +369,110 @@ CONTAINS
        if (use_lambertian) then
           rcode = NF_DEF_VAR(ncid, 'surfalb_qjac',  NF_FLOAT, 3, wavgeolev_dims, sfcqwfid)
           rcode = NF_DEF_VAR_FILL(ncid, sfcqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, sfcqwfid,NF_CHUNKED,chunk_3d)
           rcode = NF_DEF_VAR(ncid, 'surfalb_ujac',  NF_FLOAT, 3, wavgeolev_dims, sfcuwfid)
           rcode = NF_DEF_VAR_FILL(ncid, sfcuwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, sfcuwfid,NF_CHUNKED,chunk_3d)
        else 
           rcode = NF_DEF_VAR(ncid, 'windspeed_qjac', NF_FLOAT, 3, wavgeolev_dims, wsqwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, wsqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, wsqwfid,NF_CHUNKED,chunk_3d)
           rcode = NF_DEF_VAR(ncid, 'windspeed_ujac', NF_FLOAT, 3, wavgeolev_dims, wsuwfid)
+          rcode = NF_DEF_VAR_FILL(ncid, wsuwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, wsuwfid,NF_CHUNKED,chunk_3d)
        endif
        
        if (do_cfrac_Jacobians) then
           rcode = NF_DEF_VAR(ncid, 'cfrac_qjac',  NF_FLOAT, 3, wavgeolev_dims, cfracqwfid)
           rcode = NF_DEF_VAR_FILL(ncid, cfracqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, cfracqwfid,NF_CHUNKED,chunk_3d)
           rcode = NF_DEF_VAR(ncid, 'cfrac_ujac',  NF_FLOAT, 3, wavgeolev_dims, cfracuwfid)
           rcode = NF_DEF_VAR_FILL(ncid, cfracuwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, cfracuwfid,NF_CHUNKED,chunk_3d)
        endif
        if (do_sfcprs_Jacobians) then
           rcode = NF_DEF_VAR(ncid, 'sfcprs_qjac',  NF_FLOAT, 3, wavgeolev_dims, sfcprsqwfid)
           rcode = NF_DEF_VAR_FILL(ncid, sfcprsqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, sfcprsqwfid,NF_CHUNKED,chunk_3d)
           rcode = NF_DEF_VAR(ncid, 'sfcprs_ujac',  NF_FLOAT, 3, wavgeolev_dims, sfcprsuwfid)
           rcode = NF_DEF_VAR_FILL(ncid, sfcprsuwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, sfcprsuwfid,NF_CHUNKED,chunk_3d)
        endif
        if (do_aer_columnwf .and. do_aod_Jacobians) then  !No column jacobians yet
           rcode = NF_DEF_VAR(ncid, 'aodcol_qjac',  NF_FLOAT, 3, wavgeolev_dims, aodqwfid)
           rcode = NF_DEF_VAR_FILL(ncid, aodqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, aodqwfid,NF_CHUNKED,chunk_3d)
           rcode = NF_DEF_VAR(ncid, 'aodcol_ujac',  NF_FLOAT, 3, wavgeolev_dims, aoduwfid)
           rcode = NF_DEF_VAR_FILL(ncid, aoduwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, aoduwfid,NF_CHUNKED,chunk_3d)
        endif
        if (do_aer_columnwf .and. do_assa_Jacobians) then !No column jacobians yet
           rcode = NF_DEF_VAR(ncid, 'assacol_qjac', NF_FLOAT, 3, wavgeolev_dims, assaqwfid)
           rcode = NF_DEF_VAR_FILL(ncid, assaqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, assaqwfid,NF_CHUNKED,chunk_3d)
           rcode = NF_DEF_VAR(ncid, 'assacol_ujac', NF_FLOAT, 3, wavgeolev_dims, assauwfid)
           rcode = NF_DEF_VAR_FILL(ncid, assauwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, assauwfid,NF_CHUNKED,chunk_3d)
        endif
        if (do_cld_columnwf .and. do_cod_Jacobians) then  !No column jacobians yet
           rcode = NF_DEF_VAR(ncid, 'codcol_qjac',  NF_FLOAT, 3, wavgeolev_dims, codqwfid)
           rcode = NF_DEF_VAR_FILL(ncid, codqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, codqwfid,NF_CHUNKED,chunk_3d)
           rcode = NF_DEF_VAR(ncid, 'codcol_ujac',  NF_FLOAT, 3, wavgeolev_dims, coduwfid)
           rcode = NF_DEF_VAR_FILL(ncid, coduwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, coduwfid,NF_CHUNKED,chunk_3d)
        endif
        if (do_cld_columnwf .and. do_cssa_Jacobians) then !No column jacobians yet
           rcode = NF_DEF_VAR(ncid, 'cssacol_qjac', NF_FLOAT, 3, wavgeolev_dims, cssaqwfid)
           rcode = NF_DEF_VAR_FILL(ncid, cssaqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, cssaqwfid,NF_CHUNKED,chunk_3d)
           rcode = NF_DEF_VAR(ncid, 'cssacol_ujac', NF_FLOAT, 3, wavgeolev_dims, cssauwfid)
           rcode = NF_DEF_VAR_FILL(ncid, cssauwfid, FILL_MODE, NF_FILL_REAL)
-       endif
-       
+          rcode = NF_DEF_VAR_CHUNKING(ncid, cssauwfid,NF_CHUNKED,chunk_3d)
+       endif       
     endif
     
     ! variables with 4D, wavdim, laydim, geodim, olvdim
+    ! Work out chunking
+    max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim*laydim,KIND=4))
+    IF (wavdim .LT. max_chunk) THEN
+       chunk_4d(1) = wavdim
+    ELSE
+       chunk_4d(1) = max_chunk
+    END IF
+    chunk_4d(2) = laydim; chunk_4d(3) = geodim; chunk_4d(4) = 1
+
     if (do_AMF_calculation) then
        rcode = NF_DEF_VAR(ncid, 'scatweights', NF_FLOAT, 4, wavaltgeolev_dims, scatwtid)
        rcode = NF_DEF_VAR_FILL(ncid, scatwtid, FILL_MODE, NF_FILL_REAL)
+       rcode = NF_DEF_VAR_CHUNKING(ncid, scatwtid,NF_CHUNKED,chunk_4d)
     endif
     
     if (do_Jacobians) then
        if (do_T_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 't_jac',    NF_FLOAT, 4, wavaltgeolev_dims, tempwfid)
             rcode = NF_DEF_VAR_FILL(ncid, tempwfid, FILL_MODE, NF_FILL_REAL)
+            rcode = NF_DEF_VAR_CHUNKING(ncid, tempwfid,NF_CHUNKED,chunk_4d)
          endif
        if (.not. do_aer_columnwf .and. do_aod_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 'aod_jac',  NF_FLOAT, 4, wavaltgeolev_dims, aodwfid)  
             rcode = NF_DEF_VAR_FILL(ncid, aodwfid, FILL_MODE, NF_FILL_REAL)
+            rcode = NF_DEF_VAR_CHUNKING(ncid, aodwfid,NF_CHUNKED,chunk_4d)
          endif
        if (.not. do_aer_columnwf .and. do_assa_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 'assa_jac', NF_FLOAT, 4, wavaltgeolev_dims, assawfid)   
             rcode = NF_DEF_VAR_FILL(ncid, assawfid, FILL_MODE, NF_FILL_REAL)
+            rcode = NF_DEF_VAR_CHUNKING(ncid, assawfid,NF_CHUNKED,chunk_4d)
          endif
        if (.not. do_cld_columnwf .and. do_cod_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 'cod_jac',  NF_FLOAT, 4, wavaltgeolev_dims, codwfid)  
             rcode = NF_DEF_VAR_FILL(ncid, codwfid, FILL_MODE, NF_FILL_REAL)
+            rcode = NF_DEF_VAR_CHUNKING(ncid, codwfid,NF_CHUNKED,chunk_4d)
          endif
        if (.not. do_cld_columnwf .and. do_cssa_Jacobians) then
             rcode = NF_DEF_VAR(ncid, 'cssa_jac', NF_FLOAT, 4, wavaltgeolev_dims, cssawfid)  
             rcode = NF_DEF_VAR_FILL(ncid, cssawfid, FILL_MODE, NF_FILL_REAL)
+            rcode = NF_DEF_VAR_CHUNKING(ncid, cssawfid,NF_CHUNKED,chunk_4d)
          endif
     endif
     
@@ -392,44 +480,72 @@ CONTAINS
        if (.not. do_aer_columnwf .and. do_aod_Jacobians) then 
           rcode = NF_DEF_VAR(ncid, 'aod_qjac', NF_FLOAT, 4, wavaltgeolev_dims, aodqwfid)  
           rcode = NF_DEF_VAR_FILL(ncid, aodqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, aodqwfid,NF_CHUNKED,chunk_4d)
           rcode = NF_DEF_VAR(ncid, 'aod_ujac', NF_FLOAT, 4, wavaltgeolev_dims, aoduwfid)  
           rcode = NF_DEF_VAR_FILL(ncid, aoduwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, aoduwfid,NF_CHUNKED,chunk_4d)
        endif
        if (.not. do_aer_columnwf .and. do_assa_Jacobians) then
           rcode = NF_DEF_VAR(ncid, 'assa_qjac', NF_FLOAT, 4, wavaltgeolev_dims, assaqwfid)   
           rcode = NF_DEF_VAR_FILL(ncid, assaqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, assaqwfid,NF_CHUNKED,chunk_4d)
           rcode = NF_DEF_VAR(ncid, 'assa_ujac', NF_FLOAT, 4, wavaltgeolev_dims, assauwfid)   
           rcode = NF_DEF_VAR_FILL(ncid, assauwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, assauwfid,NF_CHUNKED,chunk_4d)
        endif
        if (.not. do_cld_columnwf .and. do_cod_Jacobians) then
           rcode = NF_DEF_VAR(ncid, 'cod_qjac', NF_FLOAT, 4, wavaltgeolev_dims, codqwfid)  
           rcode = NF_DEF_VAR_FILL(ncid, codqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, codqwfid,NF_CHUNKED,chunk_4d)
           rcode = NF_DEF_VAR(ncid, 'cod_ujac', NF_FLOAT, 4, wavaltgeolev_dims, coduwfid)  
           rcode = NF_DEF_VAR_FILL(ncid, coduwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, coduwfid,NF_CHUNKED,chunk_4d)
        endif
        if (.not. do_cld_columnwf .and. do_cssa_Jacobians) then
           rcode = NF_DEF_VAR(ncid, 'cssa_qjac', NF_FLOAT, 4, wavaltgeolev_dims, cssaqwfid)  
           rcode = NF_DEF_VAR_FILL(ncid, cssaqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, cssaqwfid,NF_CHUNKED,chunk_4d)
           rcode = NF_DEF_VAR(ncid, 'cssa_ujac', NF_FLOAT, 4, wavaltgeolev_dims, cssauwfid) 
           rcode = NF_DEF_VAR_FILL(ncid, cssauwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, cssauwfid,NF_CHUNKED,chunk_4d)
        endif
     endif
     
     ! variables with 4D, wavdim, geodim, gasdim, olvdim
+    max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim,KIND=4))
+    IF (wavdim .LT. max_chunk) THEN
+       chunk_4d(1) = wavdim
+    ELSE
+       chunk_4d(1) = max_chunk
+    END IF
+    chunk_4d(2) = geodim; chunk_4d(3) = 1; chunk_4d(4) = 1
+
     if (do_AMF_calculation) then
        rcode = NF_DEF_VAR(ncid, 'amf', NF_FLOAT, 4, wavgeogaslev_dims, amfid)
        rcode = NF_DEF_VAR_FILL(ncid, amfid, FILL_MODE, NF_FILL_REAL)
+       rcode = NF_DEF_VAR_CHUNKING(ncid, amfid,NF_CHUNKED,chunk_4d)
     endif
     
-    ! variables with 4D, wavdim, laydim, geodim, gasdim, olvdim
+    ! variables with 5D, wavdim, laydim, geodim, gasdim, olvdim
+    max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / (REAL(laydim,KIND=4)*REAL(geodim,KIND=4)) )
+    IF (wavdim .LT. max_chunk) THEN
+       chunk_5d(1) = wavdim
+    ELSE
+       chunk_5d(1) = max_chunk
+    END IF
+    chunk_5d(2) = laydim; chunk_5d(3) = geodim; chunk_5d(4) = 1; chunk_5d(5) = 1
+
     if (do_Jacobians) then
        rcode = NF_DEF_VAR(ncid,  'gas_jac', NF_FLOAT, 5, wavaltgeogaslev_dims, gaswfid)
        rcode = NF_DEF_VAR_FILL(ncid, gaswfid, FILL_MODE, NF_FILL_REAL)
+       rcode = NF_DEF_VAR_CHUNKING(ncid, gaswfid,NF_CHUNKED,chunk_5d)
        if (do_QU_Jacobians) then
           rcode = NF_DEF_VAR(ncid,  'gas_qjac', NF_FLOAT, 5, wavaltgeogaslev_dims, gasqwfid)
           rcode = NF_DEF_VAR_FILL(ncid, gasqwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, gasqwfid,NF_CHUNKED,chunk_5d)
           rcode = NF_DEF_VAR(ncid,  'gas_ujac', NF_FLOAT, 5, wavaltgeogaslev_dims, gasuwfid)
           rcode = NF_DEF_VAR_FILL(ncid, gasuwfid, FILL_MODE, NF_FILL_REAL)
+          rcode = NF_DEF_VAR_CHUNKING(ncid, gasuwfid,NF_CHUNKED,chunk_5d)
        endif
     endif
     
@@ -603,38 +719,38 @@ CONTAINS
     ! write the list of gases in one string
     write(gasstr, '(10(I2,A1,A4,A1))') (i,':',which_gases(i),',', i=1, ngases)
     nlen=LEN(trim(gasstr)) ; gasstr=gasstr(1:nlen-1)
-    rcode = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'gases', ncchar,  len(trim(gasstr)), trim(gasstr))
+    rcode = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'gases', nlen, gasstr)
 
     ! Units for variables
-    rcode = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'windspeed_units', ncchar, 3, 'm/s')
-    rcode = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'lonlat_units',    ncchar, 7, 'degrees')
-    rcode = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'zcldtop_units',   ncchar, 2, 'km')
-    rcode = NF_PUT_ATT_TEXT (ncid, szaid,    'units', ncchar, 7, 'degrees')
-    rcode = NF_PUT_ATT_TEXT (ncid, vzaid,    'units', ncchar, 7, 'degrees')
-    rcode = NF_PUT_ATT_TEXT (ncid, azaid,    'units', ncchar, 7, 'degrees')
-    rcode = NF_PUT_ATT_TEXT (ncid, lvlid,    'units', ncchar, 2, 'km')
-    rcode = NF_PUT_ATT_TEXT (ncid, outlevid, 'units', ncchar, 8, 'unitless')
+    rcode = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'windspeed_units', 3, 'm/s')
+    rcode = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'lonlat_units',    7, 'degrees')
+    rcode = NF_PUT_ATT_TEXT (ncid, NF_GLOBAL, 'zcldtop_units',   2, 'km')
+    rcode = NF_PUT_ATT_TEXT (ncid, szaid,    'units', 7, 'degrees')
+    rcode = NF_PUT_ATT_TEXT (ncid, vzaid,    'units', 7, 'degrees')
+    rcode = NF_PUT_ATT_TEXT (ncid, azaid,    'units', 7, 'degrees')
+    rcode = NF_PUT_ATT_TEXT (ncid, lvlid,    'units', 2, 'km')
+    rcode = NF_PUT_ATT_TEXT (ncid, outlevid, 'units', 8, 'unitless')
     if (use_wavelength) then
-       rcode = NF_PUT_ATT_TEXT(ncid,wavid,'units', ncchar,2, 'nm',rcode)
+       rcode = NF_PUT_ATT_TEXT(ncid,wavid,'units', 2, 'nm',rcode)
     else 
-       rcode = NF_PUT_ATT_TEXT(ncid,wavid,'units', ncchar,4, 'cm-1',rcode)
+       rcode = NF_PUT_ATT_TEXT(ncid,wavid,'units', 4, 'cm-1',rcode)
     endif
     if (use_solar_photons) then
        irrad_unitc='photons/cm2/nm/s'
     else
        irrad_unitc='W/m2/cm-1'
     endif
-    rcode = NF_PUT_ATT_TEXT(ncid, irradid, 'units', ncchar, len_trim(irrad_unitc), irrad_unitc)
+    rcode = NF_PUT_ATT_TEXT(ncid, irradid, 'units', len_trim(irrad_unitc), irrad_unitc)
     if (do_normalized_radiance) then
        rad_unitc='unitless'
     else
        rad_unitc=TRIM(irrad_unitc)//'/sr'
     endif
-    rcode = NF_PUT_ATT_TEXT(ncid, radid,    'units', ncchar, len_trim(rad_unitc), rad_unitc) 
-    rcode = NF_PUT_ATT_TEXT(ncid, gascolid, 'units', ncchar, 13, 'molecules/cm2')
-    rcode = NF_PUT_ATT_TEXT(ncid, airid,    'units', ncchar, 13, 'molecules/cm2')
-    rcode = NF_PUT_ATT_TEXT(ncid, psid,     'units', ncchar, 3,  'hPa')
-    rcode = NF_PUT_ATT_TEXT(ncid, tsid,     'units', ncchar, 1,  'K')    
+    rcode = NF_PUT_ATT_TEXT(ncid, radid,    'units', len_trim(rad_unitc), rad_unitc) 
+    rcode = NF_PUT_ATT_TEXT(ncid, gascolid, 'units', 13, 'molecules/cm2')
+    rcode = NF_PUT_ATT_TEXT(ncid, airid,    'units', 13, 'molecules/cm2')
+    rcode = NF_PUT_ATT_TEXT(ncid, psid,     'units', 3,  'hPa')
+    rcode = NF_PUT_ATT_TEXT(ncid, tsid,     'units', 1,  'K')    
 
     !=============================================================================
     ! Get out of 'define' mode, and into 'data' mode
