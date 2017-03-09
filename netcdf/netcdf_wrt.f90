@@ -41,6 +41,8 @@ subroutine netcdf_wrt ( fname)
   !=================================  
   !     Local variables
   !=================================
+  character(len=10), parameter :: location='netcdf_wrt'
+
   integer :: ncid, nwav, iout, ngeom
   integer :: radid, qid, uid, irradid, sfcid, sfcwfid, wswfid, cfracwfid, &
        sfcprswfid, aodwfid, assawfid, codwfid, cssawfid, sfcqwfid, wsqwfid, cfracqwfid, &
@@ -57,120 +59,120 @@ subroutine netcdf_wrt ( fname)
   ! ---------------------------
   ! Code starts here: open file
   ! ---------------------------
-  CALL netcdf_handle_error(NF_OPEN(trim(fname), NF_WRITE, ncid))
+  CALL netcdf_handle_error(location,NF_OPEN(trim(fname), NF_WRITE, ncid))
 
   !=============================================================================
   ! Create the dependent variables:
   !=============================================================================
   ! varaibles with 1D, wavdim
-  CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'irradiance', irradid))
-  CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'surfalb', sfcid))
+  CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'irradiance', irradid))
+  CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'surfalb', sfcid))
 
   ! variables with 2D, wavdim, laydim
-  CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'ods', odsid))
-  CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'ssas', ssasid))
-  CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'aods', aodsid))
-  CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'assas', assasid))
-  CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'cods', codsid))
-  CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'cssas', cssasid))
+  CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'ods', odsid))
+  CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'ssas', ssasid))
+  CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'aods', aodsid))
+  CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'assas', assasid))
+  CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'cods', codsid))
+  CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'cssas', cssasid))
 
   ! variables with 3D, wavdim, geodim, olvdim
-  CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'radiance', radid))
-  CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'flux', fluxid))
-  CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'direct_flux', dfluxid))
+  CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'radiance', radid))
+  CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'flux', fluxid))
+  CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'direct_flux', dfluxid))
   if (do_vector_calculation .and. do_StokesQU_output) then
-     CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'q', qid))
-     CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'u', uid))
-     CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'qflux', qfluxid))
-     CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'uflux', ufluxid))
-     CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'qdirect_flux', qdfluxid))
-     CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'udirect_flux', udfluxid))
+     CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'q', qid))
+     CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'u', uid))
+     CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'qflux', qfluxid))
+     CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'uflux', ufluxid))
+     CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'qdirect_flux', qdfluxid))
+     CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'udirect_flux', udfluxid))
   endif
 
   if (do_Jacobians) then
 
      if (use_lambertian) then
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'surfalb_jac', sfcwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'surfalb_jac', sfcwfid))
      else 
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'windspeed_jac', wswfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'windspeed_jac', wswfid))
      endif
 
      if (do_cfrac_Jacobians) &
-          CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'cfrac_jac', cfracwfid))
+          CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'cfrac_jac', cfracwfid))
      if (do_sfcprs_Jacobians) &
-          CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'sfcprs_jac', sfcprswfid))
+          CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'sfcprs_jac', sfcprswfid))
 
   endif
 
   if (do_QU_Jacobians) then
 
      if (use_lambertian) then
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'surfalb_qjac', sfcqwfid))
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'surfalb_ujac', sfcuwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'surfalb_qjac', sfcqwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'surfalb_ujac', sfcuwfid))
      else 
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'windspeed_qjac', wsqwfid))
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'windspeed_ujac', wsuwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'windspeed_qjac', wsqwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'windspeed_ujac', wsuwfid))
      endif
 
      if (do_cfrac_Jacobians) then
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'cfrac_qjac', cfracqwfid))
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'cfrac_ujac', cfracuwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'cfrac_qjac', cfracqwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'cfrac_ujac', cfracuwfid))
      endif
      if (do_sfcprs_Jacobians) then
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'sfcprs_qjac', sfcprsqwfid))
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'sfcprs_ujac', sfcprsuwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'sfcprs_qjac', sfcprsqwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'sfcprs_ujac', sfcprsuwfid))
      endif
 
   endif
 
   ! variables with 4D, wavdim, laydim, geodim, olvdim
   if (do_AMF_calculation) then
-     CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'scatweights', scatwtid))
+     CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'scatweights', scatwtid))
   endif
 
   if (do_Jacobians) then
      if (do_T_Jacobians) &
-          CALL netcdf_handle_error(NF_INQ_VARID(ncid, 't_jac', tempwfid))
+          CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 't_jac', tempwfid))
      if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
-          CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'aod_jac', aodwfid))
+          CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'aod_jac', aodwfid))
      if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
-          CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'assa_jac', assawfid))
+          CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'assa_jac', assawfid))
      if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
-          CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'cod_jac', codwfid))
+          CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'cod_jac', codwfid))
      if (.not. do_cld_columnwf .and. do_cssa_Jacobians) &
-          CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'cssa_jac', cssawfid))
+          CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'cssa_jac', cssawfid))
   endif
 
   if (do_QU_Jacobians) then
      if (.not. do_aer_columnwf .and. do_aod_Jacobians) then 
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'aod_qjac', aodqwfid)) 
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'aod_ujac', aoduwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'aod_qjac', aodqwfid)) 
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'aod_ujac', aoduwfid))
      endif
      if (.not. do_aer_columnwf .and. do_assa_Jacobians) then
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'assa_qjac', assaqwfid))  
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'assa_ujac', assauwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'assa_qjac', assaqwfid))  
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'assa_ujac', assauwfid))
      endif
      if (.not. do_cld_columnwf .and. do_cod_Jacobians) then
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'cod_qjac', codqwfid)) 
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'cod_ujac', coduwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'cod_qjac', codqwfid)) 
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'cod_ujac', coduwfid))
      endif
      if (.not. do_cld_columnwf .and. do_cssa_Jacobians) then
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'cssa_qjac', cssaqwfid))
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'cssa_ujac', cssauwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'cssa_qjac', cssaqwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'cssa_ujac', cssauwfid))
      endif
   endif
 
   ! variables with 4D, wavdim, geodim, gasdim, olvdim
   if (do_AMF_calculation) then
-     CALL netcdf_handle_error(NF_INQ_VARID(ncid, 'amf', amfid))
+     CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'amf', amfid))
   endif
 
   ! variables with 5D, wavdim, laydim, geodim, gasdim, ovdim
   if (do_Jacobians) then
-     CALL netcdf_handle_error(NF_INQ_VARID(ncid,  'gas_jac', gaswfid))
+     CALL netcdf_handle_error(location,NF_INQ_VARID(ncid,  'gas_jac', gaswfid))
      if (do_QU_Jacobians) then
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid,  'gas_qjac', gasqwfid))
-        CALL netcdf_handle_error(NF_INQ_VARID(ncid,  'gas_ujac', gasuwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid,  'gas_qjac', gasqwfid))
+        CALL netcdf_handle_error(location,NF_INQ_VARID(ncid,  'gas_ujac', gasuwfid))
      endif
   endif
 
@@ -190,44 +192,52 @@ subroutine netcdf_wrt ( fname)
   ! write 1D variables with wavdim
   ndimstart1 = (/ 1 /)
   ndimcount1 = (/ nwav /)  
-  CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, irradid, ndimstart1, ndimcount1, real(solar_cspec_data(1:nwav), kind=4)))
-  CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, sfcid,   ndimstart1, ndimcount1, real(ground_ler(1:nwav), kind=4)))
+  CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, irradid, ndimstart1, ndimcount1, &
+       real(solar_cspec_data(1:nwav), kind=4)))
+  CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, sfcid,   ndimstart1, ndimcount1, &
+       real(ground_ler(1:nwav), kind=4)))
   
   ! 2D, variables, wavdim, laydim
   ndimstart2 = (/    1,  1 /)
   ndimcount2 = (/ nwav, GC_nlayers /) 
-  CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, odsid,   ndimstart2, ndimcount2, real(opdeps(1:nwav,1:GC_nlayers), kind=4)))
-  CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, ssasid,  ndimstart2, ndimcount2, real(ssalbs(1:nwav,1:GC_nlayers), kind=4)))
-  CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, aodsid,  ndimstart2, ndimcount2, real(aer_opdeps(1:nwav,1:GC_nlayers), kind=4)))
-  CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, assasid, ndimstart2, ndimcount2, real(aer_ssalbs(1:nwav,1:GC_nlayers), kind=4)))
-  CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, codsid,  ndimstart2, ndimcount2, real(cld_opdeps(1:nwav,1:GC_nlayers), kind=4)))
-  CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, cssasid, ndimstart2, ndimcount2, real(cld_ssalbs(1:nwav,1:GC_nlayers), kind=4)))
+  CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, odsid,   ndimstart2, ndimcount2, &
+       real(opdeps(1:nwav,1:GC_nlayers), kind=4)))
+  CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, ssasid,  ndimstart2, ndimcount2, &
+       real(ssalbs(1:nwav,1:GC_nlayers), kind=4)))
+  CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, aodsid,  ndimstart2, ndimcount2, &
+       real(aer_opdeps(1:nwav,1:GC_nlayers), kind=4)))
+  CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, assasid, ndimstart2, ndimcount2, &
+       real(aer_ssalbs(1:nwav,1:GC_nlayers), kind=4)))
+  CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, codsid,  ndimstart2, ndimcount2, &
+       real(cld_opdeps(1:nwav,1:GC_nlayers), kind=4)))
+  CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, cssasid, ndimstart2, ndimcount2, &
+       real(cld_ssalbs(1:nwav,1:GC_nlayers), kind=4)))
   
   ! write 3D variables with wavdim,geodim,olvdim
   DO iout = 1, GC_n_user_levels
      ndimstart3 = (/ 1, 1 , iout/)
      ndimcount3 = (/ nwav, ngeom , 1/)  
-     CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, radid,   ndimstart3, ndimcount3, &
+     CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, radid,   ndimstart3, ndimcount3, &
           real(GC_radiances(1:nwav,iout,1:ngeom,didx), kind=4)))
      ndimcount3 = (/   1, GC_n_sun_positions , 1/)  
-     CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, fluxid,  ndimstart3, ndimcount3, &
+     CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, fluxid,  ndimstart3, ndimcount3, &
           real(GC_flux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4)))
-     CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, dfluxid, ndimstart3, ndimcount3, &
+     CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, dfluxid, ndimstart3, ndimcount3, &
           real(GC_direct_flux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4)))
      if (do_vector_calculation .and. do_StokesQU_output) then
         ndimcount3 = (/ 1 , ngeom , 1/)
-        CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, qid, ndimstart3, ndimcount3, &
+        CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, qid, ndimstart3, ndimcount3, &
              real(GC_Qvalues(1:nwav,iout,1:ngeom,didx), kind=4)))
-        CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, uid, ndimstart3, ndimcount3, &
+        CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, uid, ndimstart3, ndimcount3, &
              real(GC_Uvalues(1:nwav,iout,1:ngeom,didx), kind=4)))
         ndimcount3 = (/   1, GC_n_sun_positions , 1/)  
-        CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, qfluxid,  ndimstart3, ndimcount3, &
+        CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, qfluxid,  ndimstart3, ndimcount3, &
              real(GC_Qflux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4)))
-        CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, ufluxid,  ndimstart3, ndimcount3, &
+        CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, ufluxid,  ndimstart3, ndimcount3, &
              real(GC_Uflux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4)))
-        CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, qdfluxid, ndimstart3, ndimcount3, &
+        CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, qdfluxid, ndimstart3, ndimcount3, &
              real(GC_Qdirect_flux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4)))
-        CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, udfluxid, ndimstart3, ndimcount3, &
+        CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, udfluxid, ndimstart3, ndimcount3, &
              real(GC_Udirect_flux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4)))
      endif
      
@@ -235,46 +245,46 @@ subroutine netcdf_wrt ( fname)
      ndimcount3 = (/ nwav, ngeom , 1/)  
      if (do_Jacobians) then
         if (use_lambertian) then
-           CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, sfcwfid, ndimstart3, ndimcount3, &
+           CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, sfcwfid, ndimstart3, ndimcount3, &
                 real(GC_Surfalbedo_Jacobians(1:nwav,iout,1:ngeom,didx), kind=4)))
         else 
-           CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, wswfid, ndimstart3, ndimcount3, &
+           CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, wswfid, ndimstart3, ndimcount3, &
                 real(GC_Windspeed_Jacobians(1:nwav,iout,1:ngeom,didx), kind=4)))
         endif
         if (do_cfrac_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, cfracwfid,  ndimstart3, ndimcount3, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, cfracwfid,  ndimstart3, ndimcount3, &
              real(GC_cfrac_Jacobians(1:nwav,iout,1:ngeom,didx), kind=4)))
         if (do_sfcprs_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, sfcprswfid, ndimstart3, ndimcount3, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, sfcprswfid, ndimstart3, ndimcount3, &
              real(GC_sfcprs_Jacobians(1:nwav,iout,1:ngeom,didx), kind=4)))
      endif
      
      if (do_QU_Jacobians) then
         if (use_lambertian) then
-           CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, sfcqwfid, ndimstart3, ndimcount3, &
+           CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, sfcqwfid, ndimstart3, ndimcount3, &
                 real(GC_Surfalbedo_QJacobians(1:nwav,iout,1:ngeom,didx), kind=4)))
         else 
-           CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, wsqwfid,  ndimstart3, ndimcount3, &
+           CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, wsqwfid,  ndimstart3, ndimcount3, &
                 real(GC_Windspeed_QJacobians(1:nwav,iout,1:ngeom,didx), kind=4)))
         endif
         if (do_cfrac_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, cfracqwfid, ndimstart3, ndimcount3, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, cfracqwfid, ndimstart3, ndimcount3, &
              real(GC_cfrac_QJacobians(1:nwav,iout,1:ngeom,didx), kind=4)))
         if (do_sfcprs_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, sfcprsqwfid, ndimstart3, ndimcount3, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, sfcprsqwfid, ndimstart3, ndimcount3, &
              real(GC_sfcprs_QJacobians(1:nwav,iout,1:ngeom,didx), kind=4)))
         if (use_lambertian) then
-           CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, sfcuwfid, ndimstart3, ndimcount3, &
+           CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, sfcuwfid, ndimstart3, ndimcount3, &
                 real(GC_Surfalbedo_UJacobians(1:nwav,iout,1:ngeom,didx), kind=4)))
         else 
-           CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, wsuwfid, ndimstart3, ndimcount3, &
+           CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, wsuwfid, ndimstart3, ndimcount3, &
                 real(GC_Windspeed_UJacobians(1:nwav,iout,1:ngeom,didx), kind=4)))
         endif
         if (do_cfrac_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, cfracuwfid, ndimstart3, ndimcount3, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, cfracuwfid, ndimstart3, ndimcount3, &
              real(GC_cfrac_UJacobians(1:nwav,iout,1:ngeom,didx), kind=4)))
         if (do_sfcprs_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, sfcprsuwfid, ndimstart3, ndimcount3, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, sfcprsuwfid, ndimstart3, ndimcount3, &
              real(GC_sfcprs_UJacobians(1:nwav,iout,1:ngeom,didx), kind=4)))
      endif
      
@@ -282,53 +292,53 @@ subroutine netcdf_wrt ( fname)
      ndimstart4 = (/    1,          1,     1, iout/)
      ndimcount4 = (/ nwav, GC_nlayers, ngeom,    1/) 
      if (do_AMF_calculation) then
-        CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, scatwtid, ndimstart4, ndimcount4, &
+        CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, scatwtid, ndimstart4, ndimcount4, &
              real(GC_Scattering_Weights(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
      endif
      
      if (do_Jacobians) then
         if (do_T_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, tempwfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, tempwfid, ndimstart4, ndimcount4, &
              real(GC_Temperature_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, aodwfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, aodwfid, ndimstart4, ndimcount4, &
              real(GC_aod_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, assawfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, assawfid, ndimstart4, ndimcount4, &
              real(GC_assa_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, codwfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, codwfid, ndimstart4, ndimcount4, &
              real(GC_cod_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_cld_columnwf .and. do_cssa_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, cssawfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, cssawfid, ndimstart4, ndimcount4, &
              real(GC_cssa_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))  
      endif
      
      if (do_QU_Jacobians) then
         if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, aodqwfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, aodqwfid, ndimstart4, ndimcount4, &
              real(GC_aod_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, assaqwfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, assaqwfid, ndimstart4, ndimcount4, &
              real(GC_assa_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, codqwfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, codqwfid, ndimstart4, ndimcount4, &
              real(GC_cod_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_cld_columnwf .and. do_cssa_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, cssaqwfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, cssaqwfid, ndimstart4, ndimcount4, &
              real(GC_cssa_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4))) 
         
         if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, aoduwfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, aoduwfid, ndimstart4, ndimcount4, &
              real(GC_aod_UJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, assauwfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, assauwfid, ndimstart4, ndimcount4, &
              real(GC_assa_UJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, coduwfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, coduwfid, ndimstart4, ndimcount4, &
              real(GC_cod_UJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_cld_columnwf .and. do_cssa_Jacobians) &
-             CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, cssauwfid, ndimstart4, ndimcount4, &
+             CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, cssauwfid, ndimstart4, ndimcount4, &
              real(GC_cssa_UJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
      endif
      
@@ -336,7 +346,7 @@ subroutine netcdf_wrt ( fname)
      if (do_AMF_calculation) then
         ndimstart4 = (/ 1, 1, 1, iout/)
         ndimcount4 = (/ nwav, ngeom, ngases, 1 /) 
-        CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, amfid, ndimstart4, ndimcount4, &
+        CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, amfid, ndimstart4, ndimcount4, &
              real(GC_AMFs(1:nwav,iout,1:ngeom,1:ngases,didx), kind=4)))
      endif
      
@@ -344,12 +354,12 @@ subroutine netcdf_wrt ( fname)
      ndimstart5 = (/ 1,          1,     1,      1, iout /)
      ndimcount5 = (/ nwav, GC_nlayers, ngeom, ngases,    1 /) 
      if (do_Jacobians) then
-        CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, gaswfid, ndimstart5, ndimcount5, &
+        CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, gaswfid, ndimstart5, ndimcount5, &
              real(GC_Tracegas_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,1:ngases,didx), kind=4)))
         if (do_QU_Jacobians) then
-           CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, gasqwfid, ndimstart5, ndimcount5, &
+           CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, gasqwfid, ndimstart5, ndimcount5, &
                 real(GC_Tracegas_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,1:ngases,didx), kind=4))) 
-           CALL netcdf_handle_error(NF_PUT_VARA_REAL (ncid, gasuwfid, ndimstart5, ndimcount5, &
+           CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, gasuwfid, ndimstart5, ndimcount5, &
                 real(GC_Tracegas_UJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,1:ngases,didx), kind=4)))
         endif
      endif
@@ -358,7 +368,7 @@ subroutine netcdf_wrt ( fname)
   !==============================================================================
   ! CLOSE the NetCDF file
   !==============================================================================
-  CALL netcdf_handle_error(NF_CLOSE(ncid))
+  CALL netcdf_handle_error(location,NF_CLOSE(ncid))
      
   return
 end subroutine netcdf_wrt
