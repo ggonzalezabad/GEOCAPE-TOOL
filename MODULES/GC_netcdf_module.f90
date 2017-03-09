@@ -299,10 +299,10 @@ CONTAINS
     if (do_vector_calculation .and. do_StokesQU_output) then
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'q',            NF_FLOAT, 3, wavgeolev_dims, qid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, qid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, dfluxid,NF_CHUNKED,chunk_3d))
+       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, qid,NF_CHUNKED,chunk_3d))
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'u',            NF_FLOAT, 3, wavgeolev_dims, uid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, uid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, dfluxid,NF_CHUNKED,chunk_3d))
+       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, uid,NF_CHUNKED,chunk_3d))
        ! Work out chunking
        max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(szadim,KIND=4))
        IF (wavdim .LT. max_chunk) THEN
@@ -313,16 +313,16 @@ CONTAINS
        chunk_3d(2) = szadim; chunk_3d(3) = 1
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'qflux',        NF_FLOAT, 3, wavszalev_dims, qfluxid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, qfluxid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, dfluxid,NF_CHUNKED,chunk_3d))
+       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, qfluxid,NF_CHUNKED,chunk_3d))
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'uflux',        NF_FLOAT, 3, wavszalev_dims, ufluxid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, ufluxid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, dfluxid,NF_CHUNKED,chunk_3d))
+       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, ufluxid,NF_CHUNKED,chunk_3d))
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'qdirect_flux', NF_FLOAT, 3, wavszalev_dims, qdfluxid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, qdfluxid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, dfluxid,NF_CHUNKED,chunk_3d))
+       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, qdfluxid,NF_CHUNKED,chunk_3d))
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'udirect_flux', NF_FLOAT, 3, wavszalev_dims, udfluxid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, udfluxid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, dfluxid,NF_CHUNKED,chunk_3d))
+       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, udfluxid,NF_CHUNKED,chunk_3d))
     endif
     ! Work out chunking
     max_chunk = FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim,KIND=4))
