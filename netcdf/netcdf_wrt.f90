@@ -219,18 +219,18 @@ subroutine netcdf_wrt ( fname)
      ndimcount3 = (/ nwav, ngeom , 1/)  
      CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, radid,   ndimstart3, ndimcount3, &
           real(GC_radiances(1:nwav,iout,1:ngeom,didx), kind=4)))
-     ndimcount3 = (/   1, GC_n_sun_positions , 1/)  
+     ndimcount3 = (/   nwav, GC_n_sun_positions , 1/)  
      CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, fluxid,  ndimstart3, ndimcount3, &
           real(GC_flux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4)))
      CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, dfluxid, ndimstart3, ndimcount3, &
           real(GC_direct_flux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4)))
      if (do_vector_calculation .and. do_StokesQU_output) then
-        ndimcount3 = (/ 1 , ngeom , 1/)
+        ndimcount3 = (/ nwav , ngeom , 1/)
         CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, qid, ndimstart3, ndimcount3, &
              real(GC_Qvalues(1:nwav,iout,1:ngeom,didx), kind=4)))
         CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, uid, ndimstart3, ndimcount3, &
              real(GC_Uvalues(1:nwav,iout,1:ngeom,didx), kind=4)))
-        ndimcount3 = (/   1, GC_n_sun_positions , 1/)  
+        ndimcount3 = (/   nwav, GC_n_sun_positions , 1/)  
         CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, qfluxid,  ndimstart3, ndimcount3, &
              real(GC_Qflux(1:nwav,iout,1:GC_n_sun_positions,didx), kind=4)))
         CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, ufluxid,  ndimstart3, ndimcount3, &
