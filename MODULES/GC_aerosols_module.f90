@@ -218,9 +218,8 @@ MODULE GC_aerosols_module
       ! ----------------
       error = .FALSE.
 
-!!$      aer_profile = aer_profile0; naer = naer0
       IF (use_aerprof) THEN
-
+         aer_profile = aer_profile0; naer = naer0
          IF (naer == 0) THEN
             do_aerosols        = .FALSE.
             do_aer_columnwf    = .FALSE.
