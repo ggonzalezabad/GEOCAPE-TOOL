@@ -116,20 +116,6 @@ CONTAINS
     ! ----------
     INTEGER, parameter :: FILL_MODE   = 0 !Set to 1 to disable fill mode
  
-    ! ---------------
-    ! Chunking arrays
-    ! ---------------
-    INTEGER, parameter, dimension(1) :: members_chunk_1 = 4096
-    INTEGER, parameter, dimension(1) :: members_chunk_2 = 2048
-    INTEGER, parameter, dimension(1) :: members_chunk_4 = 1024
-    INTEGER, parameter, dimension(1) :: members_chunk_8 =  512
-    INTEGER, dimension(1) :: chunk_1d
-    INTEGER, dimension(2) :: chunk_2d
-    INTEGER, dimension(3) :: chunk_3d
-    INTEGER, dimension(4) :: chunk_4d
-    INTEGER, dimension(5) :: chunk_5d
-    INTEGER :: max_chunk
-
     ! ----------------
     ! Code starts here
     ! ----------------
@@ -189,12 +175,6 @@ CONTAINS
 
     CALL netcdf_handle_error(location,NF_DEF_VAR (ncid, 'Wavelength',           NF_FLOAT, 1, wavdimid, wavid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, wavid, FILL_MODE, NF_FILL_REAL))
-    IF (wavdim .LT. members_chunk_4(1)) THEN
-       chunk_1d(1) = wavdim
-    ELSE
-       chunk_1d(1) = members_chunk_4(1)
-    END IF
-    CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, wavid,NF_CHUNKED,chunk_1d))
 
     CALL netcdf_handle_error(location,NF_DEF_VAR (ncid, 'outputlevels',         NF_FLOAT, 1, olvdimid, outlevid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, outlevid, FILL_MODE, NF_FILL_REAL))
@@ -215,8 +195,10 @@ CONTAINS
     
     wavaltgeogaslev_dims(1) = wavdimid; wavaltgeogaslev_dims(2) = laydimid
     wavaltgeogaslev_dims(3) = geodimid; wavaltgeogaslev_dims(4) = gasdimid; wavaltgeogaslev_dims(5) = olvdimid
-    
-    brdfdim(1) = nsqdimid; brdfdim(2) = vzadimid; brdfdim(3)=azadimid; brdfdim(4) = szadimid
+
+    IF (do_brdf_surface) THEN    
+       brdfdim(1) = nsqdimid; brdfdim(2) = vzadimid; brdfdim(3)=azadimid; brdfdim(4) = szadimid
+    END IF
 
     !=============================================================================
     ! Create the dependent variables:
@@ -238,142 +220,83 @@ CONTAINS
     ! varaibles with 1D, wavdim
     CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'irradiance', NF_FLOAT, 1, wavdimid, irradid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, irradid, FILL_MODE, NF_FILL_REAL))
-    CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, irradid,NF_CHUNKED,chunk_1d))
     ! Work out chunking
     CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'surfalb',    NF_FLOAT, 1, wavdimid, sfcid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, sfcid, FILL_MODE, NF_FILL_REAL))
-    CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, sfcid,NF_CHUNKED,chunk_1d))
 
     ! variables with 2D, laydim, gasdim
     CALL netcdf_handle_error(location,NF_DEF_VAR(ncid,  'gascol', NF_DOUBLE, 2, gascol_dims, gascolid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, gascolid, FILL_MODE, NF_FILL_DOUBLE))
     
     ! variables with 2D, wavdim, laydim
-    ! Work out chunking
-    max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(laydim,KIND=4)),1)
-    IF (wavdim .LT. max_chunk) THEN
-       chunk_2d(1) = wavdim
-    ELSE
-       chunk_2d(1) = max_chunk
-    END IF
-    chunk_2d(2) = laydim
-
     CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'ods',   NF_FLOAT, 2, wavalt_dims, odsid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, odsid, FILL_MODE, NF_FILL_REAL))
-    CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, odsid,NF_CHUNKED,chunk_2d))
     CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'ssas',  NF_FLOAT, 2, wavalt_dims, ssasid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, ssasid, FILL_MODE, NF_FILL_REAL))
-    CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, ssasid,NF_CHUNKED,chunk_2d))
     CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aods',  NF_FLOAT, 2, wavalt_dims, aodsid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aodsid, FILL_MODE, NF_FILL_REAL))
-    CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, aodsid,NF_CHUNKED,chunk_2d))
     CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assas', NF_FLOAT, 2, wavalt_dims, assasid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, assasid, FILL_MODE, NF_FILL_REAL))
-    CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, assasid,NF_CHUNKED,chunk_2d))
     CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cods',  NF_FLOAT, 2, wavalt_dims, codsid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, codsid, FILL_MODE, NF_FILL_REAL))
-    CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, codsid,NF_CHUNKED,chunk_2d))
     CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cssas', NF_FLOAT, 2, wavalt_dims, cssasid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, cssasid, FILL_MODE, NF_FILL_REAL))
-    CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, cssasid,NF_CHUNKED,chunk_2d))
     
     ! variables with 3D, wavdim, geodim, olvdim
-    ! Work out chunking
-    max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim,KIND=4)),1)
-    IF (wavdim .LT. max_chunk) THEN
-       chunk_3d(1) = wavdim
-    ELSE
-       chunk_3d(1) = max_chunk
-    END IF
-    chunk_3d(2) = geodim; chunk_3d(3) = 1
-
     CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'radiance',    NF_FLOAT, 3, wavgeolev_dims, radid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, radid, FILL_MODE, NF_FILL_REAL))
-    CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, radid,NF_CHUNKED,chunk_3d))
     CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'flux',        NF_FLOAT, 3, wavszalev_dims, fluxid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, fluxid, FILL_MODE, NF_FILL_REAL))
-    CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, fluxid,NF_CHUNKED,chunk_3d))
     CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'direct_flux', NF_FLOAT, 3, wavszalev_dims, dfluxid))
     CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, dfluxid, FILL_MODE, NF_FILL_REAL))
-    CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, dfluxid,NF_CHUNKED,chunk_3d))
     if (do_vector_calculation .and. do_StokesQU_output) then
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'q',            NF_FLOAT, 3, wavgeolev_dims, qid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, qid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, qid,NF_CHUNKED,chunk_3d))
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'u',            NF_FLOAT, 3, wavgeolev_dims, uid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, uid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, uid,NF_CHUNKED,chunk_3d))
-       ! Work out chunking
-       max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(szadim,KIND=4)),1)
-       IF (wavdim .LT. max_chunk) THEN
-          chunk_3d(1) = wavdim
-       ELSE
-          chunk_3d(1) = max_chunk
-       END IF
-       chunk_3d(2) = szadim; chunk_3d(3) = 1
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'qflux',        NF_FLOAT, 3, wavszalev_dims, qfluxid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, qfluxid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, qfluxid,NF_CHUNKED,chunk_3d))
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'uflux',        NF_FLOAT, 3, wavszalev_dims, ufluxid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, ufluxid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, ufluxid,NF_CHUNKED,chunk_3d))
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'qdirect_flux', NF_FLOAT, 3, wavszalev_dims, qdfluxid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, qdfluxid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, qdfluxid,NF_CHUNKED,chunk_3d))
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'udirect_flux', NF_FLOAT, 3, wavszalev_dims, udfluxid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, udfluxid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, udfluxid,NF_CHUNKED,chunk_3d))
     endif
-    ! Work out chunking
-    max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim,KIND=4)),1)
-    IF (wavdim .LT. max_chunk) THEN
-       chunk_3d(1) = wavdim
-    ELSE
-       chunk_3d(1) = max_chunk
-    END IF
-    chunk_3d(2) = geodim; chunk_3d(3) = 1
-    
+
     if (do_Jacobians) then
        
        if (use_lambertian) then
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'surfalb_jac',   NF_FLOAT, 3, wavgeolev_dims, sfcwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, sfcwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, sfcwfid,NF_CHUNKED,chunk_3d))
        else 
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'windspeed_jac', NF_FLOAT, 3, wavgeolev_dims, wswfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, wswfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, wswfid,NF_CHUNKED,chunk_3d))
        endif
        
        if (do_cfrac_Jacobians) then
             CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cfrac_jac',     NF_FLOAT, 3, wavgeolev_dims, cfracwfid))
             CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, cfracwfid, FILL_MODE, NF_FILL_REAL))
-            CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, cfracwfid,NF_CHUNKED,chunk_3d))
          endif
        if (do_sfcprs_Jacobians) then
             CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'sfcprs_jac',    NF_FLOAT, 3, wavgeolev_dims, sfcprswfid))
             CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, sfcprswfid, FILL_MODE, NF_FILL_REAL))
-            CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, sfcprswfid,NF_CHUNKED,chunk_3d))
          endif
        if (do_aer_columnwf .and. do_aod_Jacobians) then  !No column jacobians yet
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aodcolwf_jac',  NF_FLOAT, 3, wavgeolev_dims, aodwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aodwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, aodwfid,NF_CHUNKED,chunk_3d))
        endif
        if (do_aer_columnwf .and. do_assa_Jacobians) then !No column jacobians yet
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assacolwf_jac', NF_FLOAT, 3, wavgeolev_dims, assawfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, assawfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, assawfid,NF_CHUNKED,chunk_3d))
        endif
        if (do_cld_columnwf .and. do_cod_Jacobians) then  !No column jacobians yet
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'codcolwf_jac',  NF_FLOAT, 3, wavgeolev_dims, codwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, codwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, codwfid,NF_CHUNKED,chunk_3d))
        endif
        if (do_cld_columnwf .and. do_cssa_Jacobians) then !No column jacobians yet
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cssacolwf_jac', NF_FLOAT, 3, wavgeolev_dims, cssawfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, cssawfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, cssawfid,NF_CHUNKED,chunk_3d))
        endif
        
     endif
@@ -383,110 +306,79 @@ CONTAINS
        if (use_lambertian) then
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'surfalb_qjac',  NF_FLOAT, 3, wavgeolev_dims, sfcqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, sfcqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, sfcqwfid,NF_CHUNKED,chunk_3d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'surfalb_ujac',  NF_FLOAT, 3, wavgeolev_dims, sfcuwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, sfcuwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, sfcuwfid,NF_CHUNKED,chunk_3d))
        else 
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'windspeed_qjac', NF_FLOAT, 3, wavgeolev_dims, wsqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, wsqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, wsqwfid,NF_CHUNKED,chunk_3d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'windspeed_ujac', NF_FLOAT, 3, wavgeolev_dims, wsuwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, wsuwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, wsuwfid,NF_CHUNKED,chunk_3d))
        endif
        
        if (do_cfrac_Jacobians) then
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cfrac_qjac',  NF_FLOAT, 3, wavgeolev_dims, cfracqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, cfracqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, cfracqwfid,NF_CHUNKED,chunk_3d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cfrac_ujac',  NF_FLOAT, 3, wavgeolev_dims, cfracuwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, cfracuwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, cfracuwfid,NF_CHUNKED,chunk_3d))
        endif
        if (do_sfcprs_Jacobians) then
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'sfcprs_qjac',  NF_FLOAT, 3, wavgeolev_dims, sfcprsqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, sfcprsqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, sfcprsqwfid,NF_CHUNKED,chunk_3d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'sfcprs_ujac',  NF_FLOAT, 3, wavgeolev_dims, sfcprsuwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, sfcprsuwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, sfcprsuwfid,NF_CHUNKED,chunk_3d))
        endif
        if (do_aer_columnwf .and. do_aod_Jacobians) then  !No column jacobians yet
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aodcol_qjac',  NF_FLOAT, 3, wavgeolev_dims, aodqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aodqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, aodqwfid,NF_CHUNKED,chunk_3d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aodcol_ujac',  NF_FLOAT, 3, wavgeolev_dims, aoduwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aoduwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, aoduwfid,NF_CHUNKED,chunk_3d))
        endif
        if (do_aer_columnwf .and. do_assa_Jacobians) then !No column jacobians yet
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assacol_qjac', NF_FLOAT, 3, wavgeolev_dims, assaqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, assaqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, assaqwfid,NF_CHUNKED,chunk_3d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assacol_ujac', NF_FLOAT, 3, wavgeolev_dims, assauwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, assauwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, assauwfid,NF_CHUNKED,chunk_3d))
        endif
        if (do_cld_columnwf .and. do_cod_Jacobians) then  !No column jacobians yet
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'codcol_qjac',  NF_FLOAT, 3, wavgeolev_dims, codqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, codqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, codqwfid,NF_CHUNKED,chunk_3d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'codcol_ujac',  NF_FLOAT, 3, wavgeolev_dims, coduwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, coduwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, coduwfid,NF_CHUNKED,chunk_3d))
        endif
        if (do_cld_columnwf .and. do_cssa_Jacobians) then !No column jacobians yet
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cssacol_qjac', NF_FLOAT, 3, wavgeolev_dims, cssaqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, cssaqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, cssaqwfid,NF_CHUNKED,chunk_3d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cssacol_ujac', NF_FLOAT, 3, wavgeolev_dims, cssauwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, cssauwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, cssauwfid,NF_CHUNKED,chunk_3d))
        endif       
     endif
     
     ! variables with 4D, wavdim, laydim, geodim, olvdim
-    ! Work out chunking
-    max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim*laydim,KIND=4)),1)
-    IF (wavdim .LT. max_chunk) THEN
-       chunk_4d(1) = wavdim
-    ELSE
-       chunk_4d(1) = max_chunk
-    END IF
-    chunk_4d(2) = laydim; chunk_4d(3) = geodim; chunk_4d(4) = 1
-
     if (do_AMF_calculation) then
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'scatweights', NF_FLOAT, 4, wavaltgeolev_dims, scatwtid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, scatwtid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, scatwtid,NF_CHUNKED,chunk_4d))
     endif
     
     if (do_Jacobians) then
        if (do_T_Jacobians) then
             CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 't_jac',    NF_FLOAT, 4, wavaltgeolev_dims, tempwfid))
             CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, tempwfid, FILL_MODE, NF_FILL_REAL))
-            CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, tempwfid,NF_CHUNKED,chunk_4d))
          endif
        if (.not. do_aer_columnwf .and. do_aod_Jacobians) then
             CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aod_jac',  NF_FLOAT, 4, wavaltgeolev_dims, aodwfid))
             CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aodwfid, FILL_MODE, NF_FILL_REAL))
-            CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, aodwfid,NF_CHUNKED,chunk_4d))
          endif
        if (.not. do_aer_columnwf .and. do_assa_Jacobians) then
             CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assa_jac', NF_FLOAT, 4, wavaltgeolev_dims, assawfid))
             CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, assawfid, FILL_MODE, NF_FILL_REAL))
-            CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, assawfid,NF_CHUNKED,chunk_4d))
          endif
        if (.not. do_cld_columnwf .and. do_cod_Jacobians) then
             CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cod_jac',  NF_FLOAT, 4, wavaltgeolev_dims, codwfid))
             CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, codwfid, FILL_MODE, NF_FILL_REAL))
-            CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, codwfid,NF_CHUNKED,chunk_4d))
          endif
        if (.not. do_cld_columnwf .and. do_cssa_Jacobians) then
             CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cssa_jac', NF_FLOAT, 4, wavaltgeolev_dims, cssawfid))
             CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, cssawfid, FILL_MODE, NF_FILL_REAL))
-            CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, cssawfid,NF_CHUNKED,chunk_4d))
          endif
     endif
     
@@ -494,72 +386,43 @@ CONTAINS
        if (.not. do_aer_columnwf .and. do_aod_Jacobians) then 
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aod_qjac', NF_FLOAT, 4, wavaltgeolev_dims, aodqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aodqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, aodqwfid,NF_CHUNKED,chunk_4d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aod_ujac', NF_FLOAT, 4, wavaltgeolev_dims, aoduwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aoduwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, aoduwfid,NF_CHUNKED,chunk_4d))
        endif
        if (.not. do_aer_columnwf .and. do_assa_Jacobians) then
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assa_qjac', NF_FLOAT, 4, wavaltgeolev_dims, assaqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, assaqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, assaqwfid,NF_CHUNKED,chunk_4d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assa_ujac', NF_FLOAT, 4, wavaltgeolev_dims, assauwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, assauwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, assauwfid,NF_CHUNKED,chunk_4d))
        endif
        if (.not. do_cld_columnwf .and. do_cod_Jacobians) then
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cod_qjac', NF_FLOAT, 4, wavaltgeolev_dims, codqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, codqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, codqwfid,NF_CHUNKED,chunk_4d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cod_ujac', NF_FLOAT, 4, wavaltgeolev_dims, coduwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, coduwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, coduwfid,NF_CHUNKED,chunk_4d))
        endif
        if (.not. do_cld_columnwf .and. do_cssa_Jacobians) then
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cssa_qjac', NF_FLOAT, 4, wavaltgeolev_dims, cssaqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, cssaqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, cssaqwfid,NF_CHUNKED,chunk_4d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'cssa_ujac', NF_FLOAT, 4, wavaltgeolev_dims, cssauwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, cssauwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, cssauwfid,NF_CHUNKED,chunk_4d))
        endif
     endif
-    
-    ! variables with 4D, wavdim, geodim, gasdim, olvdim
-    max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / REAL(geodim,KIND=4)),1)
-    IF (wavdim .LT. max_chunk) THEN
-       chunk_4d(1) = wavdim
-    ELSE
-       chunk_4d(1) = max_chunk
-    END IF
-    chunk_4d(2) = geodim; chunk_4d(3) = 1; chunk_4d(4) = 1
 
     if (do_AMF_calculation) then
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'amf', NF_FLOAT, 4, wavgeogaslev_dims, amfid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, amfid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, amfid,NF_CHUNKED,chunk_4d))
     endif
     
     ! variables with 5D, wavdim, laydim, geodim, gasdim, olvdim
-    max_chunk = MAX(FLOOR(REAL(members_chunk_4(1),KIND=4) / (REAL(laydim,KIND=4)*REAL(geodim,KIND=4)) ),1)
-    IF (wavdim .LT. max_chunk) THEN
-       chunk_5d(1) = wavdim
-    ELSE
-       chunk_5d(1) = max_chunk
-    END IF
-    chunk_5d(2) = laydim; chunk_5d(3) = geodim; chunk_5d(4) = 1; chunk_5d(5) = 1
-
     if (do_Jacobians) then
        CALL netcdf_handle_error(location,NF_DEF_VAR(ncid,  'gas_jac', NF_FLOAT, 5, wavaltgeogaslev_dims, gaswfid))
        CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, gaswfid, FILL_MODE, NF_FILL_REAL))
-       CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, gaswfid,NF_CHUNKED,chunk_5d))
        if (do_QU_Jacobians) then
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid,  'gas_qjac', NF_FLOAT, 5, wavaltgeogaslev_dims, gasqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, gasqwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, gasqwfid,NF_CHUNKED,chunk_5d))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid,  'gas_ujac', NF_FLOAT, 5, wavaltgeogaslev_dims, gasuwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, gasuwfid, FILL_MODE, NF_FILL_REAL))
-          CALL netcdf_handle_error(location,NF_DEF_VAR_CHUNKING(ncid, gasuwfid,NF_CHUNKED,chunk_5d))
        endif
     endif
     
