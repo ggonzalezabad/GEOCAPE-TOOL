@@ -60,7 +60,7 @@ MODULE GC_Vlidort_module
                                  VLIDORT_Sup, VLIDORT_LinSup, VBRDF_Sup_In, Total_brdf, GCM,   &
                                  NSTOKESSQ, do_brdf_surface, OUTPUT_WSABSA, WSA_CALCULATED,    &
                                  BSA_CALCULATED, use_footprint_info, do_sat_viewcalc,          &
-                                 GC_n_user_altitudes, ilev
+                                 GC_n_user_altitudes, ilev, GMASK, RMASK, SMASK
   USE GC_error_module
 
   IMPLICIT NONE
@@ -1122,21 +1122,16 @@ CONTAINS
     depol  = Rayleigh_depols(w)
     beta_2 = (1.0d0 - depol) / (2.0d0 + depol)
 
-!!$    pRay_20 = 1.0d0
     pRay_12 = beta_2
-    IF ( VLIDORT_FixIn%Cont%TS_NSTOKES .GT. 1 ) THEN
-       pRay_41 = 3.0d0 * (1.0d0 - 2.0d0*depol) / (2.0d0 + depol) 
-       pRay_22 = 6.0d0 * beta_2
-       pRay_52 = -DSQRT(6.0d0) * beta_2
-    END IF
+    pRay_41 = 3.0d0 * (1.0d0 - 2.0d0*depol) / (2.0d0 + depol) 
+    pRay_22 = 6.0d0 * beta_2
+    pRay_52 = -DSQRT(6.0d0) * beta_2
     
     phasmoms_input(0, 1, 1) = 1.0d0
     phasmoms_input(2, 1, 1) = pRay_12
-    IF (VLIDORT_FixIn%Cont%TS_NSTOKES > 1) THEN
-       phasmoms_input(1, 4, 1) = pRay_41
-       phasmoms_input(2, 2, 1) = pRay_22
-       phasmoms_input(2, 5, 1) = pRay_52
-    END IF
+    phasmoms_input(1, 4, 1) = pRay_41
+    phasmoms_input(2, 2, 1) = pRay_22
+    phasmoms_input(2, 5, 1) = pRay_52
     
     ! ------------------------------------------------------------------
     ! Get aerosol optical properties (use 1 aerosol type for all layers)
