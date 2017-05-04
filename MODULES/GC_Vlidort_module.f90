@@ -1249,7 +1249,7 @@ CONTAINS
              VLIDORT_ModIn%MBool%TS_DO_RAYLEIGH_ONLY     = .FALSE.
              VLIDORT_ModIn%MBool%TS_DO_DOUBLE_CONVTEST   = .TRUE.
              VLIDORT_ModIn%MBool%TS_DO_DELTAM_SCALING    = .TRUE.
-             VLIDORT_FixIn%Bool%TS_DO_SSCORR_TRUNCATION  = .FALSE. ! Change after Xiong settings
+             VLIDORT_FixIn%Bool%TS_DO_SSCORR_TRUNCATION  = .TRUE.
              VLIDORT_ModIn%MBool%TS_DO_SOLUTION_SAVING   = .FALSE.
              VLIDORT_ModIn%MBool%TS_DO_BVP_TELESCOPING   = .FALSE.
           END IF
