@@ -60,7 +60,7 @@ MODULE GC_Vlidort_module
                                  VLIDORT_Sup, VLIDORT_LinSup, VBRDF_Sup_In, Total_brdf, GCM,   &
                                  NSTOKESSQ, do_brdf_surface, OUTPUT_WSABSA, WSA_CALCULATED,    &
                                  BSA_CALCULATED, use_footprint_info, do_sat_viewcalc,          &
-                                 GC_n_user_altitudes, ilev, GMASK, RMASK, SMASK
+                                 GC_n_user_altitudes, ilev, maxgksec
   USE GC_error_module
 
   IMPLICIT NONE
@@ -1184,7 +1184,12 @@ CONTAINS
     ! ---------------
     ! Local variables
     ! ---------------
-    INTEGER                   :: ic, n, q, g, j, k
+    INTEGER :: ic, n, q, g, j, k, ip, jp
+
+    ! ----------------------------------------------------------------------------
+    ! Array to convert mie code greek moment sign convention to vlidort convention
+    ! ----------------------------------------------------------------------------
+    INTEGER, PARAMETER, DIMENSION(maxgksec) :: mie_smask = (/1,1,1,1,-1,-1/)
 
     ! ----------------
     ! Code starts here
@@ -1351,8 +1356,13 @@ CONTAINS
                 total_tau = total_tau + total_aertau
                 total_sca = total_sca + total_aersca
                 scaco_input(nscatter) = total_aersca
-                phasmoms_input(0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, 1:ngksec, nscatter) = &
-                     aer_phfcn(n, 0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, 1:ngksec)
+
+                DO ip=0,VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT
+                DO jp=1,ngksec
+                   phasmoms_input(ip, jp, nscatter) = &
+                        aer_phfcn(n, ip, jp) * mie_smask(jp)
+                END DO
+                END DO
              ENDIF
              
              ! --------------------------------------------
@@ -1366,8 +1376,13 @@ CONTAINS
                 total_tau = total_tau + total_cldtau
                 total_sca = total_sca + total_cldsca
                 scaco_input(nscatter) = total_cldsca
-                phasmoms_input(0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, 1:ngksec, nscatter) = &
-                     cld_phfcn(n, 0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, 1:ngksec)
+
+                DO ip=0,VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT
+                DO jp=1,ngksec
+                   phasmoms_input(ip, jp, nscatter) = &
+                        cld_phfcn(n, ip, jp) * mie_smask(jp)
+                END DO
+                END DO
              END IF
              
              omega = total_sca / total_tau

@@ -195,7 +195,7 @@ program geocape_tools_v2p6
       WRITE(du,'(2i5)')GC_nlayers, ngases
       WRITE(du,'(20d14.6)')(gas_totalcolumns(g),g=1,ngases)
       DO n = 1, GC_nlayers
-         WRITE(du,5),n,heights(n), pressures(n),mid_temperatures(n),&
+         WRITE(du,5) n,heights(n), pressures(n),mid_temperatures(n),&
          aircolumns(n),daircolumns_dT(n), (gas_partialcolumns(n,g),g=1,ngases)
       ENDDO
 5     FORMAT(i3,3f10.4,1p20e15.6)
