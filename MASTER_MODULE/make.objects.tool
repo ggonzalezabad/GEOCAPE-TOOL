@@ -22,6 +22,7 @@ OBJECTS_GEOCAPE_PREP  = $(OBJ)/geocape_profile_prep.o               \
 OBJECTS_NETCDF        = $(OBJ)/netcdf_wrt.o
 
 OBJECTS_MODULE        = $(GC_OBJ)/GC_parameters_module.o            \
+                        $(GC_OBJ)/GC_control_types_module.o         \
                         $(GC_OBJ)/GC_variables_module.o             \
                         $(GC_OBJ)/GC_error_module.o                 \
                         $(GC_OBJ)/GC_read_input_module.o            \
