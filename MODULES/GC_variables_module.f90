@@ -13,6 +13,7 @@ MODULE GC_variables_module
   USE VBRDF_LINSUP_OUTPUTS_DEF
 
   USE GC_parameters_module
+  USE GC_control_types_module, ONLY:aerosol_control
 
   IMPLICIT NONE
 ! ----------------------------
@@ -207,6 +208,9 @@ MODULE GC_variables_module
 ! =========================
 ! *************************
 ! =========================
+! Input and logical variables
+! ---------------------------
+TYPE(aerosol_control) :: aer_ctr
 
 ! ----------------------------------
 ! Logicals for aerosols calculations
