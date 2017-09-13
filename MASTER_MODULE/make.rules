@@ -28,7 +28,8 @@ $(GC_OBJ)/GC_control_types_module.o:  $(MOD_PATH)/GC_control_types_module.f90 \
 	mv -f *.mod $(GC_MOD)
 
 $(GC_OBJ)/GC_variables_module.o:  $(MOD_PATH)/GC_variables_module.f90 \
-                               $(GC_OBJ)/GC_parameters_module.o
+                               $(GC_OBJ)/GC_parameters_module.o \
+                               $(GC_OBJ)/GC_control_types_module.o
 	$(TOOL_COMPILE) $(MOD_PATH)/GC_variables_module.f90 -I$(GC_OBJ) -I$(GC_MOD) \
     -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_variables_module.o
 	mv -f *.mod $(GC_MOD)
