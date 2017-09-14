@@ -8,24 +8,36 @@ F
 # AOD Jacobians LOGICAL T/F
 # -------------------------
 AOD jacobians
-T
+F
 
 # --------------------------
 # ASSA Jacobians LOICAL T/F
 # --------------------------
 ASSA jacobians
-T
+F
 
-# ---------------------------
+# -------------------------------------
 # AERPH Jacobians LOGICAL T/F
-# ---------------------------
+# Peak height Jacobians not implemented
+# Only to be used with GDF profile type
+# -------------------------------------
 AERPH jacobians
 F
 
-# ---------------------------
+# -------------------------------------
 # AERHW Jacobians LOGICAL T/F
-# ---------------------------
+# Half width Jacobians not implemented
+# Only to be used with GDF profile type
+# -------------------------------------
 AERHW jacobians
+F
+
+# ---------------------------------------------
+# AERRE Jacobians LOGICAL T/F
+# Relaxation constant Jacobians not implemented
+# Only to be used with Exponential profile type
+# ---------------------------------------------
+AERRE jacobians
 F
 
 # -------------------
@@ -34,22 +46,28 @@ F
 AOD wavelength
 550.0
 
-# ----------------------------------------------
+# -----------------------------------------------------------------------------------
 # Aerosol types:
 #   1. Number of aerosol types
 #   Follow by those lines for each type:
-#       1. Aerosol type 
-#       2. Aerosol optical thickness
-#       3. Upper limit, lower limit, peak height
-#       4. Half width
-# ----------------------------------------------
+#       1. Aerosol type (SU DU BC OC SC SF)
+#	2. Profile type (BOX EXP GDF)
+#       3. Total aerosol optical thickness
+#       4. Upper limit, lower limit [km]
+#       5. Relaxation constant (only used if EXP but still has to be present) [km-1]
+#       6. Peak height Half width (only used if GDF but still has to be present) [km]
+# -----------------------------------------------------------------------------------
 Aerosol types
 2
 SU
+BOX
 0.2
-12.0  0.00  6.00
-0.5d0
+12.0  0.00  
+2.00
+6.0 0.5
 DU
+EXP
 0.2
-12.0 0.00 6.00
-0.5d0
+12.0 0.00
+1.0
+5.00 1.5

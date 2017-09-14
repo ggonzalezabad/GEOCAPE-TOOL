@@ -16,7 +16,7 @@ MODULE GC_aerosols_module
 !  !USES:
 !
   USE GC_parameters_module, ONLY: GC_maxlayers, aerunit, max_ch_len
-  USE GC_variables_module,  ONLY: naer0, taertau0, &
+  USE GC_variables_module,  ONLY: naer0, aer_types0, taertau0, &
                                   aer_profile, aer_d_profile_dtau,        &
                                   aer_d_profile_dpkh, aer_d_profile_dhfw, &
                                   aer_profile0, taer_profile, &
@@ -60,6 +60,7 @@ MODULE GC_aerosols_module
       CHARACTER(LEN=14), PARAMETER :: assa_jacobians_str  = 'ASSA jacobians'
       CHARACTER(LEN=15), PARAMETER :: aerph_jacobians_str = 'AERPH jacobians'
       CHARACTER(LEN=15), PARAMETER :: aerhw_jacobians_str = 'AERHW jacobians'
+      CHARACTER(LEN=15), PARAMETER :: aerre_jacobians_str = 'AERRE jacobians'
       CHARACTER(LEN=14), PARAMETER :: aod_wavelength_str  = 'AOD wavelength'
       CHARACTER(LEN=15), PARAMETER :: aerosols_type_str   = 'Aerosol types'
 
@@ -151,6 +152,16 @@ MODULE GC_aerosols_module
          CALL write_err_message ( .TRUE., "ERROR: Can't find "//aerhw_jacobians_str )
       END IF
       READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%do_aerhw_jacobians
+
+      ! ---------------
+      ! AERRE Jacobians
+      ! ---------------
+      REWIND (funit)
+      CALL skip_to_filemark (funit, aerre_jacobians_str , tmpstr, error )
+      IF ( error ) THEN
+         CALL write_err_message ( .TRUE., "ERROR: Can't find "//aerre_jacobians_str )
+      END IF
+      READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%do_aerre_jacobians
       
       ! --------------
       ! AOD wavelength
@@ -160,7 +171,7 @@ MODULE GC_aerosols_module
       IF ( error ) THEN
          CALL write_err_message ( .TRUE., "ERROR: Can't find "//  aod_wavelength_str)
       END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%aer_reflambda
+      READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%reflambda
      
       IF (.NOT. aer_ctr%use_aerprof) THEN
          ! ---------------------------------------------------------------
@@ -177,21 +188,23 @@ MODULE GC_aerosols_module
          END IF
          READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%naer
          
-         ALLOCATE(aer_ctr%aer_types(1:aer_ctr%naer))
-         ALLOCATE(aer_ctr%aer_tau0s(1:aer_ctr%naer))
-         ALLOCATE(aer_ctr%aer_z_upperlimit(1:aer_ctr%naer))
-         ALLOCATE(aer_ctr%aer_z_lowerlimit(1:aer_ctr%naer))
-         ALLOCATE(aer_ctr%aer_z_peakheight(1:aer_ctr%naer))
-         ALLOCATE(aer_ctr%aer_half_width(1:aer_ctr%naer))
-         ALLOCATE(aer_ctr%aer_relax(1:aer_ctr%naer))
+         ALLOCATE(aer_ctr%types(1:aer_ctr%naer))
+         ALLOCATE(aer_ctr%profiles(1:aer_ctr%naer))
+         ALLOCATE(aer_ctr%tau0s(1:aer_ctr%naer))
+         ALLOCATE(aer_ctr%z_upperlimit(1:aer_ctr%naer))
+         ALLOCATE(aer_ctr%z_lowerlimit(1:aer_ctr%naer))
+         ALLOCATE(aer_ctr%z_peakheight(1:aer_ctr%naer))
+         ALLOCATE(aer_ctr%half_width(1:aer_ctr%naer))
+         ALLOCATE(aer_ctr%relaxation(1:aer_ctr%naer))
 
          DO i = 1, aer_ctr%naer
-            READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%aer_types(i)
-            READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%aer_tau0s(i)
-            READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%aer_z_upperlimit(i),   &
-                 aer_ctr%aer_z_lowerlimit(i),   &
-                 aer_ctr%aer_z_peakheight(i)
-            READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%aer_half_width(i)
+            READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%types(i)
+            READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%profiles(i)
+            READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%tau0s(i)
+            READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%z_upperlimit(i),   &
+                 aer_ctr%z_lowerlimit(i)
+            READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%relaxation(i)
+            READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%z_peakheight(i), aer_ctr%half_width(i)
          ENDDO
       ENDIF
       
@@ -201,7 +214,7 @@ MODULE GC_aerosols_module
       IF (ios .NE. 0) error = .TRUE.
       
       CLOSE(funit)
-      
+
     END SUBROUTINE read_aer_control_file
 
     SUBROUTINE aerosol_profiles(error)
@@ -222,6 +235,8 @@ MODULE GC_aerosols_module
 
       IF (aer_ctr%use_aerprof) THEN
          aer_profile = aer_profile0; aer_ctr%naer = naer0
+         ALLOCATE(aer_ctr%types(1:aer_ctr%naer))
+         aer_ctr%types = aer_types0
          IF (aer_ctr%naer == 0) THEN
             aer_ctr%do_aerosols        = .FALSE.
             aer_ctr%do_aer_columnwf    = .FALSE.
@@ -230,40 +245,39 @@ MODULE GC_aerosols_module
             aer_ctr%do_aerph_Jacobians = .FALSE.
             aer_ctr%do_aerhw_Jacobians = .FALSE.
          END IF
-
       ELSE
          DO i = 1, aer_ctr%naer
 
-            IF (aer_ctr%aer_tau0s(i) <= 0.d0) THEN
+            IF (aer_ctr%tau0s(i) <= 0.d0) THEN
                CALL write_err_message ( .TRUE., &
                     "ERROR: Aerosol optical depth must be greater than 0")
             ENDIF
-            IF (aer_ctr%aer_z_lowerlimit(i) >= aer_ctr%aer_z_upperlimit(i) ) THEN
+            IF (aer_ctr%z_lowerlimit(i) >= aer_ctr%z_upperlimit(i) ) THEN
                CALL write_err_message ( .TRUE., &
                     "ERROR: Aerosol bottom must be lower than aerosol top")
             ENDIF
-            IF (aer_ctr%aer_z_peakheight(i) > aer_ctr%aer_z_upperlimit(i)) THEN
+            IF (aer_ctr%z_peakheight(i) > aer_ctr%z_upperlimit(i)) THEN
                CALL write_err_message ( .TRUE., &
                     "ERROR: Aerosol peak height should be <= upperlimit")
             END IF
-            IF (aer_ctr%aer_z_peakheight(i) < aer_ctr%aer_z_lowerlimit(i)) THEN
+            IF (aer_ctr%z_peakheight(i) < aer_ctr%z_lowerlimit(i)) THEN
                CALL write_err_message ( .TRUE., &
                     "ERROR: Aerosol peak height should be >= lowerlimit")
             ENDIF
             
-            IF (aer_ctr%aer_z_lowerlimit(i) < heights(GC_nlayers)) &
-                 aer_ctr%aer_z_lowerlimit(i) = heights(GC_nlayers)
-            IF (aer_ctr%aer_z_upperlimit(i) > heights(0)) &
-                 aer_ctr%aer_z_upperlimit(i) = heights(0)
+            IF (aer_ctr%z_lowerlimit(i) < heights(GC_nlayers)) &
+                 aer_ctr%z_lowerlimit(i) = heights(GC_nlayers)
+            IF (aer_ctr%z_upperlimit(i) > heights(0)) &
+                 aer_ctr%z_upperlimit(i) = heights(0)
             
             ! ----------------------------------------------
             ! Generate aerosol plume/profiles based on input
             ! ----------------------------------------------
-            CALL generate_plume                                            &
-                 ( GC_maxlayers, aer_ctr%aer_z_upperlimit(i), &
-                 aer_ctr%aer_z_lowerlimit(i), & ! input
-                 aer_ctr%aer_z_peakheight(i), &
-                 aer_ctr%aer_tau0s(i), aer_ctr%aer_half_width(i),     & ! input
+            CALL generate_plume                           &
+                 ( GC_maxlayers, aer_ctr%z_upperlimit(i), &
+                 aer_ctr%z_lowerlimit(i), & ! input
+                 aer_ctr%z_peakheight(i), &
+                 aer_ctr%tau0s(i), aer_ctr%half_width(i),     & ! input
                  GC_nlayers, heights(0:GC_maxlayers),                      & ! input
                  aer_profile(i, 1:GC_maxlayers),                           & ! output
                  aer_d_profile_dtau(i, 1:GC_maxlayers),                    & ! output   
@@ -288,7 +302,7 @@ MODULE GC_aerosols_module
       DO i = 1, GC_nlayers
          IF (aer_flags(i)) taer_profile(i) = SUM(aer_profile(1:aer_ctr%naer, i))
       END DO
-
+    
     END SUBROUTINE aerosol_profiles
 
 END MODULE GC_aerosols_module

@@ -16,16 +16,16 @@ MODULE GC_control_types_module
      LOGICAL :: do_aerhw_jacobians = .false. ! Aerosol half width jacobians
      LOGICAL :: do_aerre_jacobians = .false. ! Aerosol exponential relaxation jacobians
      LOGICAL :: do_aer_columnwf = .false. ! Aerosol column weighting function
-     REAL(KIND=8) :: aer_reflambda
-     CHARACTER(LEN=3) :: profile_type ! Loading profile type
+     REAL(KIND=8) :: reflambda
      INTEGER :: naer ! Number of aerosol types
-     CHARACTER(LEN=2), ALLOCATABLE, DIMENSION(:) :: aer_types ! SU, DU, BC, OC, SC, SF
-     REAL(KIND=8), ALLOCATABLE, DIMENSION(:) :: aer_tau0s, & ! Aerosol total loading
-     aer_z_upperlimit, & ! Aerosol layer upper limit
-     aer_z_lowerlimit, & ! Aerosol layer lower limit
-     aer_z_peakheight, & ! Aerosol layer peak heigh (only GDF)
-     aer_half_width, & ! Aerosol layer half width (only GDF)
-     aer_relax ! Aerosol layer exponential relaxation (only exponential)
+     CHARACTER(LEN=2), ALLOCATABLE, DIMENSION(:) :: types ! SU, DU, BC, OC, SC, SF
+     CHARACTER(LEN=3), ALLOCATABLE, DIMENSION(:) :: profiles ! BOX EXP GDF
+     REAL(KIND=8), ALLOCATABLE, DIMENSION(:) :: tau0s, & ! Aerosol total loading
+     z_upperlimit, & ! Aerosol layer upper limit
+     z_lowerlimit, & ! Aerosol layer lower limit
+     z_peakheight, & ! Aerosol layer peak height (only GDF)
+     half_width, & ! Aerosol layer half width (only GDF)
+     relaxation ! Aerosol layer exponential relaxation (only exponential)
   END TYPE aerosol_control
 
 END MODULE GC_control_types_module
