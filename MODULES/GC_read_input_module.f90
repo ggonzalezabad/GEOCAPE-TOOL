@@ -18,9 +18,9 @@ MODULE GC_read_input_module
 ! !USES
   USE GC_parameters_module, ONLY: max_ch_len, maxlambdas, maxflambdas, maxmoms, ctrunit
   USE GC_variables_module,  ONLY: database_dir, results_dir, profile_data_filename,   &
-                                  debug_filename, albspectra_fname, aerfile, cldfile, &
-                                  do_aerosols, do_clouds, do_lambertian_cld,          &
-                                  use_aerprof, use_cldprof,                           &
+                                  debug_filename, albspectra_fname, cldfile, &
+                                  do_clouds, do_lambertian_cld,          &
+                                  use_cldprof,                           &
                                   do_StokesQU_output, idix,                           &
                                   do_AMF_calculation, do_T_Jacobians,                 &
                                   do_sfcprs_Jacobians, do_normalized_WFoutput,        &
@@ -38,7 +38,7 @@ MODULE GC_read_input_module
                                   wind_speed, water_rn, water_cn, do_sat_viewcalc,    &
                                   year, month, day, latitude, longitude, satlon,      &
                                   satlat, satalt, utc, geometry_data,                 &
-                                  solar_spec_filename
+                                  solar_spec_filename, aer_ctr
   USE GC_error_module
 ! 
   IMPLICIT NONE
@@ -356,9 +356,9 @@ MODULE GC_read_input_module
          CALL write_err_message ( .TRUE., "ERROR: Can't find "//aerosols_str )
          CALL error_exit (error)
       END IF
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) do_aerosols
-      READ (UNIT=funit, FMT=*, IOSTAT=ios) use_aerprof
-      READ (UNIT=funit, FMT='(A)', IOSTAT=ios) aerfile
+      READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%do_aerosols
+      READ (UNIT=funit, FMT=*, IOSTAT=ios) aer_ctr%use_aerprof
+      READ (UNIT=funit, FMT='(A)', IOSTAT=ios) aer_ctr%aerfile
 
       ! ------
       ! Clouds
@@ -508,9 +508,9 @@ MODULE GC_read_input_module
        ENDIF
     ENDDO
 
-    DO i = 1, LEN(aerfile)
-       IF (aerfile(i:i) == ' ') THEN
-          aerfile = aerfile(1:i-1); EXIT
+    DO i = 1, LEN(aer_ctr%aerfile)
+       IF (aer_ctr%aerfile(i:i) == ' ') THEN
+          aer_ctr%aerfile = aer_ctr%aerfile(1:i-1); EXIT
        ENDIF
     ENDDO
 

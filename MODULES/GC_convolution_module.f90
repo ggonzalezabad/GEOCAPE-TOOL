@@ -9,8 +9,7 @@ MODULE GC_convolution_module
                                  do_Jacobians, ngases, GC_Tracegas_Jacobians,  &
                                  VLIDORT_FixIn, temp_wf, do_AMF_calculation,   &
                                  GC_Scattering_Weights, GC_AMFs,               &
-                                 do_aer_columnwf, do_aod_jacobians,            &
-                                 GC_aod_Jacobians, do_assa_jacobians,          &
+                                 GC_aod_Jacobians, &
                                  GC_assa_jacobians, do_cld_columnwf,           &
                                  do_cod_jacobians, GC_cod_Jacobians,           &
                                  do_cssa_jacobians, GC_cssa_Jacobians,         &
@@ -31,7 +30,7 @@ MODULE GC_convolution_module
                                  GC_Temperature_Jacobians, nlambdas, lambdas,  &
                                  clambdas, wavnums, GC_flux, GC_Uflux,         &
                                  GC_Qflux, GC_direct_flux, GC_Qdirect_flux,    &
-                                 GC_Udirect_flux, VLIDORT_ModIn, didx, ilev
+                                 GC_Udirect_flux, VLIDORT_ModIn, didx, ilev, aer_ctr
                                  
   USE GC_error_module
 
@@ -142,20 +141,20 @@ CONTAINS
              END DO
           END IF
           
-          IF (do_aer_columnwf) THEN
+          IF (aer_ctr%do_aer_columnwf) THEN
              nspec=1
-             IF (do_aod_jacobians) THEN
+             IF (aer_ctr%do_aod_jacobians) THEN
                 CALL gauss_f2c (tmpwaves(1:nflambdas), GC_aod_Jacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
                 GC_aod_Jacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
              END IF
-             IF (do_assa_jacobians) THEN
+             IF (aer_ctr%do_assa_jacobians) THEN
                 CALL gauss_f2c (tmpwaves(1:nflambdas), GC_assa_Jacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
                 GC_assa_Jacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
              END IF
           ELSE
-             IF (do_aod_jacobians) THEN
+             IF (aer_ctr%do_aod_jacobians) THEN
                 CALL gauss_f2c (tmpwaves(1:nflambdas), GC_aod_Jacobians(1:nflambdas,      &
                      1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas,                &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution,                    &
@@ -164,7 +163,7 @@ CONTAINS
                 GC_aod_Jacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
              END IF
-             IF (do_assa_jacobians) THEN
+             IF (aer_ctr%do_assa_jacobians) THEN
                 CALL gauss_f2c (tmpwaves(1:nflambdas), GC_assa_Jacobians(1:nflambdas,      &
                      1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas,                 &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution,                     &
@@ -252,9 +251,9 @@ CONTAINS
                   temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS)
           END DO
           
-          IF (do_aer_columnwf) THEN
+          IF (aer_ctr%do_aer_columnwf) THEN
              nspec=1
-             IF (do_aod_Jacobians) THEN 
+             IF (aer_ctr%do_aod_Jacobians) THEN 
                 CALL gauss_f2c (tmpwaves(1:nflambdas), GC_aod_QJacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
                 GC_aod_QJacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
@@ -262,7 +261,7 @@ CONTAINS
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
                 GC_aod_UJacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
              END IF
-             IF (do_assa_Jacobians) THEN 
+             IF (aer_ctr%do_assa_Jacobians) THEN 
                 CALL gauss_f2c (tmpwaves(1:nflambdas), GC_assa_QJacobians(1:nflambdas, 1, ilev, v, didx), nflambdas, &
                      nspec, lambda_resolution, tmpcwaves(1:nclambdas), temp_wf(1:nclambdas, 1), nclambdas)
                 GC_assa_QJacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
@@ -272,7 +271,7 @@ CONTAINS
                 GC_assa_UJacobians(1:nclambdas, 1, ilev, v, didx) = temp_wf(1:nclambdas, 1) 
              END IF
           ELSE
-             IF (do_aod_Jacobians) THEN 
+             IF (aer_ctr%do_aod_Jacobians) THEN 
                 CALL gauss_f2c (tmpwaves(1:nflambdas),                                                    &
                      GC_aod_QJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas, &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),            &
@@ -286,7 +285,7 @@ CONTAINS
                 GC_aod_UJacobians(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx) = &
                      temp_wf(1:nclambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS) 
              END IF
-             IF (do_assa_Jacobians) THEN 
+             IF (aer_ctr%do_assa_Jacobians) THEN 
                 CALL gauss_f2c (tmpwaves(1:nflambdas),                                                     &
                      GC_assa_QJacobians(1:nflambdas, 1:VLIDORT_FixIn%Cont%TS_NLAYERS, ilev, v, didx), nflambdas, &
                      VLIDORT_FixIn%Cont%TS_NLAYERS, lambda_resolution, tmpcwaves(1:nclambdas),             &

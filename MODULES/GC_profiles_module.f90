@@ -16,9 +16,9 @@ MODULE GC_profiles_module
                                   temperatures, pressures,           &
                                   aircolumns, daircolumns_dT,        &
                                   gas_partialcolumns,                &
-                                  gas_totalcolumns, do_aerosols,     &
-                                  use_aerprof, naer0, aer_types,     &
-                                  aer_profile0
+                                  gas_totalcolumns, &
+                                  naer0, &
+                                  aer_profile0, aer_ctr
   USE GC_error_module
 
   IMPLICIT NONE
@@ -115,10 +115,10 @@ CONTAINS
     ! ------------------------------------------------------------------
     ! Read aerosol profile before modifying the altitude grids by clouds
     ! ------------------------------------------------------------------
-    IF (do_aerosols .AND. use_aerprof) THEN
+    IF (aer_ctr%do_aerosols .AND. aer_ctr%use_aerprof) THEN
        CALL get_aerprof_from_atmosprof(pmaxl, pmaxc, GC_nlayers, pnc, &
                                        profids, profile_data, maxaer, &
-                                       naer0, aer_types, aer_profile0)
+                                       naer0, aer_ctr%aer_types, aer_profile0)
     ELSE
        naer0 = 0; aer_profile0 = 0.0d0
     ENDIF

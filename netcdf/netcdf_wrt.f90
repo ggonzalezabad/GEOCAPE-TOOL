@@ -9,8 +9,8 @@ subroutine netcdf_wrt ( fname)
        ground_ler, & !Surface albedo
        do_vector_calculation, do_StokesQU_output, do_Jacobians,      & !LOGICAL SWITCHES
        do_QU_Jacobians, do_AMF_calculation, do_T_Jacobians, do_sfcprs_Jacobians,    & !LOGICAL SWITCHES
-       do_aod_Jacobians, do_assa_Jacobians, do_cod_Jacobians, do_cssa_Jacobians,    & !LOGICAL SWITCHES
-       do_cfrac_Jacobians, do_aer_columnwf, do_cld_columnwf, use_lambertian,        & !LOGICAL SWITCHES
+       do_cod_Jacobians, do_cssa_Jacobians,    & !LOGICAL SWITCHES
+       do_cfrac_Jacobians, do_cld_columnwf, use_lambertian,        & !LOGICAL SWITCHES
        do_effcrs, lambda_resolution, & !Convolution switch and lambda resolution
        solar_cspec_data, GC_radiances, & !Irradiance and radiance
        GC_Qvalues, GC_Uvalues, & !Qvalues, Uvalues
@@ -27,7 +27,8 @@ subroutine netcdf_wrt ( fname)
        GC_sfcprs_Jacobians, GC_sfcprs_QJacobians, GC_sfcprs_UJacobians, & !Surface or cloud pressure Jacobians
        GC_flux, GC_Qflux, GC_Uflux, & !Totla flux
        GC_direct_flux, GC_Qdirect_flux, GC_Udirect_flux, & !Direct flux
-       didx !Direction index
+       didx, & !Direction index
+       aer_ctr !Aerosol control
   USE GC_netcdf_module, ONLY: netcdf_handle_error
   
   IMPLICIT none
@@ -133,9 +134,9 @@ subroutine netcdf_wrt ( fname)
   if (do_Jacobians) then
      if (do_T_Jacobians) &
           CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 't_jac', tempwfid))
-     if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
+     if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_aod_Jacobians) &
           CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'aod_jac', aodwfid))
-     if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
+     if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_assa_Jacobians) &
           CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'assa_jac', assawfid))
      if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
           CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'cod_jac', codwfid))
@@ -144,11 +145,11 @@ subroutine netcdf_wrt ( fname)
   endif
 
   if (do_QU_Jacobians) then
-     if (.not. do_aer_columnwf .and. do_aod_Jacobians) then 
+     if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_aod_Jacobians) then 
         CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'aod_qjac', aodqwfid)) 
         CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'aod_ujac', aoduwfid))
      endif
-     if (.not. do_aer_columnwf .and. do_assa_Jacobians) then
+     if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_assa_Jacobians) then
         CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'assa_qjac', assaqwfid))  
         CALL netcdf_handle_error(location,NF_INQ_VARID(ncid, 'assa_ujac', assauwfid))
      endif
@@ -300,10 +301,10 @@ subroutine netcdf_wrt ( fname)
         if (do_T_Jacobians) &
              CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, tempwfid, ndimstart4, ndimcount4, &
              real(GC_Temperature_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
-        if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
+        if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_aod_Jacobians) &
              CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, aodwfid, ndimstart4, ndimcount4, &
              real(GC_aod_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
-        if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
+        if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_assa_Jacobians) &
              CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, assawfid, ndimstart4, ndimcount4, &
              real(GC_assa_Jacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
@@ -315,10 +316,10 @@ subroutine netcdf_wrt ( fname)
      endif
      
      if (do_QU_Jacobians) then
-        if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
+        if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_aod_Jacobians) &
              CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, aodqwfid, ndimstart4, ndimcount4, &
              real(GC_aod_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
-        if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
+        if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_assa_Jacobians) &
              CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, assaqwfid, ndimstart4, ndimcount4, &
              real(GC_assa_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_cld_columnwf .and. do_cod_Jacobians) &
@@ -328,10 +329,10 @@ subroutine netcdf_wrt ( fname)
              CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, cssaqwfid, ndimstart4, ndimcount4, &
              real(GC_cssa_QJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4))) 
         
-        if (.not. do_aer_columnwf .and. do_aod_Jacobians) &
+        if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_aod_Jacobians) &
              CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, aoduwfid, ndimstart4, ndimcount4, &
              real(GC_aod_UJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
-        if (.not. do_aer_columnwf .and. do_assa_Jacobians) &
+        if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_assa_Jacobians) &
              CALL netcdf_handle_error(location,NF_PUT_VARA_REAL (ncid, assauwfid, ndimstart4, ndimcount4, &
              real(GC_assa_UJacobians(1:nwav,1:GC_nlayers,iout,1:ngeom,didx), kind=4)))
         if (.not. do_cld_columnwf .and. do_cod_Jacobians) &

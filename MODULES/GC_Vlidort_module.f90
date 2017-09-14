@@ -10,9 +10,9 @@ MODULE GC_Vlidort_module
                                  GC_view_angles, GC_n_azimuths, GC_azimuths, gaswfidx, twfidx, &
                                  aodwfidx, assawfidx, sfcprswfidx, codwfidx, cssawfidx,        &
                                  do_Jacobians, do_T_Jacobians, do_sfcprs_Jacobians,            &
-                                 do_aod_Jacobians, do_assa_Jacobians, do_cod_Jacobians,        &
+                                 do_cod_Jacobians,        &
                                  do_cssa_Jacobians,do_lambertian_cld, N_TOTALPROFILE_WFS_wcld, &
-                                 do_clouds, N_TOTALPROFILE_WFS_ncld, do_aerosols,              &
+                                 do_clouds, N_TOTALPROFILE_WFS_ncld,               &
                                  use_lambertian, wind_speed,                                   &
                                  VBRDF_Sup_In, VBRDF_LinSup_In, VLIDORT_Out, GC_Radiances,     &
                                  do_StokesQU_output, GC_Qvalues, GC_Uvalues, ngases,           &
@@ -20,7 +20,7 @@ MODULE GC_Vlidort_module
                                  do_normalized_WFoutput, ratio, total_gasabs, VLIDORT_LinOut,  &
                                  do_AMF_calculation, GC_Scattering_Weights, w, GC_AMFs,        &
                                  GC_Tracegas_QJacobians, GC_Tracegas_UJacobians,               &
-                                 GC_Temperature_Jacobians, mid_temperatures, do_aer_columnwf,  &
+                                 GC_Temperature_Jacobians, mid_temperatures, &
                                  total_wf, aer_flags, GC_aod_Jacobians, taertau0, taer_profile,&
                                  do_QU_Jacobians, total_Qwf, total_Uwf, GC_aod_QJacobians,     &
                                  GC_aod_UJacobians, total_aersca, total_aertau, aer_opdeps,    &
@@ -38,8 +38,8 @@ MODULE GC_Vlidort_module
                                  GC_sfcprs_UJacobians, do_normalized_radiance, do_effcrs,      &
                                  solar_cspec_Data, depol, rayleigh_depols, beta_2, pray_22,    &
                                  pray_12, pray_41, pray_52, phasmoms_input,                    &
-                                 database_dir, maxaer, naer, aer_types, solar_spec_data,       &
-                                 aer_profile, lambdas, aer_reflambda, aer_relqext, aer_phfcn,  &
+                                 database_dir, maxaer, solar_spec_data,       &
+                                 aer_profile, lambdas, aer_relqext, aer_phfcn,  &
                                  maxcld, ncld, cld_types, cld_profile, cld_reflambda,          &
                                  cld_relqext, cld_phfcn, water_rn, water_cn, stokes_clrcld,    &
                                  stokes_flux, stokes_direct_flux,                              &
@@ -60,7 +60,7 @@ MODULE GC_Vlidort_module
                                  VLIDORT_Sup, VLIDORT_LinSup, VBRDF_Sup_In, Total_brdf, GCM,   &
                                  NSTOKESSQ, do_brdf_surface, OUTPUT_WSABSA, WSA_CALCULATED,    &
                                  BSA_CALCULATED, use_footprint_info, do_sat_viewcalc,          &
-                                 GC_n_user_altitudes, ilev, maxgksec
+                                 GC_n_user_altitudes, ilev, maxgksec, aer_ctr
   USE GC_error_module
 
   IMPLICIT NONE
@@ -106,7 +106,7 @@ CONTAINS
     ! ----------------------------------------
     ! Check for aerosols and scattering clouds
     ! ----------------------------------------
-    IF ( do_aerosols .OR. (do_clouds .AND. .NOT. do_lambertian_cld)) THEN
+    IF ( aer_ctr%do_aerosols .OR. (do_clouds .AND. .NOT. do_lambertian_cld)) THEN
        IF ( VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT .LT. 2 * VLIDORT_FixIn%Cont%TS_NSTREAMS) THEN
           CALL write_err_message ( .FALSE., "Not enough aerosol/cloud moments"// &
                ", must be at least 2*nstreams")
@@ -284,7 +284,7 @@ CONTAINS
     ENDIF
 
     IF ( ( do_T_Jacobians   .OR. do_sfcprs_Jacobians .OR.  &
-           do_aod_Jacobians .OR. do_assa_Jacobians   .OR.  &
+           aer_ctr%do_aod_jacobians .OR. aer_ctr%do_assa_jacobians   .OR.  &
            do_cod_Jacobians .OR. do_cssa_Jacobians)  .AND. &
            (.NOT. do_Jacobians) ) THEN
        WRITE(*,*) do_Jacobians
@@ -316,14 +316,14 @@ CONTAINS
                '-------Surface Pressure--------'
        END IF
        
-       IF (do_aod_Jacobians) THEN
+       IF (aer_ctr%do_aod_Jacobians) THEN
           VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS = VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS + 1
           aodwfidx = VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS
           VLIDORT_LinFixIn%Cont%TS_profilewf_names(VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS)  = &
                '-----Aerosol Optical Depth-----'
        END IF
        
-       IF (do_assa_Jacobians) THEN
+       IF (aer_ctr%do_assa_Jacobians) THEN
           VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS = VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS + 1
           assawfidx = VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS
           VLIDORT_LinFixIn%Cont%TS_profilewf_names(VLIDORT_LinFixIn%Cont%TS_N_TOTALPROFILE_WFS)  = &
@@ -362,7 +362,7 @@ CONTAINS
     END IF
     
     ! Rayleigh only flag, set if no aerosols and scattering clouds
-    VLIDORT_ModIn%MBool%TS_DO_RAYLEIGH_ONLY = .NOT. do_aerosols &
+    VLIDORT_ModIn%MBool%TS_DO_RAYLEIGH_ONLY = .NOT. aer_ctr%do_aerosols &
          .AND. .NOT. (do_clouds .AND. .NOT. do_lambertian_cld)
     
     ! Rayleigh only, no delta-M scaling, no performance enhancements, nmoms=2
@@ -604,10 +604,10 @@ CONTAINS
     ! -----------------------------------------
     ! Save aerosols optical thickness Jacobians
     ! -----------------------------------------
-    IF ( do_aod_Jacobians ) THEN
+    IF ( aer_ctr%do_aod_jacobians ) THEN
        q = aodwfidx
        DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
-          IF (do_aer_columnwf) THEN
+          IF (aer_ctr%do_aer_columnwf) THEN
              DO ilev = 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS
                 total_wf = 0.0d0
                 DO il = 1, VLIDORT_FixIn%Cont%TS_NLAYERS
@@ -637,10 +637,10 @@ CONTAINS
        END DO
     END IF
     
-    IF (  do_aod_Jacobians .AND. do_QU_Jacobians) THEN
+    IF (  aer_ctr%do_aod_jacobians .AND. do_QU_Jacobians) THEN
        q = aodwfidx
        DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
-          IF (do_aer_columnwf) THEN
+          IF (aer_ctr%do_aer_columnwf) THEN
              DO ilev = 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS
                 total_Qwf = 0.0d0; total_Uwf = 0.0d0
                 DO il = 1, VLIDORT_FixIn%Cont%TS_NLAYERS
@@ -682,10 +682,10 @@ CONTAINS
     ! ------------------------------------------------
     ! Save aerosols single scattering albedo Jacobians
     ! ------------------------------------------------
-    IF ( do_assa_Jacobians ) THEN
+    IF ( aer_ctr%do_assa_jacobians ) THEN
        q = assawfidx
        DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
-          IF (do_aer_columnwf) THEN
+          IF (aer_ctr%do_aer_columnwf) THEN
              DO ilev = 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS
                 total_wf = 0.0d0; total_aersca = 0.0d0; total_aertau = 0.0d0
                 DO il = 1, VLIDORT_FixIn%Cont%TS_NLAYERS
@@ -718,10 +718,10 @@ CONTAINS
        END DO
     END IF
     
-    IF ( do_assa_Jacobians .AND. do_QU_Jacobians) THEN
+    IF ( aer_ctr%do_assa_jacobians .AND. do_QU_Jacobians) THEN
        q = assawfidx
        DO v = 1, VLIDORT_Out%Main%TS_N_GEOMETRIES
-          IF (do_aer_columnwf) THEN
+          IF (aer_ctr%do_aer_columnwf) THEN
              DO ilev = 1, VLIDORT_FixIn%UserVal%TS_N_USER_LEVELS
                 total_Qwf = 0.0d0; total_Uwf = 0.0d0; total_aersca = 0.0d0; total_aertau = 0.0d0
                 DO il = 1, VLIDORT_FixIn%Cont%TS_NLAYERS
@@ -1136,11 +1136,12 @@ CONTAINS
     ! ------------------------------------------------------------------
     ! Get aerosol optical properties (use 1 aerosol type for all layers)
     ! ------------------------------------------------------------------
-    IF (do_aerosols) THEN
+    IF (aer_ctr%do_aerosols) THEN
        nw1=1
-       CALL prepare_aercld_optical_property(database_dir, maxaer, naer, aer_types, GC_nlayers, &
+       CALL prepare_aercld_optical_property(database_dir, maxaer, aer_ctr%naer, &
+            aer_ctr%aer_types, GC_nlayers, &
             aer_profile(1:maxaer, 1:GC_nlayers), aer_flags(1:GC_nlayers), lambdas(w), nw1,     &
-            aer_reflambda, VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, ngksec,                &
+            aer_ctr%aer_reflambda, VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, ngksec,                &
             aer_opdeps(w, 1:GC_nlayers), aer_ssalbs(w, 1:GC_nlayers),                          &
             aer_relqext(w, 1:GC_nlayers),                                                      &
             aer_phfcn(1:GC_nlayers, 0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, 1:ngksec),  &
@@ -1242,7 +1243,7 @@ CONTAINS
        ! ------------------------------------------------------------------
        ! Reset Rayleigh only flag, set if no aerosols and scattering clouds
        ! ------------------------------------------------------------------
-       IF (.NOT. do_aerosols .AND. .NOT. do_lambertian_cld) THEN
+       IF (.NOT. aer_ctr%do_aerosols .AND. .NOT. do_lambertian_cld) THEN
           IF (ic == 1) THEN
              VLIDORT_ModIn%MBool%TS_DO_RAYLEIGH_ONLY     = .TRUE.
              VLIDORT_ModIn%MBool%TS_DO_DOUBLE_CONVTEST   = .FALSE.
@@ -1519,7 +1520,7 @@ CONTAINS
              ! ------------------------------------------
              ! Aerosol optical thickness, only if flagged
              ! ------------------------------------------
-             IF (do_aod_Jacobians .AND. aer_flags(n) ) THEN
+             IF (aer_ctr%do_aod_jacobians .AND. aer_flags(n) ) THEN
                 q = aodwfidx
                 
                 VLIDORT_LinFixIn%Optical%TS_L_DELTAU_VERT_INPUT(q, n) = &
@@ -1560,7 +1561,7 @@ CONTAINS
              ! ------------------------------------------------------
              ! Aerosol SSA thickness, only if flagged (AOD unchanged)
              ! ------------------------------------------------------
-             IF (do_assa_Jacobians .AND. aer_flags(n)) THEN
+             IF (aer_ctr%do_assa_jacobians .AND. aer_flags(n)) THEN
                 q = assawfidx
                 VLIDORT_LinFixIn%Optical%TS_L_DELTAU_VERT_INPUT(q,n) = 0.0d0
                 VLIDORT_LinFixIn%Optical%TS_L_OMEGA_TOTAL_INPUT(q,n) = total_aersca / &

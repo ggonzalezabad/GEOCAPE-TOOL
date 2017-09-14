@@ -207,16 +207,11 @@ program geocape_tools_v2p6
    ! --------------------
    ! Initialize variables
    ! --------------------
-   naer               = 0
+   aer_ctr%naer       = 0
    aer_flags          = .FALSE.
-   do_aer_columnwf    = .FALSE.
-   do_aod_Jacobians   = .FALSE.
-   do_assa_Jacobians  = .FALSE.
-   do_aerph_Jacobians = .FALSE.
-   do_aerhw_Jacobians = .FALSE.
    aer_profile = 0.0d0; taer_profile = 0.0d0; taertau0 = 0.0d0
 
-   IF (do_aerosols) THEN
+   IF (aer_ctr%do_aerosols) THEN
       CALL read_aer_control_file(yn_error)
       IF (yn_error) CALL error_exit (yn_error)
     
@@ -443,20 +438,10 @@ program geocape_tools_v2p6
    ! -----------------------------------
    CALL Vlidort_GC_config (yn_error)
 
-   ! -------------------
-   ! Not implemented yet
-   ! -------------------
-   do_aerph_Jacobians  = .FALSE.
-   do_aerhw_Jacobians  = .FALSE.
-
    IF (.NOT. do_Jacobians) THEN
       do_QU_Jacobians     = .FALSE.
       do_T_Jacobians      = .FALSE.
       do_sfcprs_Jacobians = .FALSE.
-      do_aod_Jacobians    = .FALSE.
-      do_assa_Jacobians   = .FALSE.
-      do_aerph_Jacobians  = .FALSE.
-      do_aerhw_Jacobians  = .FALSE.
       do_cod_Jacobians    = .FALSE.
       do_cssa_Jacobians   = .FALSE.
       do_ctp_Jacobians    = .FALSE.

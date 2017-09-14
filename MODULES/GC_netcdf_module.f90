@@ -7,12 +7,12 @@ MODULE GC_netcdf_module
                                   lambertian_cldalb, taer_profile, tcld_profile, opdeps, ssalbs,       &
                                   aer_opdeps, aer_ssalbs, cld_opdeps, cld_ssalbs, ground_ler,          &
                                   wind_speed, VLIDORT_FixIn, lambda_dw, clambdas, nclambdas,           &
-                                  lambda_dfw, use_wavelength, aer_reflambda, cld_reflambda,            &
+                                  lambda_dfw, use_wavelength, cld_reflambda,            &
                                   do_vector_calculation, do_StokesQU_output, do_Jacobians,             &
                                   do_QU_Jacobians, do_AMF_calculation, do_T_Jacobians,                 &
-                                  do_sfcprs_Jacobians, do_aod_Jacobians, do_assa_Jacobians,            &
+                                  do_sfcprs_Jacobians,             &
                                   do_cod_Jacobians, do_cssa_Jacobians, do_cfrac_Jacobians,             &
-                                  do_aer_columnwf, do_cld_columnwf, do_normalized_WFoutput,            &
+                                  do_cld_columnwf, do_normalized_WFoutput,            &
                                   do_normalized_radiance, use_lambertian, do_lambertian_cld, do_effcrs,&
                                   use_solar_photons, lambda_resolution, solar_cspec_data, GC_radiances,&
                                   GC_Qvalues, GC_Uvalues, GC_Tracegas_Jacobians, GC_Scattering_Weights,&
@@ -31,7 +31,7 @@ MODULE GC_netcdf_module
                                   GC_flux, GC_Qflux, GC_Uflux, GC_direct_flux, GC_Qdirect_flux,        &
                                   GC_Udirect_flux, Total_brdf, NSTOKESSQ, do_brdf_surface,             &
                                   OUTPUT_WSABSA, WSA_CALCULATED, BSA_CALCULATED, didx, W,              &
-                                  GC_user_altitudes, GC_n_user_levels, ilev, GC_user_levels
+                                  GC_user_altitudes, GC_n_user_levels, ilev, GC_user_levels, aer_ctr
   USE GC_error_module
 
   IMPLICIT NONE
@@ -282,11 +282,11 @@ CONTAINS
             CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'sfcprs_jac',    NF_FLOAT, 3, wavgeolev_dims, sfcprswfid))
             CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, sfcprswfid, FILL_MODE, NF_FILL_REAL))
          endif
-       if (do_aer_columnwf .and. do_aod_Jacobians) then  !No column jacobians yet
+       if (aer_ctr%do_aer_columnwf .and. aer_ctr%do_aod_Jacobians) then  !No column jacobians yet
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aodcolwf_jac',  NF_FLOAT, 3, wavgeolev_dims, aodwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aodwfid, FILL_MODE, NF_FILL_REAL))
        endif
-       if (do_aer_columnwf .and. do_assa_Jacobians) then !No column jacobians yet
+       if (aer_ctr%do_aer_columnwf .and. aer_ctr%do_assa_Jacobians) then !No column jacobians yet
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assacolwf_jac', NF_FLOAT, 3, wavgeolev_dims, assawfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, assawfid, FILL_MODE, NF_FILL_REAL))
        endif
@@ -327,13 +327,13 @@ CONTAINS
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'sfcprs_ujac',  NF_FLOAT, 3, wavgeolev_dims, sfcprsuwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, sfcprsuwfid, FILL_MODE, NF_FILL_REAL))
        endif
-       if (do_aer_columnwf .and. do_aod_Jacobians) then  !No column jacobians yet
+       if (aer_ctr%do_aer_columnwf .and. aer_ctr%do_aod_Jacobians) then  !No column jacobians yet
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aodcol_qjac',  NF_FLOAT, 3, wavgeolev_dims, aodqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aodqwfid, FILL_MODE, NF_FILL_REAL))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aodcol_ujac',  NF_FLOAT, 3, wavgeolev_dims, aoduwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aoduwfid, FILL_MODE, NF_FILL_REAL))
        endif
-       if (do_aer_columnwf .and. do_assa_Jacobians) then !No column jacobians yet
+       if (aer_ctr%do_aer_columnwf .and. aer_ctr%do_assa_Jacobians) then !No column jacobians yet
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assacol_qjac', NF_FLOAT, 3, wavgeolev_dims, assaqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, assaqwfid, FILL_MODE, NF_FILL_REAL))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assacol_ujac', NF_FLOAT, 3, wavgeolev_dims, assauwfid))
@@ -364,11 +364,11 @@ CONTAINS
             CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 't_jac',    NF_FLOAT, 4, wavaltgeolev_dims, tempwfid))
             CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, tempwfid, FILL_MODE, NF_FILL_REAL))
          endif
-       if (.not. do_aer_columnwf .and. do_aod_Jacobians) then
+       if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_aod_Jacobians) then
             CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aod_jac',  NF_FLOAT, 4, wavaltgeolev_dims, aodwfid))
             CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aodwfid, FILL_MODE, NF_FILL_REAL))
          endif
-       if (.not. do_aer_columnwf .and. do_assa_Jacobians) then
+       if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_assa_Jacobians) then
             CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assa_jac', NF_FLOAT, 4, wavaltgeolev_dims, assawfid))
             CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, assawfid, FILL_MODE, NF_FILL_REAL))
          endif
@@ -383,13 +383,13 @@ CONTAINS
     endif
     
     if (do_QU_Jacobians) then
-       if (.not. do_aer_columnwf .and. do_aod_Jacobians) then 
+       if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_aod_Jacobians) then 
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aod_qjac', NF_FLOAT, 4, wavaltgeolev_dims, aodqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aodqwfid, FILL_MODE, NF_FILL_REAL))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'aod_ujac', NF_FLOAT, 4, wavaltgeolev_dims, aoduwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, aoduwfid, FILL_MODE, NF_FILL_REAL))
        endif
-       if (.not. do_aer_columnwf .and. do_assa_Jacobians) then
+       if (.not. aer_ctr%do_aer_columnwf .and. aer_ctr%do_assa_Jacobians) then
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assa_qjac', NF_FLOAT, 4, wavaltgeolev_dims, assaqwfid))
           CALL netcdf_handle_error(location,NF_DEF_VAR_FILL(ncid, assaqwfid, FILL_MODE, NF_FILL_REAL))
           CALL netcdf_handle_error(location,NF_DEF_VAR(ncid, 'assa_ujac', NF_FLOAT, 4, wavaltgeolev_dims, assauwfid))
@@ -453,7 +453,8 @@ CONTAINS
          real(VLIDORT_ModIn%MUserVal%TS_USER_LEVELS, kind=4)))
     CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'windspeed', NF_FLOAT, 1, real(wind_speed, kind=4)))
     CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'lam_reso', NF_FLOAT, 1, real(lambda_resolution, kind=4)))
-    CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'aer_reflam', NF_FLOAT, 1, real(aer_reflambda, kind=4)))
+    CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'aer_reflam', NF_FLOAT, &
+         1, real(aer_ctr%aer_reflambda, kind=4)))
     CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'cld_reflam', NF_FLOAT, 1, real(cld_reflambda, kind=4)))
     CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'lam_dw', NF_FLOAT, 1, real(lambda_dw, kind=4)))
     CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'lam_dfw', NF_FLOAT, 1, real(lambda_dfw, kind=4)))
@@ -550,12 +551,12 @@ CONTAINS
     else
        CALL netcdf_handle_error(location,NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_sfcprs_Jacobian', NF_INT1, 1, 0))
     endif
-    if (do_aod_Jacobians) then
+    if (aer_ctr%do_aod_Jacobians) then
        CALL netcdf_handle_error(location,NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_aod_Jacobian', NF_INT1, 1, 1))
     else
        CALL netcdf_handle_error(location,NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_aod_Jacobian', NF_INT1, 1, 0))
     endif
-    if (do_assa_Jacobians) then
+    if (aer_ctr%do_assa_Jacobians) then
        CALL netcdf_handle_error(location,NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_assa_Jacobian', NF_INT1, 1, 1))
     else
        CALL netcdf_handle_error(location,NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_assa_Jacobian', NF_INT1, 1, 0))
@@ -575,7 +576,7 @@ CONTAINS
     else
        CALL netcdf_handle_error(location,NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_cfrac_Jacobian', NF_INT1, 1, 0))
     endif
-    if (do_aer_columnwf) then
+    if (aer_ctr%do_aer_columnwf) then
        CALL netcdf_handle_error(location,NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_aer_columnwf', NF_INT1, 1, 1))
     else
        CALL netcdf_handle_error(location,NF_PUT_ATT_INT1 (ncid, NF_GLOBAL, 'do_aer_columnwf', NF_INT1, 1, 0))

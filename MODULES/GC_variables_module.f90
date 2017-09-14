@@ -57,13 +57,13 @@ MODULE GC_variables_module
 ! File names for data
 ! -------------------
    CHARACTER(LEN=max_ch_len) :: profile_data_filename, debug_filename, &
-                                albspectra_fname, aerfile, cldfile
+                                albspectra_fname, cldfile
 
 !  ----------------------------------------------------------
 !  Aerosol/clouds flag (true if you want to include aerosols)
 ! -----------------------------------------------------------
-   LOGICAL :: do_aerosols, do_clouds, do_lambertian_cld
-   LOGICAL :: use_aerprof, use_cldprof
+   LOGICAL :: do_clouds, do_lambertian_cld
+   LOGICAL :: use_cldprof
   
 ! --------------------------------------------------------
 ! Vector calculation flag (true if you want polarization)
@@ -210,29 +210,19 @@ MODULE GC_variables_module
 ! =========================
 ! Input and logical variables
 ! ---------------------------
-TYPE(aerosol_control) :: aer_ctr
-
-! ----------------------------------
-! Logicals for aerosols calculations
-! ----------------------------------
-   LOGICAL :: do_aod_Jacobians, do_assa_Jacobians, do_aerph_jacobians, &
-             do_aerhw_jacobians, do_aer_columnwf
+   TYPE(aerosol_control) :: aer_ctr
 
 ! -------------
 ! Aerosol Stuff 
 ! -------------
-   INTEGER                         :: naer, naer0
-   REAL(KIND=8)                    :: aer_reflambda, taertau0
-   REAL(KIND=8), DIMENSION(maxaer) :: aer_tau0s, aer_z_upperlimit,       &
-                                      aer_z_lowerlimit, aer_z_peakheight,&
-                                      aer_half_width
+   INTEGER                         :: naer0
+   REAL(KIND=8)                    :: taertau0
    REAL(KIND=8), DIMENSION(maxaer, GC_maxlayers) :: aer_profile,         &
                                                     aer_d_profile_dtau,  &
                                                     aer_d_profile_dpkh,  &
                                                     aer_d_profile_dhfw,  &
                                                     aer_profile0
    REAL(KIND=8), DIMENSION(GC_maxlayers)         :: taer_profile
-   CHARACTER(LEN=2), DIMENSION(maxaer)           :: aer_types
   
    LOGICAL,      DIMENSION(GC_maxlayers)             :: aer_flags
    REAL(KIND=8), DIMENSION(maxlambdas,GC_maxlayers)  :: aer_opdeps

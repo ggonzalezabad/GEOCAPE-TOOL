@@ -8,7 +8,7 @@ MODULE GC_control_types_module
 
   TYPE, PUBLIC :: aerosol_control
      LOGICAL :: do_aerosols = .false. ! Do aerosols
-     LOGICAL :: use_earprof = .false. ! Use profile from atmospheric model file
+     LOGICAL :: use_aerprof = .false. ! Use profile from atmospheric model file
      CHARACTER(LEN=max_ch_len) :: aerfile ! Aerosol control file
      LOGICAL :: do_aod_jacobians = .false. ! Aerosol optical depth jacobians
      LOGICAL :: do_assa_jacobians = .false. ! Aerosol single scattering albedo jacobians
@@ -22,10 +22,10 @@ MODULE GC_control_types_module
      CHARACTER(LEN=2), ALLOCATABLE, DIMENSION(:) :: aer_types ! SU, DU, BC, OC, SC, SF
      REAL(KIND=8), ALLOCATABLE, DIMENSION(:) :: aer_tau0s, & ! Aerosol total loading
      aer_z_upperlimit, & ! Aerosol layer upper limit
-     aer_z_lowelimit, & ! Aerosol layer lower limit
+     aer_z_lowerlimit, & ! Aerosol layer lower limit
      aer_z_peakheight, & ! Aerosol layer peak heigh (only GDF)
      aer_half_width, & ! Aerosol layer half width (only GDF)
-     aer_half_relax ! Aerosol layer exponential relaxation (only exponential)
+     aer_relax ! Aerosol layer exponential relaxation (only exponential)
   END TYPE aerosol_control
 
 END MODULE GC_control_types_module
