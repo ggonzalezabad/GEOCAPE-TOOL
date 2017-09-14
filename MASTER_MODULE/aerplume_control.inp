@@ -58,9 +58,9 @@ AOD wavelength
 #       6. Peak height Half width (only used if GDF but still has to be present) [km]
 # -----------------------------------------------------------------------------------
 Aerosol types
-2
+3
 SU
-BOX
+GDF
 0.2
 12.0  0.00  
 2.00
@@ -71,3 +71,9 @@ EXP
 12.0 0.00
 1.0
 5.00 1.5
+BC
+BOX
+0.4
+2.0 1.0
+1.5
+1.5 1.5

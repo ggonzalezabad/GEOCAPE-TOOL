@@ -25,6 +25,7 @@ MODULE GC_aerosols_module
                                   GC_nlayers, heights, nmessages,         &
                                   messages, aer_ctr
   USE GC_read_input_module, ONLY: skip_to_filemark
+  USE GC_Aerloading_routines_m, ONLY: generate_plume
   USE GC_error_module
 !
   IMPLICIT NONE
