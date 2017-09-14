@@ -215,8 +215,9 @@ MODULE GC_variables_module
 ! -------------
 ! Aerosol Stuff 
 ! -------------
-   INTEGER                         :: naer0
-   REAL(KIND=8)                    :: taertau0
+   INTEGER          :: naer0
+   REAL(KIND=8)     :: taertau0
+   CHARACTER(LEN=2), DIMENSION(maxaer) :: aer_types0
    REAL(KIND=8), DIMENSION(maxaer, GC_maxlayers) :: aer_profile,         &
                                                     aer_d_profile_dtau,  &
                                                     aer_d_profile_dpkh,  &

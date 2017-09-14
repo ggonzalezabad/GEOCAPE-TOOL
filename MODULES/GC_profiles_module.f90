@@ -17,8 +17,7 @@ MODULE GC_profiles_module
                                   aircolumns, daircolumns_dT,        &
                                   gas_partialcolumns,                &
                                   gas_totalcolumns, &
-                                  naer0, &
-                                  aer_profile0, aer_ctr
+                                  naer0, aer_types0, aer_profile0, aer_ctr
   USE GC_error_module
 
   IMPLICIT NONE
@@ -118,9 +117,9 @@ CONTAINS
     IF (aer_ctr%do_aerosols .AND. aer_ctr%use_aerprof) THEN
        CALL get_aerprof_from_atmosprof(pmaxl, pmaxc, GC_nlayers, pnc, &
                                        profids, profile_data, maxaer, &
-                                       naer0, aer_ctr%aer_types, aer_profile0)
+                                       naer0, aer_types0, aer_profile0)
     ELSE
-       naer0 = 0; aer_profile0 = 0.0d0
+       naer0 = 0; aer_types0 = ''; aer_profile0 = 0.0d0
     ENDIF
     
   END SUBROUTINE prepare_profiles

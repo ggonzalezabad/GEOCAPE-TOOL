@@ -1139,9 +1139,9 @@ CONTAINS
     IF (aer_ctr%do_aerosols) THEN
        nw1=1
        CALL prepare_aercld_optical_property(database_dir, maxaer, aer_ctr%naer, &
-            aer_ctr%aer_types, GC_nlayers, &
+            aer_ctr%types, GC_nlayers, &
             aer_profile(1:maxaer, 1:GC_nlayers), aer_flags(1:GC_nlayers), lambdas(w), nw1,     &
-            aer_ctr%aer_reflambda, VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, ngksec,                &
+            aer_ctr%reflambda, VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, ngksec,                &
             aer_opdeps(w, 1:GC_nlayers), aer_ssalbs(w, 1:GC_nlayers),                          &
             aer_relqext(w, 1:GC_nlayers),                                                      &
             aer_phfcn(1:GC_nlayers, 0:VLIDORT_ModIn%MCont%TS_NGREEK_MOMENTS_INPUT, 1:ngksec),  &

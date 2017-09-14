@@ -454,7 +454,7 @@ CONTAINS
     CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'windspeed', NF_FLOAT, 1, real(wind_speed, kind=4)))
     CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'lam_reso', NF_FLOAT, 1, real(lambda_resolution, kind=4)))
     CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'aer_reflam', NF_FLOAT, &
-         1, real(aer_ctr%aer_reflambda, kind=4)))
+         1, real(aer_ctr%reflambda, kind=4)))
     CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'cld_reflam', NF_FLOAT, 1, real(cld_reflambda, kind=4)))
     CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'lam_dw', NF_FLOAT, 1, real(lambda_dw, kind=4)))
     CALL netcdf_handle_error(location,NF_PUT_ATT_REAL (ncid, NF_GLOBAL, 'lam_dfw', NF_FLOAT, 1, real(lambda_dfw, kind=4)))
