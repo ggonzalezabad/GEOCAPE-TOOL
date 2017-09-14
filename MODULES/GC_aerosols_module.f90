@@ -16,13 +16,14 @@ MODULE GC_aerosols_module
 !  !USES:
 !
   USE GC_parameters_module, ONLY: GC_maxlayers, aerunit, max_ch_len
-  USE GC_variables_module,  ONLY: naer0, aer_types0, taertau0, &
+  USE GC_variables_module,  ONLY: naer0, aer_types0, taertau0,            &
                                   aer_profile, aer_d_profile_dtau,        &
                                   aer_d_profile_dpkh, aer_d_profile_dhfw, &
-                                  aer_profile0, taer_profile, &
-                                  aer_flags, aer_opdeps, aer_ssalbs,      &
-                                  aer_relqext, aer_phfcn, GC_nlayers,     &
-                                  heights, nmessages, messages, aer_ctr
+                                  aer_d_profile_drel, aer_profile0,       &
+                                  taer_profile, aer_flags, aer_opdeps,    &
+                                  aer_ssalbs, aer_relqext, aer_phfcn,     &
+                                  GC_nlayers, heights, nmessages,         &
+                                  messages, aer_ctr
   USE GC_read_input_module, ONLY: skip_to_filemark
   USE GC_error_module
 !
@@ -273,16 +274,17 @@ MODULE GC_aerosols_module
             ! ----------------------------------------------
             ! Generate aerosol plume/profiles based on input
             ! ----------------------------------------------
-            CALL generate_plume                           &
-                 ( GC_maxlayers, aer_ctr%z_upperlimit(i), &
-                 aer_ctr%z_lowerlimit(i), & ! input
-                 aer_ctr%z_peakheight(i), &
-                 aer_ctr%tau0s(i), aer_ctr%half_width(i),     & ! input
-                 GC_nlayers, heights(0:GC_maxlayers),                      & ! input
-                 aer_profile(i, 1:GC_maxlayers),                           & ! output
-                 aer_d_profile_dtau(i, 1:GC_maxlayers),                    & ! output   
-                 aer_d_profile_dpkh(i,1:GC_maxlayers),                     & ! output
-                 aer_d_profile_dhfw(i,1:GC_maxlayers),                     & ! output
+            CALL generate_plume ( &
+                 GC_maxlayers, GC_nlayers, heights(0:GC_maxlayers), & ! input
+                 aer_ctr%profiles(i), aer_ctr%z_upperlimit(i),      & ! input
+                 aer_ctr%z_lowerlimit(i), aer_ctr%z_peakheight(i),  & ! input
+                 aer_ctr%tau0s(i), aer_ctr%half_width(i),           & ! input
+                 aer_ctr%relaxation(i),                             & ! input
+                 aer_profile(i, 1:GC_maxlayers),                    & ! output
+                 aer_d_profile_dtau(i, 1:GC_maxlayers),             & ! output   
+                 aer_d_profile_dpkh(i,1:GC_maxlayers),              & ! output
+                 aer_d_profile_dhfw(i,1:GC_maxlayers),              & ! output
+                 aer_d_profile_drel(i,1:GC_maxlayers),              & ! output
                  error, messages(nmessages+1) ) 
 
             ! ------

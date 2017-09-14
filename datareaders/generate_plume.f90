@@ -1,74 +1,74 @@
 ! This tool is taken from Rob's Combo-VLIDORT tool, used to generate aerosol
 ! or trace gas profiles/plumes using generalized distribution function (GDF) 
-subroutine generate_plume                       &
-     ( max_layers, z_upperlimit, z_lowerlimit,  & ! input
+subroutine generate_plume &
+     ( max_layers, nlayers, level_heights, & ! input
+     profile_type, z_upperlimit, z_lowerlimit,  & ! input
      z_peakheight, total_column, half_width,    & ! input
-     nlayers, level_heights,                    & ! input
+     relaxation,                                & ! input
      profile, d_profile_dcol,                   & ! output
      d_profile_dpkh, d_profile_dhfw,            & ! output
-     fail, message)                               ! output
+     d_profile_drel, fail, message)              ! output
   
-!  Inputs
-!  ------
+! ------
+! Inputs
+! ------
 
-!  dimensioning
-
+! Dimensioning
   INTEGER, INTENT(IN) :: max_layers, nlayers
 
-!  height levels controlling profile shape. All in [km].
+! H level input
+  REAL(KIND=8), DIMENSION(0:MAX_LAYERS), INTENT(IN) :: level_heights   
 
-!     z_upperlimit = uppermost height value at start  of GDF profile
-!     z_lowerlimit = lowest    height value at bottom of GDF profile
-!     z_peakheight = height at which peak value of GDF profile occurs
+! Profile shape type
+  CHARACTER(LEN=3) :: profile_type
 
-!  Notes:
-!    (1) Must have  z_u > z_p >/= z_l. This is checked internally
-!    (2) Must have  z_l > heightgrid(nlayers). Also checked internally
+! Height levels controlling profile shape. All in [km].
 
+! z_upperlimit = uppermost height value at start  of GDF profile
+! z_lowerlimit = lowest    height value at bottom of GDF profile
+! z_peakheight = height at which peak value of GDF profile occurs
+
+! Notes:
+!   (1) Must have  z_u > z_p >/= z_l. This is checked internally
+!   (2) Must have  z_l > heightgrid(nlayers). Also checked internally
   REAL(KIND=8), INTENT(IN) :: z_upperlimit, z_lowerlimit,  z_peakheight
 
-!  Half width
+! Half width
   REAL(KIND=8), INTENT(IN) :: half_width
 
-!  Total column between upper and lower limits
-
+! Total column between upper and lower limits
   REAL(KIND=8), INTENT(IN) :: total_column
 
-!  H level input
-  REAL(kind=8), DIMENSION(0:MAX_LAYERS), INTENT(IN) :: level_heights   
+! Exponential relaxation
+  REAL(KIND=8), INTENT(IN) :: relaxation
 
-!  Outputs
-!  -------
-
+! -------
+! Outputs
+! -------
   REAL(KIND=8), DIMENSION(MAX_LAYERS), INTENT(OUT)  :: profile
-
-!  Umkehr profile derivatives (3 of them)
-!    Ashplume:  (w.r.t. total tau and peak height and half width)
-
+! Umkehr profile derivatives (3 of them)
+!   Ashplume:  (w.r.t. total tau and peak height and half width)
   REAL(KIND=8), DIMENSION(MAX_LAYERS), INTENT(OUT) :: d_profile_dcol
   REAL(KIND=8), DIMENSION(MAX_LAYERS), INTENT(OUT) :: d_profile_dpkh
   REAL(KIND=8), DIMENSION(MAX_LAYERS), INTENT(OUT) :: d_profile_dhfw
+  REAL(KIND=8), DIMENSION(MAX_LAYERS), INTENT(OUT) :: d_profile_drel
 
-!  Error handling
-
+! Error handling
   LOGICAL, INTENT(OUT)         :: FAIL
   CHARACTER*(*), INTENT(INOUT) :: MESSAGE
   CHARACTER(LEN=256)           :: ACTION
 
-!  Local variables
-!  ---------------
+! ---------------
+! Local variables
+! ---------------
 
-!  Control for calculating derivatives
-
+! Control for calculating derivatives
   logical :: do_derivatives
 
-!  Other variables
-
+! Other variables
   integer :: i
-!      DOUBLE PRECISION sum, sumd
 
-!  Exception handling. Check physical limits of plume
-
+! Exception handling. Check physical limits of plume
   fail = .false.
   message = ' '
   action  = ' '
@@ -79,17 +79,16 @@ subroutine generate_plume                       &
      return
   endif
   
-!  Initialize
-
+! Initialize
   do i = 1, nlayers
      profile(i)        = 0.0d0
      d_profile_dcol(i) = 0.0d0
      d_profile_dpkh(i) = 0.0d0
      d_profile_dhfw(i) = 0.0d0
+     d_profile_drel(i) = 0.0d0
   enddo
   
-  !  Call
-  
+! Call
   do_derivatives = .true.
   call profiles_gdfone  & 
        ( max_layers, nlayers, level_heights, do_derivatives, & ! Input
@@ -98,20 +97,7 @@ subroutine generate_plume                       &
        profile, d_profile_dcol,                              & ! Output
        d_profile_dpkh, d_profile_dhfw,                       & ! Output
        fail, message, action )                                 ! Output
-       
-!  debug
-
-!      sum = 0.0d0
-!      sumd = 0.0d0
-!      do i = 1, nlayers
-!        sum  = sum  + profile(i)
-!        sumd = sumd + d_profile_dcol(i)
-!      enddo
-!      write(*,*)sum,sumd
-!      pause
-
-!  FInish
-       
+              
   RETURN
 END SUBROUTINE generate_plume
 

@@ -222,6 +222,7 @@ MODULE GC_variables_module
                                                     aer_d_profile_dtau,  &
                                                     aer_d_profile_dpkh,  &
                                                     aer_d_profile_dhfw,  &
+                                                    aer_d_profile_drel,  &
                                                     aer_profile0
    REAL(KIND=8), DIMENSION(GC_maxlayers)         :: taer_profile
   
