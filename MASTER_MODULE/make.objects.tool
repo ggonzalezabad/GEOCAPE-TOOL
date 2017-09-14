@@ -4,7 +4,6 @@
 OBJECTS_GEOCAPE_MAIN  = $(OBJ)/geocape_tool.o
 
 OBJECTS_GEOCAPE_PREP  = $(OBJ)/geocape_profile_prep.o               \
-                           $(OBJ)/generate_plume.o                  \
                            $(OBJ)/geocape_surface_prep.o            \
                            $(OBJ)/solarspec_prep.o                  \
                            $(OBJ)/geocape_xsecs_prep.o              \
@@ -26,6 +25,7 @@ OBJECTS_MODULE        = $(GC_OBJ)/GC_parameters_module.o            \
                         $(GC_OBJ)/GC_variables_module.o             \
                         $(GC_OBJ)/GC_error_module.o                 \
                         $(GC_OBJ)/GC_read_input_module.o            \
+                        $(GC_OBJ)/GC_Aerloading_routines_m.o  	    \
                         $(GC_OBJ)/GC_aerosols_module.o              \
                         $(GC_OBJ)/GC_clouds_module.o                \
                         $(GC_OBJ)/GC_solar_module.o                 \

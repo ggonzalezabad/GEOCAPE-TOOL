@@ -62,7 +62,7 @@ $(GC_OBJ)/GC_aerosols_module.o:   $(MOD_PATH)/GC_aerosols_module.f90 \
                                $(GC_OBJ)/GC_error_module.o           \
                                $(GC_OBJ)/GC_read_input_module.o      \
                                $(GC_OBJ)/GC_variables_module.o       \
-                               $(OBJ)/generate_plume.o
+                               $(GC_OBJ)/GC_Aerloading_routines_m.o
 	$(TOOL_COMPILE) $(MOD_PATH)/GC_aerosols_module.f90 -I$(OBJ)  -I$(GC_OBJ) -I$(GC_MOD) \
       -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_aerosols_module.o
 	mv -f *.mod $(GC_MOD)
@@ -131,6 +131,11 @@ $(GC_OBJ)/GC_netcdf_module.o:$(MOD_PATH)/GC_netcdf_module.f90   \
                                $(GC_OBJ)/GC_variables_module.o
 	$(TOOL_COMPILE) $(MOD_PATH)/GC_netcdf_module.f90 -I$(OBJ)  -I$(GC_OBJ)  -I$(GC_MOD) \
     -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_netcdf_module.o
+	mv -f *.mod $(GC_MOD)
+
+$(GC_OBJ)/GC_Aerloading_routines_m.o:$(MOD_PATH)/GC_Aerloading_routines_m.f90
+	$(TOOL_COMPILE) $(MOD_PATH)/GC_Aerloading_routines_m.f90 -I$(OBJ)  -I$(GC_OBJ)  -I$(GC_MOD) \
+    -I$(VLIDORT_MOD) -I$(VLIDORT_OBJ) -o $(GC_OBJ)/GC_Aerloading_routines_m.o
 	mv -f *.mod $(GC_MOD)
 
 # --------------------------------------------------------
