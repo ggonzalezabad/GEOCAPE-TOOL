@@ -6,7 +6,7 @@ MODULE GC_control_types_module
 
   PUBLIC :: aerosol_control
 
-  TYPE, PUBLIC :: aerosol_control
+  TYPE :: aerosol_control
      LOGICAL :: do_aerosols = .false. ! Do aerosols
      LOGICAL :: use_aerprof = .false. ! Use profile from atmospheric model file
      CHARACTER(LEN=max_ch_len) :: aerfile ! Aerosol control file

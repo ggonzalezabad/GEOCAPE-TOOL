@@ -210,7 +210,7 @@ MODULE GC_variables_module
 ! =========================
 ! Input and logical variables
 ! ---------------------------
-   TYPE(aerosol_control) :: aer_ctr
+   TYPE(aerosol_control), SAVE :: aer_ctr
 
 ! -------------
 ! Aerosol Stuff 
